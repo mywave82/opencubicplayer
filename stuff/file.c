@@ -1280,7 +1280,7 @@ int osdir_trash_perform (const char *path)
 		snprintf (tempinfo,  len, "%s/info/%.*s-%d",  trash, namelen, name, ++i);
 		snprintf (tempfiles, len, "%s/files/%.*s-%d", trash, namelen, name, i);
 	}
-	write (fd, "[Trash Info]\nPath=", 18);
+	do {} while ((write (fd, "[Trash Info]\nPath=", 18) < 0) && (errno == EINTR));
 	{
 		const char *c;
 		for (c=path; *c && !((c[0] == '/') && (c[1] == 0)); c++) /* do not add final slash if present */
@@ -1289,15 +1289,16 @@ int osdir_trash_perform (const char *path)
 			     ((*c >= 'A') && (*c <= 'Z')) ||
 			     ((*c >= 'a') && (*c <= 'z')) )
 			{
-				write (fd, c, 1);
+				do {} while ((write (fd, c, 1) < 0) && (errno == EINTR));
 			} else {
 				char c4[4];
 				snprintf (c4, 4, "%%%02x", *(unsigned char *)c);
-				write (fd, c4, 3);
+				do {} while ((write (fd, c4, 3) < 0) && (errno == EINTR));
 			}
 		}
 	}
-	write (fd, "\nDeletionDate=", 14);
+
+	do {} while ((write (fd, "\nDeletionDate=", 14) < 0) && (errno == EINTR));
 	{
 		char c32[32];
 		struct tm *t;
@@ -1309,9 +1310,9 @@ int osdir_trash_perform (const char *path)
 		snprintf (c32, 32, "%04u%02u%02uT%02u:%02u:%02u\n",
 			t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
 			t->tm_hour, t->tm_min, t->tm_sec);
-		write (fd, c32, strlen (c32));
+		do {} while ((write (fd, c32, strlen (c32)) < 0) && (errno == EINTR));
 	}
-	close (fd);
+	do {} while ((close (fd) < 0) && (errno == EINTR));
 
 	if (rename (path, tempfiles))
 	{

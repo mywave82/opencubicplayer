@@ -514,9 +514,16 @@ static int rename_exdev (const char *oldpath, const char *newpath)
 			memset (linkdata, 0, sizeof (linkdata));
 			if (readlink (oldpath, linkdata, sizeof (linkdata) - 1) >= 0)
 			{
-				symlink (newpath, linkdata);
+				int e = 0;
+				if (symlink (newpath, linkdata) < 0)
+				{
+					e = errno;
+				}
 				fprintf (stderr, " symlink %s %s", newpath, linkdata);
-				if (strstr (linkdata, ".."))
+				if (e)
+				{
+					fprintf(stderr, "%s (failed with: %s)%s", isatty (2) ? "\033[1m\033[31m" : "", strerror (e), isatty (2) ? "\033[0m" : "");
+				} else if (strstr (linkdata, ".."))
 				{
 					fprintf(stderr, "%s (warning, relative symlinks will likely break)%s", isatty (2) ? "\033[1m\033[31m" : "", isatty (2) ? "\033[0m" : "");
 				}
