@@ -41,7 +41,7 @@ static SDL_AudioDeviceID status;
 static int status;
 #endif
 
-void theRenderProc(void *userdata, Uint8 *stream, int len)
+static void theRenderProc(void *userdata, Uint8 *stream, int len)
 {
 	int pos1, length1, pos2, length2;
 
