@@ -177,6 +177,7 @@ static int fb_SetGraphMode (int high)
 		ioctl(fd, FBIOPUT_VSCREENINFO, &lowres);
 		Console.GraphBytesPerLine = 640; /* not good, but my framebuffer bugs too much */
 	}
+	Console.CurrentFont = _8x16;
 
 	Console.VidMem = fbmem;
 	memset (fbmem, 0, fix.smem_len);
@@ -222,10 +223,14 @@ int fb_init (int minor, struct consoleDriver_t *driver)
 		if ((fd=open("/dev/fb", O_RDWR))<0)
 		{
 			perror("fb: open(/dev/fb)");
-			if ((fd=open("/dev/fb/0", O_RDWR))<0)
+			if ((fd=open("/dev/fb0", O_RDWR))<0)
 			{
-				perror("fb: open(/dev/fb/0)");
-				return -1;
+				perror("fb: open(/dev/fb0)");
+				if ((fd=open("/dev/fb/0", O_RDWR))<0)
+				{
+					perror("fb: open(/dev/fb/0)");
+					return -1;
+				}
 			}
 		}
 	}
@@ -449,15 +454,15 @@ int fb_init (int minor, struct consoleDriver_t *driver)
 		return -1;
 	}
 
-	driver->SetGraphMode = fb_SetGraphMode;
-	driver->gDrawChar16  = generic_gdrawchar;
-	driver->gDrawChar16P = generic_gdrawcharp;
-	driver->gDrawChar8   = generic_gdrawchar8;
-	driver->gDrawChar8P  = generic_gdrawchar8p;
-	driver->gDrawStr     = generic_gdrawstr;
-	driver->gUpdateStr   = generic_gupdatestr;
-	driver->gUpdatePal   = fb_gUpdatePal;
-	driver->gFlushPal    = fb_gFlushPal;
+	driver->SetGraphMode   = fb_SetGraphMode;
+	driver->gDrawChar8x16  = generic_gdrawchar;
+	driver->gDrawChar8x16P = generic_gdrawcharp;
+	driver->gDrawChar8x8   = generic_gdrawchar8;
+	driver->gDrawChar8x8P  = generic_gdrawchar8p;
+	driver->gDrawStr       = generic_gdrawstr;
+	driver->gUpdateStr     = generic_gupdatestr;
+	driver->gUpdatePal     = fb_gUpdatePal;
+	driver->gFlushPal      = fb_gFlushPal;
 
 	Console.VidType = vidVESA;
 

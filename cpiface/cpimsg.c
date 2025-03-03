@@ -111,11 +111,13 @@ static void msgDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDisplayMessage (cpifaceSession);
 }
 
-static void msgSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
+static int msgSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(0);
 	plWinFirstLine=6;
 	plWinHeight=19;
+
+	return 0;
 }
 
 static int msgIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)

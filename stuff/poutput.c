@@ -36,6 +36,8 @@
  *     the generic functions is still kept in this file.
  */
 
+#define _POUTPUT_C
+
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -111,7 +113,7 @@ void generic_gdrawchar8p (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *pi
 
 	if (!picp)
 	{
-		gdrawchar8(x,y,c,f,0);
+		generic_gdrawchar8 (x,y,c,f,0);
 		return;
 	}
 
@@ -177,7 +179,7 @@ void generic_gdrawcharp (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *pic
 
 	if (!picp)
 	{
-		gdrawchar(x,y,c,f,0);
+		generic_gdrawchar (x,y,c,f,0);
 		return;
 	}
 

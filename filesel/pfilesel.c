@@ -2236,7 +2236,10 @@ superbreak:
 
 		switch (c)
 		{
-			case '1': stored = 0; plDisplaySetupTextMode(); break;
+			case '1': stored = 0;
+			                      plDisplaySetupTextMode();
+			                      fsScrType = Console.CurrentMode;
+			                      break;
 			/*case '1': stored = 0; fsScrType=(fsScrType+1)&7; break;*/
 			case '2': stored = 0; fsListScramble=!fsListScramble; break;
 			case '3': stored = 0; fsListRemove=!fsListRemove; break;

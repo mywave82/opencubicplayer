@@ -163,10 +163,12 @@ static void hlpDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDisplayHelp (cpifaceSession);
 }
 
-static void hlpSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
+static int hlpSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(fsScrType);
 	plWinHeight=plScrHeight-6;
+
+	return 0;
 }
 
 static int hlpIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)

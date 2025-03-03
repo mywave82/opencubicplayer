@@ -112,10 +112,11 @@ static int fontdebugIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uin
 	return 1;
 }
 
-static void fontdebugSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
+static int fontdebugSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
+	return 0;
 }
 
 static void fontdebugDisplayText_16x32(int x, int y, uint32_t *text)

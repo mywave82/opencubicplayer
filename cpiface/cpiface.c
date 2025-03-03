@@ -138,10 +138,14 @@ static char curmodehandle[9];
 
 static struct interfacestruct plOpenCP;
 
-void cpiSetGraphMode(int big)
+int cpiSetGraphMode(int big)
 {
-	plSetGraphMode(big);
+	if (plSetGraphMode(big) < 0)
+	{
+		return -1;
+	}
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 1;
+	return 0;
 }
 
 void cpiSetTextMode(int size)
@@ -2018,9 +2022,9 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 
 			for (i=0; i<chann; i++)
 			{ /* needs tuning... TODO */
-				gdrawchar8(384+i*8, 64, '0'+(i+chan0+1)/10, f->Public.MuteChannel[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 72, '0'+(i+chan0+1)%10, f->Public.MuteChannel[i+chan0]?8:7, 0);
-				gdrawchar8(384+i*8, 80, ((i+chan0)==f->Public.SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != f->Public.LogicalChannelCount))?0x1A:' ', 15, 0);
+				Console.Driver->gDrawChar8x8 (384+i*8, 64, '0'+(i+chan0+1)/10, f->Public.MuteChannel[i+chan0]?8:7, 0);
+				Console.Driver->gDrawChar8x8 (384+i*8, 72, '0'+(i+chan0+1)%10, f->Public.MuteChannel[i+chan0]?8:7, 0);
+				Console.Driver->gDrawChar8x8 (384+i*8, 80, ((i+chan0)==f->Public.SelectedChannel)?0x18:((i==0)&&chan0)?0x1B:((i==(chann-1))&&((chan0+chann) != f->Public.LogicalChannelCount))?0x1A:' ', 15, 0);
 			}
 		}
 	}
@@ -2029,7 +2033,7 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 void cpiResetScreen(void)
 {
 	if (curmode)
-		curmode->SetMode(&cpifaceSessionAPI.Public);
+		curmode->SetMode(&cpifaceSessionAPI.Public); /* we ignore errors here.... */
 }
 
 static void cpiChangeMode(struct cpimoderegstruct *m)
@@ -2038,24 +2042,53 @@ static void cpiChangeMode(struct cpimoderegstruct *m)
 	{
 		curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
 	}
-	curmode = m ? m : &cpiModeText;
-again:
+	curmode = 0;
+
+	if (m != &cpiModeText)
+	{
+		if (!m->Event (&cpifaceSessionAPI.Public, cpievOpen))
+		{
+			fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
+			goto text;
+		}
+
+		if (m->SetMode(&cpifaceSessionAPI.Public) < 0)
+		{
+			fprintf (stderr, "cpimode[%s]->SetMode() failed\n", m->handle);
+			m->Event (&cpifaceSessionAPI.Public, cpievClose);
+			goto text;
+		}
+		curmode = m;
+		return;
+	}
+
+text:
+	m = &cpiModeText;
 	if (!m->Event (&cpifaceSessionAPI.Public, cpievOpen))
 	{
 		fprintf (stderr, "cpimode[%s]->Event(cpievOpen) failed\n", m->handle);
-		if (curmode != &cpiModeText)
-		{
-			curmode=&cpiModeText;
-			goto again;
-		}
+		return;
 	}
 
-	curmode->SetMode(&cpifaceSessionAPI.Public);
+	if (m->SetMode(&cpifaceSessionAPI.Public))
+	{
+		fprintf (stderr, "cpimode[%s]->SetMode() failed\n", m->handle);
+		m->Event (&cpifaceSessionAPI.Public, cpievClose);
+
+		return;
+	}
+
+	curmode = m;
 }
 
 void cpiGetMode(char *hand)
 {
-	strcpy(hand, curmode->handle);
+	if (curmode)
+	{
+		strcpy(hand, curmode->handle);
+	} else {
+		*hand = 0;
+	}
 }
 
 void cpiSetMode(const char *hand)
@@ -2406,16 +2439,24 @@ static void plmpOpenScreen (void)
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 0; /* force redraw of selected channel */
 
 	if (!curmode)
+	{
 		curmode=&cpiModeText;
+	}
 	if (!curmode->Event (&cpifaceSessionAPI.Public, cpievOpen))
+	{
 		curmode=&cpiModeText;
+		curmode->Event (&cpifaceSessionAPI.Public, cpievOpen);
+	}
 	curmode->SetMode(&cpifaceSessionAPI.Public);
 }
 
 
 static void plmpCloseScreen (void)
 {
-	curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
+	if (curmode)
+	{
+		curmode->Event (&cpifaceSessionAPI.Public, cpievClose);
+	}
 }
 
 static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
@@ -2558,11 +2599,17 @@ static interfaceReturnEnum plmpDrawScreen(void)
 
 	if (plInKeyboardHelp)
 	{
-		curmode->Draw (&cpifaceSessionAPI.Public);
+		if (curmode)
+		{
+			curmode->Draw (&cpifaceSessionAPI.Public);
+		}
 		plInKeyboardHelp = cpiKeyHelpDisplay();
 		if (!plInKeyboardHelp)
 		{
-			curmode->SetMode(&cpifaceSessionAPI.Public); /* force complete redraw */
+			if (curmode)
+			{
+				curmode->SetMode(&cpifaceSessionAPI.Public); /* force complete redraw */
+			}
 		} else {
 			framelock();
 		}
@@ -2591,7 +2638,7 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			cpiKeyHelpClear();
 		}
 
-		if (curmode->AProcessKey (&cpifaceSessionAPI.Public, key))
+		if (curmode && curmode->AProcessKey (&cpifaceSessionAPI.Public, key))
 		{
 #ifdef KEYBOARD_DEBUG
 			fprintf (stderr, "plmpDrawScreen: curmode[%s]->AProcessKey() swallowed the key\n", curmode->handle);
@@ -2625,9 +2672,11 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				break;
 			case KEY_ALT_C:
 				fsSetup();
-				plSetTextMode(fsScrType);
-				fsScrType=plScrType;
-				curmode->SetMode(&cpifaceSessionAPI.Public);
+				fsScrType=plScrType; // store the new "default" textmode
+				if (curmode)
+				{
+					curmode->SetMode(&cpifaceSessionAPI.Public);
+				}
 				break;
 			#if 0
 			TODO plLoopPatterns
@@ -2721,7 +2770,10 @@ static interfaceReturnEnum plmpDrawScreen(void)
 	}
 
 superbreak:
-	curmode->Draw(&cpifaceSessionAPI.Public);
+	if (curmode)
+	{
+		curmode->Draw(&cpifaceSessionAPI.Public);
+	}
 	framelock();
 
 	cpifaceSessionAPI.Public.SelectedChannelChanged = 0;

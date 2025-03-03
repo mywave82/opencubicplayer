@@ -185,15 +185,15 @@ static void plDrawDots (struct cpifaceSessionAPI_t *cpifaceSession)
 		{
 			if (dothgt>=16)
 			{
-				gdrawcharp  (  8, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  ( 16, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  (616, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawcharp  (624, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x16P  (  8, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x16P  ( 16, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x16P  (616, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x16P  (624, 96+(dothgt-16)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
 			} else {
-				gdrawchar8p (  8, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p ( 16, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p (616, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
-				gdrawchar8p (624, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x8P (  8, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x8P ( 16, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x8P (616, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
+				Console.Driver->gDrawChar8x8P (624, 96+(dothgt- 8)/2+i*dothgt, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel) ? 15 : cpifaceSession->MuteChannel[i+chan0] ? 8 : 7, plOpenCPPict ? (plOpenCPPict - 96*640) : 0);
 			}
 		}
 	}
@@ -444,12 +444,16 @@ static void dotDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDrawDots (cpifaceSession);
 }
 
-static void dotSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int dotSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);
-	cpiSetGraphMode(0);
+	if (cpiSetGraphMode(0) < 0)
+	{
+		return -1;
+	}
 	plPrepareDots();
 	plPrepareDotsScr();
+	return 0;
 }
 
 static int dotCan (struct cpifaceSessionAPI_t *cpifaceSession)

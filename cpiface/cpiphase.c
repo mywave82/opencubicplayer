@@ -410,12 +410,16 @@ static void scoDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDrawScopes (cpifaceSession);
 }
 
-static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);
-	cpiSetGraphMode(0);
+	if (cpiSetGraphMode(0))
+	{
+		return -1;
+	}
 	plPrepareScopes();
 	plPrepareScopeScr (cpifaceSession);
+	return 0;
 }
 
 static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)

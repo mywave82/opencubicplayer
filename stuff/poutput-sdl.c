@@ -163,7 +163,9 @@ again:
 	} else {
 		current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_RESIZABLE|SDL_HWSURFACE);
 		if (!current_surface)
+		{
 			current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_RESIZABLE|SDL_SWSURFACE);
+		}
 	}
 	Console.TextGUIOverlay = current_surface->format->BytesPerPixel != 1;
 
@@ -207,10 +209,26 @@ again:
 		exit(-1);
 	}
 
+	do { /* resolve Console.CurrentMode */
+		int i;
+		for (i=0; i < 8; i++)
+		{
+			if ((Console.TextWidth   == mode_tui_data[i].text_width) &&
+			    (Console.TextHeight  == mode_tui_data[i].text_height) &&
+			    (Console.CurrentFont == mode_tui_data[i].font))
+			{
+				break;
+			}
+		}
+		Console.LastTextMode = Console.CurrentMode = i;
+	} while (0);
+
 	sdl_gFlushPal ();
 
 	___push_key(VIRT_KEY_RESIZE);
 }
+
+static int cachemode = -1;
 
 static void sdl_SetTextMode (unsigned char x)
 {
@@ -222,25 +240,16 @@ static void sdl_SetTextMode (unsigned char x)
 		return;
 	}
 
-	if (x==255)
+	Console.CurrentFont = sdl_CurrentFontWanted;
+
+	if (cachemode >= 0)
 	{
 		sdl_SetGraphMode (-1);
-
-		if (current_surface)
-		{
-			/* This surface belongs to SDL internals */
-			/* SDL_FreeSurface(current_surface); */
-			current_surface = 0;
-		}
-		Console.CurrentMode = 255;
-		return; /* gdb helper */
 	}
 
 	/* if invalid mode, set it to custom */
 	if (x>7)
 	{
-		x=8;
-
 		set_state_textmode(
 			do_fullscreen,
 			last_text_width,
@@ -253,11 +262,7 @@ static void sdl_SetTextMode (unsigned char x)
 			mode_gui_data[mode_tui_data[x].gui_mode].width,
 			mode_gui_data[mode_tui_data[x].gui_mode].height);
 	}
-
-	Console.LastTextMode = Console.CurrentMode = x;
 }
-
-static int cachemode = -1;
 
 static void set_state_graphmode(int fullscreen, int width, int height)
 {
@@ -298,9 +303,10 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 
 	if ((do_fullscreen = fullscreen))
 	{
-
 		if (fullscreen_info[mode].is_possible)
+		{
 			current_surface = SDL_SetVideoMode(fullscreen_info[mode].resolution.w, fullscreen_info[mode].resolution.h, 0, fullscreen_info[mode].flags | SDL_ANYFORMAT);
+		}
 	}
 
 	if (!current_surface)
@@ -308,7 +314,9 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 		do_fullscreen = 0;
 		current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_HWSURFACE);
 		if (!current_surface)
+		{
 			current_surface = SDL_SetVideoMode(width, height, 0, SDL_ANYFORMAT|SDL_SWSURFACE);
+		}
 	}
 	Console.TextGUIOverlay = current_surface->format->BytesPerPixel != 1;
 
@@ -316,6 +324,7 @@ static void set_state_graphmode(int fullscreen, int width, int height)
 	Console.TextHeight        = height/16;
 	Console.GraphBytesPerLine = width;
 	Console.GraphLines        = height;
+	Console.CurrentFont       = _8x16;
 
 	plScrRowBytes = Console.TextWidth * 2;
 
@@ -361,9 +370,9 @@ quick:
 	return 0;
 }
 
-static void sdl_vga13 (void)
+static int sdl_vga13 (void)
 {
-	sdl_SetGraphMode (13);
+	return sdl_SetGraphMode (13);
 }
 
 static void FindFullscreenModes_SDL(Uint32 flags)

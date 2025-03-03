@@ -461,12 +461,13 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 
 	destroy_image();
 	create_image();
+
 	if (virtual_framebuffer)
 	{
 		free(virtual_framebuffer);
 		virtual_framebuffer=0;
 	}
-	if ((x11_depth!=8) || (Console.GraphBytesPerLine != image->bytes_per_line))
+	if ((x11_depth != 8) || (Console.GraphBytesPerLine != image->bytes_per_line))
 	{
 		virtual_framebuffer = malloc (Console.GraphBytesPerLine * Console.GraphLines);
 		Console.VidMem = virtual_framebuffer;
@@ -476,14 +477,23 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 	}
 	memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
 
+	do { /* resolve Console.CurrentMode */
+		int i;
+		for (i=0; i < 8; i++)
+		{
+			if ((Console.TextWidth   == modes[i].charx) &&
+			    (Console.TextHeight  == modes[i].chary) &&
+			    (Console.CurrentFont == modes[i].bigfont))
+			{
+				break;
+			}
+		}
+		Console.LastTextMode = Console.CurrentMode = i;
+	} while (0);
+
+
 	if (!do_fullscreen)
 	{
-		if ((Console.CurrentMode != 8) &&
-		    ((modes[Console.CurrentMode].windowy != height) ||
-		     (modes[Console.CurrentMode].windowx != width)))
-		{
-			Console.LastTextMode = Console.CurrentMode = 8;
-		}
 		Textmode_Window_Height = height;
 		Textmode_Window_Width = width;
 	}
@@ -526,16 +536,19 @@ static void set_state_graphmode(int FullScreen)
 		SizeHints.min_height = SizeHints.max_height = Console.GraphLines;
 	}
 
+	//fprintf (stderr, "[x11] XSetWMNormalHints (min_width=%d max_width=%d min_height=%d max_height=%d\n", SizeHints.min_width, SizeHints.max_width, SizeHints.min_height, SizeHints.max_height);
 	XSetWMNormalHints(mDisplay, window, &SizeHints);
 	motif_decoration(window, !do_fullscreen);
 	ewmh_fullscreen(window, do_fullscreen);
 
 	if (do_fullscreen)
 	{
+		//fprintf (stderr, "[x11] /* do_fullscreen */ XResizeWindow (width=%d height=%d)\n", Graphmode_modeline->hdisplay, Graphmode_modeline->vdisplay);
 		XResizeWindow(mDisplay, window, Graphmode_modeline->hdisplay, Graphmode_modeline->vdisplay);
 		XSync(mDisplay, FALSE);
 		//XClearWindow(mDisplay, window);
 	} else {
+		//fprintf (stderr, "[x11] XResizeWindow (width=%d height=%d)\n", Console.GraphBytesPerLine, Console.GraphLines);
 		XResizeWindow(mDisplay, window, Console.GraphBytesPerLine, Console.GraphLines);
 		XSync(mDisplay, FALSE);
 	}
@@ -660,7 +673,6 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		Console.GraphLines = Textmode_Window_Height;
 		Console.GraphBytesPerLine = Textmode_Window_Width;
 	}
-	___push_key(VIRT_KEY_RESIZE);
 
 	if (xvidmode_event_base >= 0)
 	{
@@ -724,6 +736,22 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 		Console.VidMem = (uint8_t *)image->data;
 	}
 	memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
+
+	do { /* resolve Console.CurrentMode */
+		int i;
+		for (i=0; i < 8; i++)
+		{
+			if ((Console.TextWidth   == modes[i].charx) &&
+			    (Console.TextHeight  == modes[i].chary) &&
+			    (Console.CurrentFont == modes[i].bigfont))
+			{
+				break;
+			}
+		}
+		Console.LastTextMode = Console.CurrentMode = i;
+	} while (0);
+
+	___push_key(VIRT_KEY_RESIZE);
 }
 
 static void x11_common_event_loop(void)
@@ -823,7 +851,7 @@ static void x11_common_event_loop(void)
 				}
 				break;
 			case ConfigureNotify:
-				//fprintf(stderr, "configure notify\n");
+				//fprintf(stderr, "[X11] configure notify\n");
 				if ((Console.GraphBytesPerLine == event.xconfigure.width) && (Console.GraphLines == event.xconfigure.height))
 				{
 					/* event was probably only a move */
@@ -1090,6 +1118,7 @@ static void create_window(void)
 	xswa.border_pixel=WhitePixel(mDisplay, mScreen);
 	xswa.event_mask=VisibilityChangeMask|FocusChangeMask|ExposureMask|KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask/*|ResizeRedirectMask*/|StructureNotifyMask;
 	xswa.override_redirect = False;
+	//fprintf (stderr, "[x11] XCreateWindow(width=%d height=%d)\n", Console.GraphBytesPerLine, Console.GraphLines);
 	if (!(window = XCreateWindow (mDisplay,
 	                              DefaultRootWindow(mDisplay),
 	                              0, 0,
@@ -1160,7 +1189,7 @@ static void create_image(void)
 	{
 		if (image)
 		{
-			fprintf (stderr, "image already set, memory will be lost\n");
+			fprintf (stderr, "[x11] image already set, memory will be lost\n");
 		}
 		shm_completiontype = XShmGetEventBase(mDisplay) + ShmCompletion;
 		if (!(image = XShmCreateImage (mDisplay,
@@ -1237,7 +1266,7 @@ static void create_image(void)
 		data = calloc (Console.GraphBytesPerLine, bytes_per_line);
 		if (!data)
 		{
-			fprintf (stderr, "calloc() before XCreateImage() failed\n");
+			fprintf (stderr, "[x11] calloc() before XCreateImage() failed\n");
 			exit(-1);
 		}
 		if (!(image = XCreateImage (
@@ -1374,6 +1403,7 @@ static int x11_SetGraphMode (int high)
 		Console.GraphLines = 480;
 		Graphmode_modeline = modelines[MODE_640x480];
 	}
+	Console.CurrentFont = _8x16;
 	if (!Graphmode_modeline)
 	{
 		fprintf(stderr, "[x11] unable to find modeline, this should not happen\n");
@@ -1408,9 +1438,9 @@ quick:
 	return 0;
 }
 
-static void x11_vga13(void)
+static int x11_vga13(void)
 {
-	x11_SetGraphMode (13);
+	return x11_SetGraphMode (13);
 }
 
 static void x11_SetTextMode (unsigned char x)
@@ -1430,32 +1460,6 @@ static void x11_SetTextMode (unsigned char x)
 	{
 		x11_SetGraphMode (-1);
 		destroy_image();
-	}
-
-	if (x==255)
-	{
-		destroy_image();
-
-		if (window)
-		{
-			vo_showcursor(mDisplay, window);
-			if (we_have_fullscreen)
-				ewmh_fullscreen(window, 0);
-			XDestroyWindow(mDisplay, window);
-			window=(Window)0;
-		}
-		if (xvidmode_event_base>=0)
-		{
-			XF86VidModeSwitchToMode(mDisplay, mScreen, &default_modeline);
-		}
-
-		XUngrabKeyboard(mDisplay, CurrentTime);
-		XUngrabPointer(mDisplay, CurrentTime);
-
-		XSync(mDisplay, False);
-		Console.CurrentMode = 255;
-
-		return; /* gdb helper */
 	}
 
 #if 0 // We have disabled textmode from being able to change active resolution of physical display - Modern systems do not change resolution away from native the native resolution
@@ -1520,8 +1524,6 @@ static void x11_SetTextMode (unsigned char x)
 	}
 	plScrRowBytes = Console.TextWidth * 2;
 #endif
-	Console.LastTextMode = Console.CurrentMode = x;
-
 	x11_depth=XDefaultDepth(mDisplay, mScreen);
 	if (!window)
 	{
@@ -1583,7 +1585,7 @@ static void x11_TextOverlayRemove (void *handle)
 			return;
 		}
 	}
-	fprintf (stderr, "[X11] Warning: x11_TextOverlayRemove, handle %p not found\n", handle);
+	fprintf (stderr, "[x11] Warning: x11_TextOverlayRemove, handle %p not found\n", handle);
 }
 
 static void RefreshScreenGraph(void)
@@ -1993,7 +1995,7 @@ static void x11_DosShell (void)
 		{
 			close(2);
 			if (dup(1)!=2)
-				fprintf(stderr, __FILE__ ": dup(1) != 2\n");
+				fprintf(stderr, "[x11] dup(1) != 2\n");
 		}
 		execl(shell, shell, NULL);
 		perror("execl()");
@@ -2198,7 +2200,7 @@ static int x11_HasKey (uint16_t key)
 			return 1;
 
 		default:
-			fprintf(stderr, __FILE__ ": unknown key 0x%04x\n", (int)key);
+			fprintf(stderr, "[x11] unknown key 0x%04x\n", (int)key);
 		case KEY_ALT_ENTER:
 			return 0;
 	}
@@ -2206,7 +2208,7 @@ static int x11_HasKey (uint16_t key)
 
 static const char *x11_GetDisplayTextModeName (void)
 {
-	static char mode[32];
+	static char mode[48];
 	snprintf(mode, sizeof(mode), "res(%dx%d), font(%s)%s", Console.TextWidth, Console.TextHeight,
 		x11_CurrentFontWanted == _8x8 ? "8x8" : x11_CurrentFontWanted == _8x16 ? "8x16" : "16x32", do_fullscreen?" fullscreen":"");
 	return mode;

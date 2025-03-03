@@ -18,7 +18,7 @@ extern const struct FontSizeInfo_t FontSizeInfo[_FONT_MAX+1];
 
 struct consoleDriver_t
 {
-	void (*vga13)(void); /* Used by würfel-mode only */
+	int (*vga13)(void); /* Used by würfel-mode only */
 
 	void (*SetTextMode)(uint8_t x); /* configures text-mode */
 		/* index  text   font  physical
@@ -54,10 +54,10 @@ struct consoleDriver_t
 		 *  0     640x480
 		 *  1    1024x768
 		 */
-	void (*gDrawChar16) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-	void (*gDrawChar16P)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
-	void (*gDrawChar8)  (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
-	void (*gDrawChar8P) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+	void (*gDrawChar8x16) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+	void (*gDrawChar8x16P)(uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
+	void (*gDrawChar8x8)  (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);
+	void (*gDrawChar8x8P) (uint16_t x, uint16_t y, uint8_t c, uint8_t f, void *picp);
 	void (*gDrawStr)    (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len); /* matches DisplayStr */
 	void (*gUpdateStr)  (uint16_t y, uint16_t x, const uint16_t *str, uint16_t len, uint16_t *old);
 	void (*gUpdatePal)  (uint8_t color, uint8_t red, uint8_t green, uint8_t blue);
@@ -169,13 +169,6 @@ extern struct console_t Console;
 #define plSetGraphMode(s)                       Console.Driver->SetGraphMode(s)
 
 /* 8x16 OCP font, front and back color */
-#define gdrawchar(x,y,c,f,b)                    Console.Driver->gDrawChar16(x,y,c,f,b)
-/* 8x16 OCP font, front color, picp for backgroud (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawcharp(x,y,c,f,picp)                Console.Driver->gDrawChar16P(x,y,c,f,picp)
-/* 8x8 OCP font, front and back color */
-#define gdrawchar8(x,y,c,f,b)                   Console.Driver->gDrawChar8(x,y,c,f,b)
-/* 8x8 OCP font, front color, picp for background (or zero if no picture present) -  picp needs to be same format/size as plScrLineBytes */
-#define gdrawchar8p(x,y,c,f,picp)               Console.Driver->gDrawChar8P(x,y,c,f,picp)
 #define gdrawstr(y,x,a,s,l)                     Console.Driver->gDrawStr(y,x,a,s,l)
 #define gupdatestr(y,x,s,l,old)                 Console.Driver->gUpdateStr(y,x,s,l,old)
 #define gupdatepal(c,r,g,b)                     Console.Driver->gUpdatePal(c,r,g,b)
@@ -207,7 +200,9 @@ extern struct console_t Console;
 #define writestringattr                         Console.WriteStringAttr
 #define display_nprintf                         Console.DisplayPrintf
 
-#else
+#endif
+
+#if defined(_CONSOLE_DRIVER) || defined(_POUTPUT_C)
 
 void generic_gdrawstr (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len);
 void generic_gdrawchar8 (uint16_t x, uint16_t y, uint8_t c, uint8_t f, uint8_t b);

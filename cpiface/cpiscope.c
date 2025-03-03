@@ -362,8 +362,8 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 			{
 				if (cpifaceSession->SelectedChannelChanged)
 			        {
-					gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
-					gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
+					Console.Driver->gDrawChar8x8P (x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
+					Console.Driver->gDrawChar8x8P (x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, ' ', 0, plOpenCPPict?(plOpenCPPict-96*640):0);
 				}
 				removescope((scopedx-scopesx)/2+x*scopedx, scopedy*(i/scopenx)+scopedy/2, scopes+((i&~1)|x)*scopesx, scopesx);
 				break;
@@ -372,8 +372,8 @@ static void plDrawScopes (struct cpifaceSessionAPI_t *cpifaceSession)
 			paus = cpifaceSession->MuteChannel[i];
 			if (cpifaceSession->SelectedChannelChanged)
 			{
-				gdrawchar8p(x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
-				gdrawchar8p(x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				Console.Driver->gDrawChar8x8P (x?616: 8, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)/10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
+				Console.Driver->gDrawChar8x8P (x?624:16, 96+scopedy*(i>>1)+scopedy/2-3, '0'+(i+1+chan0)%10, ((i+chan0)==cpifaceSession->SelectedChannel)?15:paus?8:7, plOpenCPPict?(plOpenCPPict-96*640):0);
 			}
 
 			bp=plSampBuf;
@@ -470,12 +470,16 @@ static void scoDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	plDrawScopes (cpifaceSession);
 }
 
-static void scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int scoSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);;
-	cpiSetGraphMode(0);
+	plReadOpenCPPic (cpifaceSession->configAPI, cpifaceSession->dirdb);
+	if (cpiSetGraphMode(0) < 0)
+	{
+		return -1;
+	}
 	plPrepareScopes();
 	plPrepareScopeScr (cpifaceSession);
+	return 0;
 }
 
 static int scoCan (struct cpifaceSessionAPI_t *cpifaceSession)

@@ -529,11 +529,13 @@ static void plDrawStripes (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 }
 
-static void strSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int strSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiSetGraphMode(plStripeBig);
+	if ((cpiSetGraphMode(plStripeBig)) < 0)
+		return -1;
 	plPrepareStripes();
 	plPrepareStripeScr (cpifaceSession);
+	return 0;
 }
 
 static int plStripeKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)

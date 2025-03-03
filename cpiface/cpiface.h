@@ -68,7 +68,7 @@ extern int cpiKeyHelpDisplay(void); /* recall until it returns zero. This functi
 struct cpimoderegstruct
 {
   char handle[9];
-  void (*SetMode)(struct cpifaceSessionAPI_t *cpifaceSession);
+  int (*SetMode)(struct cpifaceSessionAPI_t *cpifaceSession);
   void (*Draw)(struct cpifaceSessionAPI_t *cpifaceSession);
   int (*IProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);
   int (*AProcessKey)(struct cpifaceSessionAPI_t *cpifaceSession, uint16_t);
@@ -126,7 +126,7 @@ enum
 };
 
 extern void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession);
-extern void cpiSetGraphMode (int big);
+extern int cpiSetGraphMode (int big);
 extern void cpiSetTextMode (int size);
 extern void cpiResetScreen (void);
 extern void cpiRegisterDefMode (struct cpimoderegstruct *mode); /* this are stuck until unregister is called */

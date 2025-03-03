@@ -50,11 +50,12 @@ static void hlpDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 	framelock();
 }
 
-static void hlpSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int hlpSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	cpiSetTextMode(0);
 	brSetWinStart(6);
 	brSetWinHeight(plScrHeight-6);
+	return 0;
 }
 
 static int hlpOpen(void)

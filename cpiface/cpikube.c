@@ -315,10 +315,13 @@ static char plLoadWuerfel(void)
 	return 1;
 }
 
-static void plPrepareWuerfel(void)
+static int plPrepareWuerfel(void)
 {
 	int i;
-	vga13();
+	if (vga13() < 0)
+	{
+		return -1;
+	}
 /*
 	if(!wuerfelversion)
 	{
@@ -345,6 +348,7 @@ static void plPrepareWuerfel(void)
     outpw(0x3c4, 0x0C02);
     memcpyintr((void*)(0xA0000+80*24), plWuerfel[wuerfelpos]+1, 160*76/2);
 */
+	return 0;
 }
 
 static void decodrle(uint8_t *rp, uint16_t rbuflen)
@@ -519,12 +523,16 @@ static int wuerfelKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
 	return 0;
 }
 
-static void wuerfelSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
+static int wuerfelSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	plLoadWuerfel();
-	plPrepareWuerfel();
+	if (plPrepareWuerfel() < 0)
+	{
+		return -1;
+	}
 	clock_gettime (CLOCK_MONOTONIC, &wurfelTicker);
 	wurfelTicker.tv_nsec /= 10000;
+	return 0;
 }
 
 static int wuerfelEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)

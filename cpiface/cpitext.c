@@ -126,7 +126,6 @@ static void cpiSetFocus (struct cpifaceSessionAPI_t *cpifaceSession, const char 
 	cpiFocus=mode;
 	mode->active=1;
 	strcpy(cpiFocusHandle, cpiFocus->handle);
-	cpiTextRecalc (&cpifaceSessionAPI.Public);
 }
 
 void cpiTextSetMode (struct cpifaceSessionAPI_t *cpifaceSession, const char *name)
@@ -137,8 +136,10 @@ void cpiTextSetMode (struct cpifaceSessionAPI_t *cpifaceSession, const char *nam
 	{
 		strcpy(cpiFocusHandle, name);
 		cpiSetMode("text");
-	} else
+	} else {
 		cpiSetFocus (cpifaceSession, name);
+		cpiTextRecalc (&cpifaceSessionAPI.Public);
+	}
 }
 
 void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -435,16 +436,21 @@ void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 #endif
 }
 
-static void txtSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
+static int txtSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
 	plSetTextMode(fsScrType);
 	fsScrType=plScrType;
+
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 	{
 		mode->Event (cpifaceSession, cpievSetMode);
 	}
+
+	cpiSetFocus (cpifaceSession, cpiFocusHandle);
 	cpiTextRecalc (&cpifaceSessionAPI.Public);
+
+	return 0;
 }
 
 static void txtDraw (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -628,7 +634,6 @@ static int txtOpenMode (struct cpifaceSessionAPI_t *cpifaceSession)
 		mode->nextact=cpiTextActModes;
 		cpiTextActModes=mode;
 	}
-	cpiSetFocus (cpifaceSession, cpiFocusHandle);
 
 	return 1;
 }
