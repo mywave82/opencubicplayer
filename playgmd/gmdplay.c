@@ -434,9 +434,24 @@ static void PlayGCommand (struct cpifaceSessionAPI_t *cpifaceSession, const uint
 				break;
 			case cmdSpeed:
 				speed=*cmd;
+				/* The BPM have these assumptions in a IT file:
+				 *  * a beat has 4 rows
+				 *  * a row has 6 ticks (known as speed)
+				 *  * ticks_per_beat = 4 row * 6 ticks = 24 ticks
+				 *
+				 * BPM is a the name says, beats per minute, so needs to scale by 60 to get per second.
+				 *
+				 * Open Cubic Player - mcpGSpeed expects a number in fixed point notation 24.8, so 0x00000010 = 1.0,
+				 * describing how many ticks one second should contain
+				 * param = 0x100 * ticks_per_beat * input BPM
+				 * param = 0x100 * 24             * input / 60
+				 * param = 0x100 * 2 * 2 * 2 * 3 * input / (2 * 2 * 3 * 5)
+				 * param = 256   * 2             * input / 5
+				 */
 				cpifaceSession->mcpSet (cpifaceSession, -1, mcpGSpeed, 256*2*speed/5);
 				break;
 			case cmdFineSpeed:
+				 /* Adds granularity of a 10th to the formula mentioned above, even though parameter could allowed for 16th (or even 17th, since the zero-index could be skipped) */
 				cpifaceSession->mcpSet (cpifaceSession, -1, mcpGSpeed, 256*2*(10*speed+*cmd)/50);
 				break;
 			case cmdBreak:
@@ -1242,7 +1257,8 @@ static void PlayTick (struct cpifaceSessionAPI_t *cpifaceSession)
 				tempo=6;
 				speed=125;
 				globalvol=0xFF;
-				cpifaceSession->mcpSet (cpifaceSession, -1, mcpGSpeed, 12800);
+				/* See earlier comments regarding mcpGSpeed */
+				cpifaceSession->mcpSet (cpifaceSession, -1, mcpGSpeed, 256 * 2 * speed / 5);
 			}
 			LoadPattern(currentpattern, currentrow);
 		}
