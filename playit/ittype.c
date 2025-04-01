@@ -46,7 +46,9 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 {
 	uint32_t type;
 	int i;
-	uint16_t ver;
+	uint16_t cwtv;
+	uint16_t cmwt;
+
 
 	if (!memcmp(buf, "ziRCONia", 8))
 	{
@@ -68,42 +70,78 @@ static int itpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		if (!(buf[64+i]&0x80))
 			m->channels++;
 
-	ver = uint16_little(*(uint16_t *)(buf + 0x28));
-	if ( ((ver >= 0x0100) && (ver <= 0x0106)) ||
-	     ((ver >= 0x0200) && (ver >= 0x020f)) )
+	cwtv = uint16_little(*(uint16_t *)(buf + 0x28)); // created with tracker version
+	cmwt = uint16_little(*(uint16_t *)(buf + 0x2a)); // compatible with
+	if ( ((cwtv >= 0x0100) && (cwtv <= 0x0106)) ||
+	     ((cwtv >= 0x0200) && (cwtv <= 0x020f)) )
 	{
-		snprintf (m->comment, sizeof (m->comment), "Impulse Tracker v%d.%02d", ver >> 8, ver & 0x00ff);
-	} else if (ver == 0x0020)
+		snprintf (m->comment, sizeof (m->comment), "Impulse Tracker v%d.%02d (%04x)", cwtv >> 8, cwtv & 0x00ff, cwtv);
+	} else if (cwtv == 0x0020)
 	{
 		snprintf (m->comment, sizeof (m->comment), "Schism Tracker v0.2a");
-	} else if (ver == 0x0050)
+	} else if (cwtv == 0x0050)
 	{
 		snprintf (m->comment, sizeof (m->comment), "Schism Tracker v2007-04-17<=>v2009-10-31");
-	} else if ((ver >= 0x0050) && (ver < 0x0fff))
+	} else if ((cwtv >= 0x0050) && (cwtv < 0x0fff))
 	{
 		struct tm version,     epoch = { .tm_year = 109, .tm_mon = 9, .tm_mday = 31 }; /* 2009-10-31 */
 		time_t    version_sec, epoch_sec;
 
 		epoch_sec = mktime(&epoch);
-		version_sec = (ver - 0x050) * 86400 + epoch_sec;
+		version_sec = (cwtv - 0x050) * 86400 + epoch_sec;
 
 		if (localtime_r(&version_sec, &version) != 0)
 		{
 			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
 				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
 		}
-	} else {
+	} else if (cwtv == 0xfff)
+	{
 		struct tm version,     epoch = { .tm_year = 109, .tm_mon = 9, .tm_mday = 31 }; /* 2009-10-31 */
 		time_t    version_sec, epoch_sec;
 
 		epoch_sec = mktime(&epoch);
-		version_sec = (*(uint32_t *)(buf + 0x3c)) * 86400 + epoch_sec;
+		version_sec = uint32_little(*(uint32_t *)(buf + 0x3c)) * 86400 + epoch_sec;
 
 		if (localtime_r(&version_sec, &version) != 0)
 		{
 			snprintf(m->comment, sizeof (m->comment), "Schism Tracker v%04d-%02d-%02d",
 				version.tm_year + 1900, version.tm_mon + 1, version.tm_mday);
 		}
+	} else if ((cwtv >= 0x1000) && (cwtv <= 0x1fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "Schism Tracker v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+
+	} else if ((cwtv >= 0x4000) && (cwtv <= 0x4fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "pyIT v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+	} else if ((cwtv >= 0x5000) && (cwtv <= 0x5fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "OpenMPT v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+	} else if ((cwtv >= 0x6000) && (cwtv <= 0x6fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "BeRoTracker v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+	} else if ((cwtv == 0x7fff) && (cmwt == 0x0215))
+	{
+		snprintf (m->comment, sizeof (m->comment), "munch.py");
+	} else if ((cwtv >= 0x7000) && (cwtv <= 0x7fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "ITMCK v%d.%d.%d", (cwtv >> 8) & 0x0f, (cwtv >> 4) & 0x0f, cwtv & 0x0f);
+	} else if (cwtv == 0x8000)
+	{
+		snprintf (m->comment, sizeof (m->comment), "Tralala before first release");
+	} else if ((cwtv >= 0x8001) && (cwtv <= 0x8fff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "Tralala v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+	} else if ((cwtv >= 0xc000) && (cwtv <= 0xcfff))
+	{
+		snprintf (m->comment, sizeof (m->comment), "ChickDune ChipTune Tracker v%d.%02d", (cwtv >> 8) & 0x0f, cwtv & 0xff);
+	} else if (cwtv == 0xdaeb)
+	{
+		snprintf (m->comment, sizeof (m->comment), "spc2it");
+	} else if (cwtv == 0xd1ce)
+	{
+		snprintf (m->comment, sizeof (m->comment), "itwriter Javascript library");
 	}
 	return 1;
 }
