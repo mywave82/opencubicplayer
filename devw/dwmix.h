@@ -51,7 +51,7 @@ struct channel
 	int volopt;   /* only one flag:   0x01 srnd */
 	int orgvolx;  /* 0 - 0x100 */
 	int orgpan;   /* -0x80 - +0x7f */
-	int samptype; /* samptype&mcpSampLoop mcpSampSLoop mcpSampSBiDi mcpSamp16Bit mcpSampStereo */
+	int samptype; /* samptype&mcpSampLoop mcpSampSLoop mcpSampSBiDi mcpSamp16Bit mcpSampInterleavedStereo */
 	uint32_t orgloopstart;
 	uint32_t orgloopend;
 	uint32_t orgsloopstart;

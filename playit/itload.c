@@ -77,7 +77,6 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 		uint8_t vol[64];
 	} hdr;
 
-	int signedsamp; /* boolean */
 	int maxchan;
 
 #define MAX_ORDERS 256
@@ -172,7 +171,6 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 		return errFormStruc;
 	}
 
-	signedsamp=!(hdr.cwtv<0x202);
 	this->deltapacked=(hdr.cmwt>=0x215);
 
 	if (file->read (file, ords, hdr.nords * sizeof(uint8_t)) != (hdr.nords * sizeof(uint8_t)))
@@ -572,6 +570,29 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 				sp->name[n]=32;
 		sp->name[26]=0;
 
+#ifdef IT_LOAD_DEBUG
+		cpifaceSession->cpiDebug (cpifaceSession, "[Sample #% 2d.Header]", i);
+		cpifaceSession->cpiDebug (cpifaceSession, " header=%d", shdr.flags&1);
+		cpifaceSession->cpiDebug (cpifaceSession, " %s", (shdr.flags&2)?"16-bit":"8-bit");
+		cpifaceSession->cpiDebug (cpifaceSession, " %s%s", (shdr.flags&4)?"stereo":"mono", ((shdr.flags&4) && (hdr.cwtv < 0x214)) ? "(Probably bogus, defective version)" : "" );
+		cpifaceSession->cpiDebug (cpifaceSession, " %s",  (shdr.flags&8)?"compressed":"PCM");
+		if (shdr.flags & 0x08)
+		{
+			if (this->deltapacked && (shdr.cvt & 4))
+			{
+				cpifaceSession->cpiDebug (cpifaceSession, "(215)");
+			} else {
+				cpifaceSession->cpiDebug (cpifaceSession, "(214)");
+			}
+		} else {
+			cpifaceSession->cpiDebug (cpifaceSession, " %s", (shdr.cvt & 0x04) ? "delta" : (shdr.cvt & 0x01) ? "signed" : "unsigned");
+		}
+		cpifaceSession->cpiDebug (cpifaceSession, " loop=%s", (shdr.flags&16)?"on":"off");
+		cpifaceSession->cpiDebug (cpifaceSession, " sustain=%s", (shdr.flags&32)?"on":"off");
+		cpifaceSession->cpiDebug (cpifaceSession, " ping-pong=%s", (shdr.flags&64)?"on":"off");
+		cpifaceSession->cpiDebug (cpifaceSession, " ping-pong-sustain=%s\n", (shdr.flags&128)?"on":"off");
+#endif
+
 		if (!(shdr.flags&1)) /* is format header available? */
 		{
 #ifdef IT_LOAD_DEBUG
@@ -605,15 +626,32 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 		sip->loopend=shdr.loopend;
 		sip->sloopstart=shdr.sloopstart;
 		sip->sloopend=shdr.sloopend;
-		sip->type=((shdr.flags&2)?mcpSamp16Bit:0)|((shdr.flags&4)?mcpSampStereo:0)|(signedsamp?0:mcpSampUnsigned)|((shdr.flags&0x10)?mcpSampLoop:0)|((shdr.flags&0x40)?mcpSampBiDi:0)|((shdr.flags&0x80)?mcpSampSBiDi:0)|((shdr.flags&0x20)?mcpSampSLoop:0);
+
+		sip->type = ((shdr.flags & 0x02)?mcpSamp16Bit  : 0) |
+		            ((shdr.flags & 0x04)?mcpSampStereo : 0) |
+		            ((shdr.flags & 0x10)?mcpSampLoop   : 0) |
+		            ((shdr.flags & 0x40)?mcpSampBiDi   : 0) |
+		            ((shdr.flags & 0x80)?mcpSampSBiDi  : 0) |
+		            ((shdr.flags & 0x20)?mcpSampSLoop  : 0);
+
+		if (shdr.flags & 0x08)
+		{
+			sp->packed = 1; /* 2.14 algorithm */
+			if (this->deltapacked && (shdr.cvt & 4))
+				sp->packed |= 2; /* 2.15 algorithm */
+		} else {
+			sip->type |=
+				((shdr.cvt & 0x01)? 0 : mcpSampUnsigned) |
+				((shdr.cvt & 0x04)? mcpSampDelta : 0);
+		}
 
 		sp->packed=(shdr.flags&8?1:0);
 		if (sp->packed && this->deltapacked && (shdr.cvt & 4))
 			sp->packed|=2;
 
-		if (!(sip->ptr=malloc((sip->length+512)<<((sip->type&mcpSamp16Bit)?1:0))))
+		if (!(sip->ptr=malloc((sip->length)<<(((sip->type&mcpSamp16Bit)?1:0)+((sip->type&mcpSampStereo)?1:0)))))
 		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #15\n", (sip->length+512)<<((sip->type&mcpSamp16Bit)?1:0));
+			cpifaceSession->cpiDebug (cpifaceSession, "[IT] malloc(%d) failed #15\n", (sip->length)<<((sip->type&mcpSamp16Bit)?1:0));
 			return errAllocMem;
 		}
 	}
@@ -632,11 +670,18 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 				decompress16 (cpifaceSession, file, sip->ptr, sip->length, sp->packed&2);
 			else
 				decompress8 (cpifaceSession, file, sip->ptr, sip->length, sp->packed&2);
+			if (sip->type & mcpSampStereo)
+			{
+				if (sip->type & mcpSamp16Bit)
+					decompress16 (cpifaceSession, file, sip->ptr + sip->length * 2, sip->length, sp->packed&2);
+				else
+					decompress8 (cpifaceSession, file, sip->ptr + sip->length, sip->length, sp->packed&2);
+			}
 		} else {
-			uint64_t len = sip->length<<((sip->type&mcpSamp16Bit)?1:0);
+			uint64_t len = sip->length << (((sip->type&mcpSamp16Bit)?1:0) + ((sip->type&mcpSampStereo)?1:0));
 			if (file->read (file, sip->ptr, len) != len)
 			{
-				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #14 (sip-ptr=%p sip->length=%d 16bit=%d)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #14 (sip-ptr=%p sip->length=%d 16bit=%d stereo=%d)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit), !!(sip->type&mcpSampStereo));
 				return errFileRead;
 			}
 		}

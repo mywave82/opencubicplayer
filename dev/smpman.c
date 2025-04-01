@@ -41,12 +41,12 @@ static uint16_t abstab[0x200];
 
 static int sampsizefac(int type)
 {
-	return ((type&mcpSampFloat)?2:((type&mcpSamp16Bit)?1:0))+((type&mcpSampStereo)?1:0);
+	return ((type&mcpSampFloat)?2:((type&mcpSamp16Bit)?1:0))+((type&(mcpSampInterleavedStereo|mcpSampStereo))?1:0);
 }
 
 static int stereosizefac(int type)
 {
-	return (type&mcpSampStereo)?1:0;
+	return (type&(mcpSampInterleavedStereo|mcpSampStereo))?1:0;
 }
 
 static void sampto8(struct sampleinfo *s)
@@ -75,7 +75,7 @@ static void samptomono(struct sampleinfo *s)
 	fprintf(stderr, __FILE__ ": (samptomono)\n");
 	fprintf(stderr, __FILE__ ": s->ptr=%p\n", s->ptr);
 #endif
-	s->type&=~mcpSampStereo;
+	s->type&=~mcpSampInterleavedStereo;
 	s->type|=mcpSampRedStereo;
 	if (s->type&mcpSampFloat)
 		for (i=0; i<l; i++)
@@ -101,7 +101,7 @@ static void samptomono(struct sampleinfo *s)
 static int samptofloat(struct sampleinfo *s)
 {
 	int i;
-	int l=s->length<<sampsizefac(s->type&mcpSampStereo);
+	int l=s->length<<sampsizefac(s->type&mcpSampInterleavedStereo);
 	int l2;
 	void *tmpnew;
 	float *newptr;
@@ -122,7 +122,7 @@ static int samptofloat(struct sampleinfo *s)
 		return 0;
 	}
 	s->ptr=tmpnew;
-	if (s->type&mcpSampStereo)
+	if (s->type&mcpSampInterleavedStereo)
 		extra=SAMPEND*2;
 	else
 		extra=SAMPEND;
@@ -585,7 +585,7 @@ static int reducestereo(struct sampleinfo *samples, int samplenum, uint32_t *red
 	for (i=0; i<samplenum; i++)
 	{
 		struct sampleinfo *s=&samples[i];
-		if (s->type&mcpSampStereo)
+		if (s->type&mcpSampInterleavedStereo)
 			redpars[i]=s->length+SAMPEND;
 		else
 			redpars[i]=0;
@@ -596,7 +596,7 @@ static int reducestereo(struct sampleinfo *samples, int samplenum, uint32_t *red
 	if (curdif>totdif)
 	{
 		for (i=0; i<samplenum; i++)
-			if (samples[i].type&mcpSampStereo)
+			if (samples[i].type&mcpSampInterleavedStereo)
 				samptomono(&samples[i]);
 		return 0;
 	}
@@ -695,6 +695,46 @@ static int convertsample(struct sampleinfo *s)
 	if (s->loopstart>=s->loopend)
 		s->type&=~mcpSampLoop;
 
+	if (s->type&mcpSampStereo)
+	{
+#ifdef MCP_DEBUG
+		fprintf(stderr, __FILE__ ": Reshuffling Stereo, into Interleaved-Stereo\n");
+#endif
+
+		if (s->type&mcpSamp16Bit)
+		{
+			uint16_t *n = malloc (s->length * 4);
+			uint16_t *o = s->ptr;
+			if (!n)
+			{
+				return 0;
+			}
+			for (i=0; i < s->length; i++)
+			{
+				n[i*2 + 0] = o[i];
+				n[i*2 + 1] = o[i+s->length];
+			}
+			free (s->ptr);
+			s->ptr = n;
+		} else {
+			uint8_t *n = malloc (s->length * 2);
+			uint8_t *o = s->ptr;
+			if (!n)
+			{
+				return 0;
+			}
+			for (i=0; i < s->length; i++)
+			{
+				n[i*2 + 0] = o[i];
+				n[i*2 + 1] = o[i+s->length];
+			}
+			free (s->ptr);
+			s->ptr = n;
+		}
+		s->type &= ~mcpSampStereo;
+		s->type |= mcpSampInterleavedStereo;
+	}
+
 #ifndef WORDS_BIGENDIAN
 	if ((s->type&(mcpSampBigEndian|mcpSamp16Bit))==(mcpSampBigEndian|mcpSamp16Bit))
 #else
@@ -723,7 +763,7 @@ static int convertsample(struct sampleinfo *s)
 #ifdef MCP_DEBUG
 		fprintf(stderr, __FILE__ ": sampledata is stored as deltas, making linear\n");
 #endif
-		if (s->type&mcpSampStereo)
+		if (s->type&mcpSampInterleavedStereo)
 		{
 			if (s->type&mcpSamp16Bit)
 			{
@@ -791,32 +831,37 @@ static int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed 
 	for (i=0; i<samplenum; i++)
 	{
 		fprintf(stderr, "type[%d]", i);
-		if (si[i].type & mcpSampUnsigned)
+		if (si[i].type & mcpSampDelta)
+			fprintf(stderr, " delta");
+		else if (si[i].type & mcpSampUnsigned)
 			fprintf(stderr, " unsigned");
 		else
 			fprintf(stderr, " signed");
-		if (si[i].type & mcpSampDelta)
-			fprintf(stderr, " delta");
 		if (si[i].type & mcpSampFloat)
 			fprintf(stderr, " float");
 		else if (si[i].type & mcpSamp16Bit)
 			fprintf(stderr, " 16bit");
 		else
 			fprintf(stderr, " 8bit");
-		if (si[i].type & mcpSampBigEndian)
-			fprintf(stderr, " bigendian");
-		else
-			fprintf(stderr, " littleendian");
+		if (si[i].type & mcpSamp16Bit)
+		{ /* mcpSampBigEndian is currently used by 16bit, float is always native to host system */
+			if (si[i].type & mcpSampBigEndian)
+				fprintf(stderr, " big-endian");
+			else
+				fprintf(stderr, " little-endian");
+		}
 		if (si[i].type & mcpSampBiDi)
 			fprintf(stderr, " bidi-loop");
 		else if (si[i].type & mcpSampLoop)
 			fprintf(stderr, " loop");
 		if (si[i].type & mcpSampSBiDi)
-			fprintf(stderr, " sbidi-loop");
+			fprintf(stderr, " sustain-bidi-loop");
 		else if (si[i].type & mcpSampSLoop)
-			fprintf(stderr, " sloop");
-		if (si[i].type & mcpSampStereo)
-			fprintf(stderr, " stereo");
+			fprintf(stderr, " sustain-loop");
+		if (se[i].type & mcpSampStereo)
+			fprintf(stderr, " split-stereo");
+		else if (si[i].type & mcpSampInterleavedStereo)
+			fprintf(stderr, " interleaved-stereo");
 		else
 			fprintf(stderr, " mono");
 		fprintf(stderr, "\n");
@@ -855,7 +900,7 @@ static int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed 
 
 	if (opt&mcpRedToMono)
 		for (i=0; i<samplenum; i++)
-			if (samples[i].type&mcpSampStereo)
+			if (samples[i].type&mcpSampInterleavedStereo)
 				samptomono(&samples[i]);
 
 	if (opt&(mcpRedGUS|mcpRedTo8Bit))
@@ -902,6 +947,8 @@ static int mcpReduceSamples(struct sampleinfo *si, int n, long mem, enum mcpRed 
 #endif
 				return 0;
 			}
+
+
 #ifdef MCP_DEBUG
 	fprintf(stderr, __FILE__ ": mcpReduceSamples DONE\n");
 #endif

@@ -535,7 +535,7 @@ static void devwMixSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 			{
 				chn->status|=MIXRQ_PLAY16BIT;
 			}
-			if (chn->samptype&mcpSampStereo)
+			if (chn->samptype&mcpSampInterleavedStereo)
 			{
 				chn->status|=MIXRQ_PLAYSTEREO;
 			}
