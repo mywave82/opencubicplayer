@@ -20,10 +20,10 @@ struct mixchannel
 	uint16_t status;
 	union
 	{
-		uint32_t *voltabs[2];
 		int16_t vols[2];
 		float volfs[2];
 	} vol;
+	uint32_t *voltabs[2]; /* internal use by dev/mix.c and dev/mixasm.c */
 };
 
 struct cpifaceSessionAPI_t; /* cpiface.h */

@@ -130,8 +130,8 @@ static void putchn(struct mixchannel *chn, unsigned int len, int opt)
 			volr=64;
 		if (!voll&&!volr)
 			return;
-		chn->vol.voltabs[0]=(uint32_t *)voltabs[voll];
-		chn->vol.voltabs[1]=(uint32_t *)voltabs[volr];
+		chn->voltabs[0]=(uint32_t *)voltabs[voll];
+		chn->voltabs[1]=(uint32_t *)voltabs[volr];
 	}
 	mixPlayChannel(mixbuf, len, chn, opt&mcpGetSampleStereo);
 }

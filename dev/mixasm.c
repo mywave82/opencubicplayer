@@ -181,7 +181,9 @@ static void playmono(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0][*src];
+		*(dst)  +=voltabs[0][*src];
+		*(dst++)+=voltabs[1][*src];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -203,6 +205,7 @@ static void playstereo(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	{
 		*(dst++)+=voltabs[0][*src];
 		*(dst++)+=voltabs[1][*src];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -222,13 +225,12 @@ static void playmonoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0]
-			[
-				(uint8_t)(
-					mixIntrpolTab[fpos>>12][src[0]][0]+
-					mixIntrpolTab[fpos>>12][src[1]][1]
-				)
-			];
+		uint8_t vol = (uint8_t)( mixIntrpolTab[ fpos>>12 ][src[ 0 ]][ 0 ] +
+		                         mixIntrpolTab[ fpos>>12 ][src[ 1 ]][ 1 ] );
+
+		*(dst  )+=voltabs[0][vol];
+		*(dst++)+=voltabs[1][vol];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -248,20 +250,12 @@ static void playstereoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0]
-			[
-				(uint8_t)(
-					mixIntrpolTab[fpos>>12][src[0]][0]+
-					mixIntrpolTab[fpos>>12][src[1]][1]
-				)
-			];
-		*(dst++)+=voltabs[1]
-			[
-				(uint8_t)(
-					mixIntrpolTab[fpos>>12][src[0]][0]+
-					mixIntrpolTab[fpos>>12][src[1]][1]
-				)
-			];
+		uint8_t vol = (uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0] ][ 0 ] +
+		                         mixIntrpolTab[ fpos>>12 ][ src[1] ][ 1 ] );
+
+		*(dst++)+=voltabs[0][vol];
+		*(dst++)+=voltabs[1][vol];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -281,18 +275,14 @@ static void playmonoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		uint16_t vol = mixIntrpolTab2[fpos>>11][src[0]][0]+
-			       mixIntrpolTab2[fpos>>11][src[1]][1];
-		*(dst++)+=voltabs[0]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[0]
-			[
-				(vol&255)
-				+256
-			];
+		uint16_t vol = mixIntrpolTab2[ fpos>>11 ][ src[0] ][ 0 ] +
+			       mixIntrpolTab2[ fpos>>11 ][ src[1] ][ 1 ] ;
+
+		*(dst  ) += voltabs[ 0 ][ (vol>>8)        ] +
+		            voltabs[ 0 ][ (vol&255) + 256 ] ;
+		*(dst++) += voltabs[ 1 ][ (vol>>8)        ] +
+		            voltabs[ 1 ][ (vol&255) + 256 ] ;
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -312,28 +302,14 @@ static void playstereoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		uint16_t vol = mixIntrpolTab2[fpos>>11][src[0]][0]+
-			       mixIntrpolTab2[fpos>>11][src[1]][1];
-		*(dst++)+=voltabs[0]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[0]
-			[
-				(vol&255)
-				+256
-			];
-		*(dst++)+=voltabs[1]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[1]
-			[
-				(vol&255)
-				+256
-			];
+		uint16_t vol = mixIntrpolTab2[ fpos>>11 ][ src[0] ][ 0 ] +
+			       mixIntrpolTab2[ fpos>>11 ][ src[1] ][ 1 ] ;
+
+		*(dst++) += voltabs[ 0 ][ (vol>>8)        ] +
+		            voltabs[ 0 ][ (vol&255) + 256 ];
+		*(dst++) += voltabs[ 1 ][ (vol>>8)        ] +
+		            voltabs[ 1 ][ (vol&255) + 256 ];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -343,6 +319,7 @@ static void playstereoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
 		len--;
 	}
 }
+
 static void playmono16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
 	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
@@ -352,7 +329,9 @@ static void playmono16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0][(*src)>>8];
+		*(dst  )+=voltabs[ 0 ][ (*src)>>8 ];
+		*(dst++)+=voltabs[ 1 ][ (*src)>>8 ];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -372,8 +351,9 @@ static void playstereo16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0][(*src)>>8];
-		*(dst++)+=voltabs[1][(*src)>>8];
+		*(dst++)+=voltabs[ 0 ][ (*src)>>8 ];
+		*(dst++)+=voltabs[ 1 ][ (*src)>>8 ];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -394,13 +374,12 @@ static void playmonoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		*(dst++)+=voltabs[0]
-			[
-				(uint8_t)(
-					mixIntrpolTab[fpos>>12][src[0]>>8][0]+
-					mixIntrpolTab[fpos>>12][src[1]>>8][0]
-				)
-			];
+		uint8_t vol = (uint8_t)(mixIntrpolTab[ fpos>>12 ][ src[0]>>8 ][ 0 ] +
+                                        mixIntrpolTab[ fpos>>12 ][ src[1]>>8 ][ 1 ] );
+
+		*(dst  ) += voltabs[0][vol];
+		*(dst++) += voltabs[1][vol];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -418,19 +397,13 @@ static void playstereoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	uint16_t fadd = ch->step&0xffff;
 	int16_t add = ch->step>>16;
 
-
 	while (len)
 	{
-		*(dst++)+=voltabs[0]
-			[
-			(uint8_t)(mixIntrpolTab[fpos>>12][src[0]>>8][0]+
-			mixIntrpolTab[fpos>>12][src[1]>>8][0])
-			];
-		*(dst++)+=voltabs[1]
-			[
-			(uint8_t)(mixIntrpolTab[fpos>>12][src[0]>>8][0]+
-			mixIntrpolTab[fpos>>12][src[1]>>8][0])
-			];
+		uint8_t vol = (uint8_t)(mixIntrpolTab[ fpos>>12 ][ src[0]>>8 ][ 0 ] +
+		                        mixIntrpolTab[ fpos>>12 ][ src[1]>>8 ][ 1 ]);
+
+		*(dst++)+=voltabs[0][vol];
+		*(dst++)+=voltabs[1][vol];
 
 		if ((fpos+=fadd)>=0x10000)
 		{
@@ -451,18 +424,14 @@ static void playmonoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
 
 	while (len)
 	{
-		uint16_t vol = mixIntrpolTab2[fpos>>11][src[0]>>8][0]+
-			       mixIntrpolTab2[fpos>>11][src[1]>>8][1];
-		*(dst++)+=voltabs[0]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[0]
-			[
-				(vol&255)
-				+256
-			];
+		uint16_t vol = mixIntrpolTab2[ fpos>>11 ][ src[0]>>8 ][ 0 ] +
+			       mixIntrpolTab2[ fpos>>11 ][ src[1]>>8 ][ 1 ] ;
+
+		*(dst  ) += voltabs[ 0 ][ (vol>>8)        ] +
+		            voltabs[ 0 ][ (vol&255) + 256 ];
+		*(dst++) += voltabs[ 1 ][ (vol>>8)        ] +
+		            voltabs[ 1 ][ (vol&255) + 256 ];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -484,26 +453,12 @@ static void playstereoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	{
 		uint16_t vol = mixIntrpolTab2[fpos>>11][src[0]>>8][0]+
 			       mixIntrpolTab2[fpos>>11][src[1]>>8][1];
-		*(dst++)+=voltabs[0]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[0]
-			[
-				(vol&255)
-				+256
-			];
-		*(dst++)+=voltabs[1]
-			[
-				(vol>>8)
-			]
-			+
-			voltabs[1]
-			[
-				(vol&255)
-				+256
-			];
+
+		*(dst++) += voltabs[ 0 ][ (vol>>8)        ] +
+		            voltabs[ 0 ][ (vol&255) + 256 ];
+		*(dst++) += voltabs[ 1 ][ (vol>>8)        ] +
+		            voltabs[ 1 ][ (vol&255) + 256 ];
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -514,16 +469,19 @@ static void playstereoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmono32(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonof(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	float scale = ch->vol.volfs[0] * 64.0;
+	float scale = ch->vol.volfs[0] * 64.0 +
+	              ch->vol.volfs[1] * 64.0;
 	float *src = ch->realsamp.fmtfloat+ch->pos;
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
 	int16_t add = ch->step>>16;
+
 	while (len)
 	{
 		*(dst++)+=(int32_t)((*src)*scale);
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -542,10 +500,12 @@ static void playstereof(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
 	int16_t add = ch->step>>16;
+
 	while (len)
 	{
 		*(dst++)+=(int32_t)((*src)*scale0);
 		*(dst++)+=(int32_t)((*src)*scale1);
+
 		if ((fpos+=fadd)>=0x10000)
 		{
 			fpos-=0x10000;
@@ -555,6 +515,7 @@ static void playstereof(int32_t *dst, uint32_t len, struct mixchannel *ch)
 		len--;
 	}
 }
+
 void mixPlayChannel(int32_t *dst, uint32_t len, struct mixchannel *ch, int stereo)
 {
 	void (*playrout)(int32_t *dst, uint32_t len, struct mixchannel *ch);
@@ -582,13 +543,18 @@ void mixPlayChannel(int32_t *dst, uint32_t len, struct mixchannel *ch, int stere
 
 	playfloat=(ch->status&MIX_PLAYFLOAT);
 
+	if (!playfloat)
+	{
+		voltabs[0]=ch->voltabs[0];
+		voltabs[1]=ch->voltabs[1];
+	}
+
 	if (stereo)
 	{
-		voltabs[0]=ch->vol.voltabs[0];
-		voltabs[1]=ch->vol.voltabs[1];
 		if (playfloat)
+		{
 			playrout=playstereof; /* this overrides all other settings, since we only have one (dummy) 32bit player odd */
-		else {
+		} else {
 			if (interpolate)
 			{
 				if (render16bit)
@@ -611,11 +577,10 @@ void mixPlayChannel(int32_t *dst, uint32_t len, struct mixchannel *ch, int stere
 			}
 		}
 	} else {
-		voltabs[0]=ch->vol.voltabs[0];
-
 		if (playfloat)
-			playrout=playmono32; /* this overrides all other settings, since we only have one 32bit player mono */
-		else {
+		{
+			playrout=playmonof; /* this overrides all other settings, since we only have one 32bit player mono */
+		} else {
 			if (interpolate)
 			{
 				if (render16bit)
