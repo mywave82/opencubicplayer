@@ -108,9 +108,6 @@ struct channel
 	float orgpan;
 	float orgfrez;
 
-	float *sbpos;
-	float sbuf[8];
-
 	uint32_t orgrate;
 	uint32_t orgfrq;
 	uint32_t orgdiv;
@@ -283,40 +280,6 @@ static void stopchan(struct channel *c)
 	dwmixfa_state.voiceflags[n]&=~MIXF_PLAYING;
 }
 
-
-static void rstlbuf(struct channel *c)
-{
-	if (c->sbpos)
-	{
-		int i;
-		for (i=0; i<8; i++)
-			c->sbpos[i]=c->sbuf[i];
-		c->sbpos=0;
-	}
-}
-
-
-static void setlbuf(struct channel *c)
-{
-	int n=c->handle;
-
-	if (c->sbpos)
-		rstlbuf(c);
-
-	if (dwmixfa_state.voiceflags[n]&MIXF_LOOPED)
-	{
-		float *dst=dwmixfa_state.loopend[n];
-		float *src=dst-dwmixfa_state.looplen[n];
-		int i;
-		for (i=0; i<8; i++)
-		{
-			c->sbuf[i]=dst[i];
-			dst[i]=src[i];
-		}
-		c->sbpos=dst;
-	}
-}
-
 static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	/* mixmain */
@@ -407,7 +370,7 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 					if (!(dwmixfa_state.voiceflags[i] & MIXF_QUIET))
 					{
 						fprintf(stderr, "voice #%d\n", i);
-						fprintf(stderr, "  samp: %p (%p)\n", channels[i].samp, channels[i].sbpos);
+						fprintf(stderr, "  samp: %p\n", channels[i].samp);
 						fprintf(stderr, "  looplen: %08x\n", dwmixfa_state.looplen[i]);
 						fprintf(stderr, "  voiceflags: 0x%08x\n", dwmixfa_state.voiceflags[i]);
 						fprintf(stderr, "  freq: 0x%08x:0x%08x\n", dwmixfa_state.freqw[i], dwmixfa_state.freqf[i]);
@@ -486,7 +449,6 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 		case mcpCReset:
 			{
 				int reswasmute;
-				rstlbuf(chn);
 				stopchan(chn);
 				reswasmute=dwmixfa_state.voiceflags[ch]&MIXF_MUTE;
 				memset(chn, 0, sizeof(struct channel));
@@ -499,7 +461,6 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			{
 				struct sampleinfo *samp;
 
-				rstlbuf(chn);
 				stopchan(chn);
 				if ((val<0)||(val>=samplenum))
 					break;
@@ -546,7 +507,6 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 					dwmixfa_state.looplen[ch]=chn->length;
 					dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->length-1;
 				}
-				setlbuf(chn);
 			}
 			break;
 		case mcpCStatus:
@@ -581,7 +541,6 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			transformvol(chn);
 			break;
 		case mcpCLoop:
-			rstlbuf(chn);
 			dwmixfa_state.voiceflags[ch]&=~MIXF_LOOPED;
 
 			if ((val==1)&&!(chn->samptype&mcpSampSLoop))
@@ -610,7 +569,6 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 				dwmixfa_state.looplen[ch]=chn->length;
 				dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->length-1;
 			}
-			setlbuf(chn);
 
 			break;
 		case mcpCPosition:

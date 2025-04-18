@@ -150,27 +150,27 @@ out:
 }
 
 static inline float
-filter_none(float sample)
+filter_none(const float sample)
 {
 	return sample;
 }
 
 static inline float
-filter_mixf(float sample)
+filter_mixf(const float sample)
 {
 	state.__fb1  =  state.__fb1  *  state.frez  +  state.ffrq  *  (  sample  -  state.__fl1  );
 
-	return state.__fl1  +=  state.__fb1;
+	return state.__fl1  +=  state.ffrq  *  state.__fb1;
 }
 
 static inline float
-interp_none(float* samples, uint_fast16_t sample_pos_fract)
+interp_none(const float* samples, const uint_fast16_t sample_pos_fract)
 {
 	return *samples;
 }
 
 static inline float
-interp_lin(float* samples, uint_fast16_t sample_pos_fract)
+interp_lin(const float* samples, const uint_fast16_t sample_pos_fract)
 {
 	return samples[0]
 	        + (float)sample_pos_fract / 65536.0
@@ -178,7 +178,7 @@ interp_lin(float* samples, uint_fast16_t sample_pos_fract)
 }
 
 static inline float
-interp_cub(float* samples, uint_fast16_t sample_pos_fract)
+interp_cub(const float* samples, const uint_fast16_t sample_pos_fract)
 {
 	int idx = sample_pos_fract >> 8;
 	return samples[0] * state.ct0[idx]
@@ -187,7 +187,7 @@ interp_cub(float* samples, uint_fast16_t sample_pos_fract)
 	        + samples[3] * state.ct3[idx];
 }
 
-#define MIX_TEMPLATE(NAME, STEREO, INTERP, FILTER)                      \
+#define MIX_TEMPLATE(NAME, INTERP, FILTER, PROTECT)                     \
 static void                                                             \
 mix##NAME(float *destptr,                                               \
        float **sample_pos, uint32_t *sample_pos_fract,                  \
@@ -196,16 +196,30 @@ mix##NAME(float *destptr,                                               \
 {                                                                       \
     int i = 0;                                                          \
     float sample;                                                       \
+    float sbuf[3];                                                      \
+    int restore = 0;                                                    \
+    assert (PROTECT <= 3);                                              \
+                                                                        \
+    /* Do we need to add data past loopend, to simplify linear and      \
+       cubic interpolation sample read-out? */                          \
+    assert(PROTECT <= SAMPEND);                                         \
+    if (PROTECT && (state.looptype & MIXF_LOOPED))                      \
+    {                                                                   \
+        restore = 1;                                                    \
+        for (i = 0; i < PROTECT; i++)                                   \
+        {                                                               \
+           sbuf[i] = loopend[i];                                        \
+           loopend[i] = (loopend - state.mixlooplen)[i];                \
+        }                                                               \
+    }                                                                   \
                                                                         \
     for (i = 0; i < state.nsamples; i++)                                \
       {                                                                 \
         sample = filter_##FILTER(interp_##INTERP(*sample_pos, *sample_pos_fract)); \
         *destptr++ += state.voll * sample;                              \
         state.voll += state.volrl;                                      \
-        if (STEREO) {                                                   \
-            *destptr++ += state.volr * sample;                          \
-            state.volr += state.volrr;                                  \
-        }                                                               \
+        *destptr++ += state.volr * sample;                              \
+        state.volr += state.volrr;                                      \
                                                                         \
         *sample_pos_fract += sample_pitch_fract;                        \
         *sample_pos += sample_pitch + (*sample_pos_fract >> 16);        \
@@ -221,7 +235,7 @@ mix##NAME(float *destptr,                                               \
             *sample_pos -= state.mixlooplen;                            \
           }                                                             \
       }                                                                 \
-    return;                                                             \
+    goto out;                                                           \
                                                                         \
 fade:                                                                   \
                                                                         \
@@ -229,42 +243,30 @@ fade:                                                                   \
       {                                                                 \
         *destptr++ += state.voll * sample;                              \
         state.voll += state.volrl;                                      \
-        if (STEREO) {                                                   \
-            *destptr++ += state.volr * sample;                          \
-            state.volr += state.volrr;                                  \
-        }                                                               \
+        *destptr++ += state.volr * sample;                              \
+        state.volr += state.volrr;                                      \
     }                                                                   \
                                                                         \
     state.fadeleft += state.voll * sample;                              \
-    if (STEREO) {                                                       \
-        state.faderight += state.volr * sample;                         \
+    state.faderight += state.volr * sample;                             \
+                                                                        \
+out:                                                                    \
+    if (PROTECT && restore)                                             \
+    {                                                                   \
+        for (i = PROTECT - 1; i >= 0; i--)                              \
+        {                                                               \
+            loopend[i] = sbuf[i];                                       \
+        }                                                               \
     }                                                                   \
 }
 
-MIX_TEMPLATE(s_n, 1, none, none)
-MIX_TEMPLATE(s_i, 1, lin, none)
-MIX_TEMPLATE(s_i2, 1, cub, none)
-MIX_TEMPLATE(s_nf, 1, none, mixf)
-MIX_TEMPLATE(s_if, 1, lin, mixf)
-MIX_TEMPLATE(s_i2f, 1, cub, mixf)
 
-#if 0
-
-MIX_TEMPLATE(m_n, 0, none, none)
-MIX_TEMPLATE(m_i, 0, lin, none)
-MIX_TEMPLATE(m_i2, 0, cub, none)
-MIX_TEMPLATE(m_nf, 0, none, mixf)
-MIX_TEMPLATE(m_if, 0, lin, mixf)
-MIX_TEMPLATE(m_i2f, 0, cub, mixf)
-
-static const mixercall mixers[16] = {
-	mixm_n,   mixs_n,   mixm_i,  mixs_i,
-	mixm_i2,  mixs_i2,  mix_0,   mix_0,
-	mixm_nf,  mixs_nf,  mixm_if, mixs_if,
-	mixm_i2f, mixs_i2f, mix_0,   mix_0
-};
-
-#else
+MIX_TEMPLATE(s_n,   none, none, 0)
+MIX_TEMPLATE(s_i,   lin,  none, 1)
+MIX_TEMPLATE(s_i2,  cub,  none, 3)
+MIX_TEMPLATE(s_nf,  none, mixf, 0)
+MIX_TEMPLATE(s_if,  lin,  mixf, 1)
+MIX_TEMPLATE(s_i2f, cub,  mixf, 3)
 
 static const mixercall mixers[8] = {
 	mixs_n,   mixs_i,
@@ -272,8 +274,6 @@ static const mixercall mixers[8] = {
 	mixs_nf,  mixs_if,
 	mixs_i2f, mix_0
 };
-
-#endif
 
 void
 mixer (struct cpifaceSessionAPI_t *cpifaceSession)

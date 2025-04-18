@@ -35,8 +35,6 @@
 
 /* included from deviwave.c */
 
-#define SAMPEND 8
-
 static uint16_t abstab[0x200];
 
 static int sampsizefac(int type)

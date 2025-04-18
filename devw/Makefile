@@ -121,6 +121,7 @@ dwmixfa.o: dwmixfa.c \
 	dwmixfa_c.c \
 	../config.h \
 	../types.h \
+        ../dev/mcp.h \
 	../dev/postproc.h \
 	dwmixfa.h
 	$(CC) dwmixfa.c -o $@ -c

@@ -1,6 +1,8 @@
 #ifndef __MCP_H
 #define __MCP_H
 
+#define SAMPEND 8  /* How many samples does smpman.c overallocate, for interpolation read-outs */
+
 struct ocpfilehandle_t;
 struct cpifaceSessionAPI_t;
 
@@ -45,7 +47,11 @@ enum
 	mcpCVolume, mcpCPanning, mcpCPanY, mcpCPanZ, mcpCSurround, mcpCPosition,
 	mcpCPitch, mcpCPitchFix, mcpCPitch6848, mcpCStop, mcpCReset,
 	mcpCBass, mcpCTreble, mcpCReverb, mcpCChorus, mcpCMute, mcpCStatus,
-	mcpCInstrument, mcpCLoop, mcpCDirect, mcpCFilterFreq, mcpCFilterRez,
+	mcpCInstrument,
+	mcpCLoop, /* 0 = No loop
+	           * 1 = Sustain Loop (fallback to 2, if sample does not support this)
+	           * 2 = Loop         (fallback to 0, if sample does not support this) */
+	mcpCDirect, mcpCFilterFreq, mcpCFilterRez,
 	mcpGTimer, mcpGCmdTimer,
 };
 
