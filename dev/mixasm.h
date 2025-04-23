@@ -1,7 +1,7 @@
 #ifndef MIXASM_H
 #define MIXASM_H
 
-extern uint32_t mixAddAbs(const struct mixchannel *ch, uint32_t len);
+extern void mixAddAbs(const struct mixchannel *ch, uint32_t len, uint32_t *l, uint32_t *r);
 extern void mixPlayChannel(int32_t *buf, uint32_t len, struct mixchannel *ch, int st);
 extern void mixClip(int16_t *dst, const int32_t *src, uint32_t len, int16_t (*tab)[256], int32_t max);
 

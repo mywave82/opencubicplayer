@@ -2,26 +2,16 @@
 #define _DWMIX_H
 
 /* This is channel options */
-#define MIXRQ_PLAYING 1
-#define MIXRQ_MUTE 2
-#define MIXRQ_LOOPED 4
-#define MIXRQ_PINGPONGLOOP 8
-#define MIXRQ_PLAY16BIT 16
-#define MIXRQ_INTERPOLATE 32
-#define MIXRQ_INTERPOLATEMAX 64
-#define MIXRQ_PLAYSTEREO 128 /* this flag is local to devwmix.c only */
+#define MIXRQ_INTERPOLATE 1
+#define MIXRQ_INTERPOLATEMAX 2
+#define MIXRQ_PLAY16BIT 4
+#define MIXRQ_PLAYSTEREO 8
 
-#define MIXQ_PLAYING		MIXRQ_PLAYING
-/*#define MIXQ_PAUSED		MIXRQ_MUTE       not used */
-#define MIXQ_LOOPED		MIXRQ_LOOPED
-#define MIXQ_PINGPONGLOOP	MIXRQ_PINGPONGLOOP
-#define MIXQ_PLAY16BIT		MIXRQ_PLAY16BIT
-#define MIXQ_INTERPOLATE	MIXRQ_INTERPOLATE
-#define MIXQ_INTERPOLATEMAX	MIXRQ_INTERPOLATEMAX
-#define MIXQ_PLAYSTEREO		MIXRQ_PLAYSTEREO /* this flag is local to devwmix.c only */
+#define MIXRQ_LOOPED 32
+#define MIXRQ_PINGPONGLOOP 64
 
-/* This is not a channel option, but a mixer option */
-#define MIXRQ_RESAMPLE 1
+#define MIXRQ_PLAYING 128
+#define MIXRQ_MUTE 512
 
 struct channel
 {

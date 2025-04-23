@@ -187,7 +187,7 @@ interp_cub(const float* samples, const uint_fast16_t sample_pos_fract)
 	        + samples[3] * state.ct3[idx];
 }
 
-#define MIX_TEMPLATE(NAME, INTERP, FILTER, PROTECT)                     \
+#define MIX_TEMPLATE_M(NAME, INTERP, FILTER, PROTECT)                   \
 static void                                                             \
 mix##NAME(float *destptr,                                               \
        float **sample_pos, uint32_t *sample_pos_fract,                  \
@@ -260,19 +260,152 @@ out:                                                                    \
     }                                                                   \
 }
 
+static inline void
+filter_none_S(const float inL, const float inR, float * const outL, float * const outR)
+{
+	*outL = inL;
+	*outR = inR;
+}
 
-MIX_TEMPLATE(s_n,   none, none, 0)
-MIX_TEMPLATE(s_i,   lin,  none, 1)
-MIX_TEMPLATE(s_i2,  cub,  none, 3)
-MIX_TEMPLATE(s_nf,  none, mixf, 0)
-MIX_TEMPLATE(s_if,  lin,  mixf, 1)
-MIX_TEMPLATE(s_i2f, cub,  mixf, 3)
+static inline void
+filter_mixf_S(const float inL, const float inR, float * const outL, float * const outR)
+{
+	state.__fb1  =  state.__fb1  *  state.frez  +  state.ffrq  *  (  inL  -  state.__fl1  );
+	*outL = state.__fl1  +=  state.ffrq  *  state.__fb1;
 
-static const mixercall mixers[8] = {
-	mixs_n,   mixs_i,
-	mixs_i2,  mix_0,
-	mixs_nf,  mixs_if,
-	mixs_i2f, mix_0
+	state.__fb2  =  state.__fb2  *  state.frez  +  state.ffrq  *  (  inR  -  state.__fl2  );
+	*outR = state.__fl2  +=  state.ffrq  *  state.__fb2;
+}
+
+static inline void
+interp_none_S(const float* samples, const uint_fast16_t sample_pos_fract, float * const outL, float * const outR)
+{
+	*outL = samples[0];
+	*outR = samples[1];
+}
+
+static inline void
+interp_lin_S(const float* samples, const uint_fast16_t sample_pos_fract, float * const outL, float * const outR)
+{
+	*outL = samples[0]
+	        + (float)sample_pos_fract / 65536.0
+	        * (samples[2] - samples[0]);
+	*outR = samples[1]
+	        + (float)sample_pos_fract / 65536.0
+	        * (samples[3] - samples[1]);
+}
+
+static inline void
+interp_cub_S(const float* samples, const uint_fast16_t sample_pos_fract, float * const outL, float * const outR)
+{
+	int idx = sample_pos_fract >> 8;
+	*outL = samples[0] * state.ct0[idx]
+	      + samples[2] * state.ct1[idx]
+	      + samples[4] * state.ct2[idx]
+	      + samples[6] * state.ct3[idx];
+	*outR = samples[1] * state.ct0[idx]
+	      + samples[3] * state.ct1[idx]
+	      + samples[5] * state.ct2[idx]
+	      + samples[7] * state.ct3[idx];
+}
+
+#define MIX_TEMPLATE_S(NAME, INTERP, FILTER, PROTECT)                   \
+static void                                                             \
+mix##NAME(float *destptr,                                               \
+       float **sample_pos, uint32_t *sample_pos_fract,                  \
+       uint32_t sample_pitch, uint32_t sample_pitch_fract,              \
+       float *loopend)                                                  \
+{                                                                       \
+    int i = 0;                                                          \
+    float sampleL, sampleR;                                             \
+    float sbuf[6];                                                      \
+    int restore = 0;                                                    \
+    assert (PROTECT <= 6);                                              \
+                                                                        \
+    /* Do we need to add data past loopend, to simplify linear and      \
+       cubic interpolation sample read-out? */                          \
+    assert(PROTECT <= SAMPEND);                                         \
+    if (PROTECT && (state.looptype & MIXF_LOOPED))                      \
+    {                                                                   \
+        restore = 1;                                                    \
+        for (i = 0; i < PROTECT; i++)                                   \
+        {                                                               \
+           sbuf[i] = loopend[i];                                        \
+           loopend[i] = (loopend - state.mixlooplen)[i];                \
+        }                                                               \
+    }                                                                   \
+                                                                        \
+    for (i = 0; i < state.nsamples; i++)                                \
+      {                                                                 \
+        float iL, iR;                                                   \
+        interp_##INTERP##_S(*sample_pos, *sample_pos_fract, &iL, &iR);  \
+        filter_##FILTER##_S(iL, iR, &sampleL, &sampleR);                \
+        *destptr++ += state.voll * sampleL;                             \
+        state.voll += state.volrl;                                      \
+        *destptr++ += state.volr * sampleR;                             \
+        state.volr += state.volrr;                                      \
+                                                                        \
+        *sample_pos_fract += sample_pitch_fract;                        \
+        *sample_pos += (sample_pitch + (*sample_pos_fract >> 16))<<1;   \
+        *sample_pos_fract &= 0xffff;                                    \
+                                                                        \
+        while (*sample_pos >= loopend)                                  \
+          {                                                             \
+            if (!(state.looptype & MIXF_LOOPED)) {                      \
+                state.looptype &= ~MIXF_PLAYING;                        \
+                goto fade;                                              \
+            }                                                           \
+            assert(state.mixlooplen > 0);                               \
+            *sample_pos -= state.mixlooplen;                            \
+          }                                                             \
+      }                                                                 \
+    goto out;                                                           \
+                                                                        \
+fade:                                                                   \
+                                                                        \
+    for (; i < state.nsamples; i++)                                     \
+      {                                                                 \
+        *destptr++ += state.voll * sampleL;                             \
+        state.voll += state.volrl;                                      \
+        *destptr++ += state.volr * sampleR;                             \
+        state.volr += state.volrr;                                      \
+    }                                                                   \
+                                                                        \
+    state.fadeleft += state.voll * sampleR;                             \
+    state.faderight += state.volr * sampleL;                            \
+                                                                        \
+out:                                                                    \
+    if (PROTECT && restore)                                             \
+    {                                                                   \
+        for (i = PROTECT - 1; i >= 0; i--)                              \
+        {                                                               \
+            loopend[i] = sbuf[i];                                       \
+        }                                                               \
+    }                                                                   \
+}
+
+/* mono source sample, destination always stereo */
+MIX_TEMPLATE_M(ms_n,   none, none, 0)
+MIX_TEMPLATE_M(ms_i,   lin,  none, 1)
+MIX_TEMPLATE_M(ms_i2,  cub,  none, 3)
+MIX_TEMPLATE_M(ms_nf,  none, mixf, 0)
+MIX_TEMPLATE_M(ms_if,  lin,  mixf, 1)
+MIX_TEMPLATE_M(ms_i2f, cub,  mixf, 3)
+
+/* stereo source sample, destination always stereo */
+MIX_TEMPLATE_S(ss_n,   none, none, 0)
+MIX_TEMPLATE_S(ss_i,   lin,  none, 2)
+MIX_TEMPLATE_S(ss_i2,  cub,  none, 6)
+MIX_TEMPLATE_S(ss_nf,  none, mixf, 0)
+MIX_TEMPLATE_S(ss_if,  lin,  mixf, 2)
+MIX_TEMPLATE_S(ss_i2f, cub,  mixf, 6)
+
+static const mixercall mixers[16] = {
+	mixms_n,   mixms_i,  mixms_i2,  mix_0,
+	mixms_nf,  mixms_if, mixms_i2f, mix_0,
+
+	mixss_n,   mixss_i,  mixss_i2,  mix_0,
+	mixss_nf,  mixss_if, mixss_i2f, mix_0
 };
 
 void
@@ -310,13 +443,17 @@ mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 		state.__fl1 = state.fl1[voice];
 		state.__fb1 = state.fb1[voice];
 
-		state.mixlooplen = state.looplen[voice];
+		/* only used by stereo-samples */
+		state.__fl2 = state.fl2[voice];
+		state.__fb2 = state.fb2[voice];
 
+
+		state.mixlooplen = state.looplen[voice];
 /*
 		assert((state.freqf[voice] & 0xffff) == 0);
 		assert((state.smpposf[voice] & 0xffff) == 0);
 */
-		mixer = mixers[state.voiceflags[voice] & 0x7];
+		mixer = mixers[state.voiceflags[voice] & 0x0f];
 		state.smpposf[voice] >>= 16;
 		mixer(state.tempbuf,
 		      &state.smpposw[voice], &state.smpposf[voice],
@@ -329,6 +466,10 @@ mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 		state.volright[voice] = state.volr;
 		state.fl1[voice] = state.__fl1;
 		state.fb1[voice] = state.__fb1;
+
+		/* only used by stereo-samples */
+		state.fl2[voice] = state.__fl2;
+		state.fb2[voice] = state.__fb2;
 	}
 
 	for (i=0; i < state.postprocs; i++)
@@ -415,11 +556,47 @@ getchanvol(int n, int len)
 {
 	float *sample_pos = state.smpposw[n];
 	int sample_pos_fract = state.smpposf[n] >> 16;
-	float sum = 0.0;
 	int i;
 
-	if (state.voiceflags[n] & MIXF_PLAYING)
+	if (!(state.voiceflags[n] & MIXF_PLAYING))
 	{
+		state.voll = 0;
+		state.volr = 0;
+		return;
+	}
+
+	if (state.voiceflags[n] & MIXF_PLAYSTEREO)
+	{
+		float sumL = 0.0;
+		float sumR = 0.0;
+
+		for (i = 0; i < state.nsamples; i++)
+		{
+			sumL += fabsf(sample_pos[0]);
+			sumR += fabsf(sample_pos[1]);
+
+			sample_pos_fract += state.freqf[n] >> 16;
+			sample_pos += (state.freqw[n] + (sample_pos_fract >> 16))<<1;
+			sample_pos_fract &= 0xffff;
+			while (sample_pos >= state.loopend[n])
+			{
+				if (!(state.voiceflags[n] & MIXF_LOOPED))
+				{
+					state.voiceflags[n] &= ~MIXF_PLAYING;
+					goto outs;
+				}
+				assert(state.looplen[n] > 0);
+				sample_pos -= state.looplen[n];
+			}
+		}
+outs:
+		sumL /= state.nsamples;
+		sumR /= state.nsamples;
+		state.voll = sumL * state.volleft[n];
+		state.volr = sumR * state.volright[n];
+	} else {
+		float sum = 0.0;
+
 		for (i = 0; i < state.nsamples; i++)
 		{
 			sum += fabsf(*sample_pos);
@@ -432,17 +609,15 @@ getchanvol(int n, int len)
 				if (!(state.voiceflags[n] & MIXF_LOOPED))
 				{
 					state.voiceflags[n] &= ~MIXF_PLAYING;
-					goto out;
+					goto outm;
 				}
 				assert(state.looplen[n] > 0);
 				sample_pos -= state.looplen[n];
 			}
 		}
+outm:
+		sum /= state.nsamples;
+		state.voll = sum * state.volleft[n];
+		state.volr = sum * state.volright[n];
 	}
-
-out:
-
-	sum /= state.nsamples;
-	state.voll = sum * state.volleft[n];
-	state.volr = sum * state.volright[n];
 }

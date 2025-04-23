@@ -32,13 +32,25 @@ void mixrSetupAddresses(int32_t (*vol)[256], uint8_t (*intr)[256][2])
 
 void mixrFadeChannel(int32_t *fade, struct channel *chan)
 {
-	if (chan->status&MIXRQ_PLAY16BIT)
+	if (chan->status&MIXRQ_PLAYSTEREO)
 	{
-		fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)chan->realsamp.bit16[chan->pos])>>8];
-		fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)chan->realsamp.bit16[chan->pos])>>8];
+		if (chan->status&MIXRQ_PLAY16BIT)
+		{
+			fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)chan->realsamp.bit16[(chan->pos<<1)    ])>>8];
+			fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)chan->realsamp.bit16[(chan->pos<<1) + 1])>>8];
+		} else {
+			fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)chan->realsamp.bit8[(chan->pos<<1)    ]];
+			fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)chan->realsamp.bit8[(chan->pos<<1) + 1]];
+		}
 	} else {
-		fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)chan->realsamp.bit8[chan->pos]];
-		fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)chan->realsamp.bit8[chan->pos]];
+		if (chan->status&MIXRQ_PLAY16BIT)
+		{
+			fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)chan->realsamp.bit16[chan->pos])>>8];
+			fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)chan->realsamp.bit16[chan->pos])>>8];
+		} else {
+			fade[0]+=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)chan->realsamp.bit8[chan->pos]];
+			fade[1]+=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)chan->realsamp.bit8[chan->pos]];
+		}
 	}
 	chan->curvols[0]=0;
 	chan->curvols[1]=0;
@@ -70,7 +82,7 @@ static inline int32_t interp_i16(const struct channel *chan, const int volindex,
 	return mixrFadeChannelvoltab[volindex][cache];
 }
 
-#define MIX_TEMPLATE(NAME, STEREO, INTERP)                              \
+#define MIX_TEMPLATE_M(NAME, INTERP)                                      \
 static void                                                             \
 NAME(int32_t *buf,                                                      \
      uint32_t len,                                                      \
@@ -86,8 +98,7 @@ NAME(int32_t *buf,                                                      \
     while (len)                                                         \
         {                                                               \
             *(buf++)+=interp_##INTERP(chan, vol0, pos, fpos);           \
-            if (STEREO)                                                 \
-                *(buf++)+=interp_##INTERP(chan, vol1, pos, fpos);       \
+            *(buf++)+=interp_##INTERP(chan, vol1, pos, fpos);           \
             fpos+=chan->step&0x0000ffff;                                \
             if (fpos&0xffff0000)                                        \
             {                                                           \
@@ -96,43 +107,106 @@ NAME(int32_t *buf,                                                      \
             }                                                           \
             pos+=chan->step>>16;                                        \
             vol0+=vol0add;                                              \
-            if (STEREO)                                                 \
-                vol1+=vol1add;                                          \
+            vol1+=vol1add;                                              \
             len--;                                                      \
         }                                                               \
 }
 
-//#pragma GCC diagnostic push
-//#pragma GCC diagnostic ignored "-Wunused"
-#if 0
-MIX_TEMPLATE(playmono, 0, none8)
-MIX_TEMPLATE(playmonoi, 0, i8)
-MIX_TEMPLATE(playmono16, 0, none16)
-MIX_TEMPLATE(playmonoi16, 0, i16)
-#endif
-MIX_TEMPLATE(playstereo, 1, none8)
-MIX_TEMPLATE(playstereoi, 1, i8)
-MIX_TEMPLATE(playstereo16, 1, none16)
-MIX_TEMPLATE(playstereoi16, 1, i16)
-//#pragma GCC diagnostic pop
+MIX_TEMPLATE_M(playstereo,    none8)
+MIX_TEMPLATE_M(playstereoi,   i8)
+MIX_TEMPLATE_M(playstereo16,  none16)
+MIX_TEMPLATE_M(playstereoi16, i16)
+
+static inline void interp_none8_s(const struct channel *chan, const int volindexL, const int volindexR, const uint32_t pos, uint32_t fpos, int32_t * const outL, int32_t * const outR)
+{
+	*outL = mixrFadeChannelvoltab[volindexL][(uint8_t)(chan->realsamp.bit8[(pos<<1)  ])];
+	*outR = mixrFadeChannelvoltab[volindexR][(uint8_t)(chan->realsamp.bit8[(pos<<1)+1])];
+}
+
+static inline void interp_none16_s(const struct channel *chan, const int volindexL, const int volindexR, const uint32_t pos, uint32_t fpos, int32_t * const outL, int32_t * const outR)
+{
+	*outL = mixrFadeChannelvoltab[ volindexL ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)  ]))>>8 ];
+	*outR = mixrFadeChannelvoltab[ volindexR ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)+1]))>>8 ];
+}
+
+static inline void interp_i8_s(const struct channel *chan, const int volindexL, const int volindexR, const uint32_t pos, uint32_t fpos, int32_t * const outL, int32_t * const outR)
+{
+	uint8_t cacheL =
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint8_t)(chan->realsamp.bit8[(pos<<1)  ])) ][ 0 ]+
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint8_t)(chan->realsamp.bit8[(pos<<1)+2])) ][ 1 ];
+	uint8_t cacheR =
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint8_t)(chan->realsamp.bit8[(pos<<1)+1])) ][ 0 ]+
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint8_t)(chan->realsamp.bit8[(pos<<1)+3])) ][ 1 ];
+
+	*outL = mixrFadeChannelvoltab[volindexL][cacheL];
+	*outR = mixrFadeChannelvoltab[volindexR][cacheR];
+}
+
+static inline void interp_i16_s(const struct channel *chan, const int volindexL, const int volindexR, const uint32_t pos, uint32_t fpos, int32_t * const outL, int32_t * const outR)
+{
+	uint8_t cacheL =
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)  ]))>>8 ][ 0 ]+
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)+2]))>>8 ][ 1 ];
+	uint8_t cacheR =
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)+1]))>>8 ][ 0 ]+
+		mixrFadeChannelintrtab[ fpos>>12 ][ ((uint16_t)(chan->realsamp.bit16[(pos<<1)+3]))>>8 ][ 1 ];
+
+	*outL = mixrFadeChannelvoltab[volindexL][cacheL];
+	*outR = mixrFadeChannelvoltab[volindexR][cacheR];
+}
+
+#define MIX_TEMPLATE_S(NAME, INTERP)                                    \
+static void                                                             \
+NAME(int32_t *buf,                                                      \
+     uint32_t len,                                                      \
+     struct channel *chan)                                              \
+{                                                                       \
+    int32_t vol0=chan->curvols[0];                                      \
+    int32_t vol0add=ramping[0];                                         \
+    int32_t vol1=chan->curvols[1];                                      \
+    int32_t vol1add=ramping[1];                                         \
+    uint32_t pos=chan->pos;                                             \
+    uint32_t fpos=chan->fpos;                                           \
+                                                                        \
+    while (len)                                                         \
+        {                                                               \
+            int32_t l, r;                                               \
+            interp_##INTERP##_s(chan, vol0, vol1, pos, fpos, &l, &r);   \
+            *(buf++)+=l;                                                \
+            *(buf++)+=r;                                                \
+            fpos+=chan->step&0x0000ffff;                                \
+            if (fpos&0xffff0000)                                        \
+            {                                                           \
+                pos++;                                                  \
+                fpos&=0xffff;                                           \
+            }                                                           \
+            pos+=(chan->step>>16);                                      \
+            vol0+=vol0add;                                              \
+            vol1+=vol1add;                                              \
+            len--;                                                      \
+        }                                                               \
+}
+
+MIX_TEMPLATE_S(playstereo_s,    none8)
+MIX_TEMPLATE_S(playstereoi_s,   i8)
+MIX_TEMPLATE_S(playstereo16_s,  none16)
+MIX_TEMPLATE_S(playstereoi16_s, i16)
 
 static void routequiet(int32_t *buf, uint32_t len, struct channel *chan)
 {
 }
 
 typedef void (*route_func)(int32_t *buf, uint32_t len, struct channel *chan);
-static const route_func routeptrs[4]=
+static const route_func routeptrs[8]=
 {
-#if 0
-	playmono,
-	playmono16,
-	playmonoi,
-	playmonoi16,
-#endif
 	playstereo,
 	playstereo16,
 	playstereoi,
-	playstereoi16
+	playstereoi16,
+	playstereo_s,
+	playstereo16_s,
+	playstereoi_s,
+	playstereoi16_s,
 };
 
 void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channel *chan)
@@ -147,6 +221,9 @@ void mixrPlayChannel(int32_t *buf, int32_t *fadebuf, uint32_t len, struct channe
 
 	if (!(chan->status&MIXRQ_PLAYING))
 		return;
+
+	if (chan->status&MIXRQ_PLAYSTEREO)
+		route+=4;
 
 	if (chan->status&MIXRQ_INTERPOLATE)
 		route+=2;
@@ -324,13 +401,25 @@ mixrPlayChannelbigloop:
 	{
 		uint32_t curvols[2];
 		chan->pos=chan->length;
-		if (chan->status&MIXRQ_PLAY16BIT)
+		if (chan->status&MIXRQ_PLAYSTEREO)
 		{
-			curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)(chan->realsamp.bit16[chan->pos]))>>8];
-			curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)(chan->realsamp.bit16[chan->pos]))>>8];
+			if (chan->status&MIXRQ_PLAY16BIT)
+			{
+				curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)(chan->realsamp.bit16[(chan->pos<<1)    ]))>>8];
+				curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)(chan->realsamp.bit16[(chan->pos<<1) + 1]))>>8];
+			} else {
+				curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)(chan->realsamp.bit8[(chan->pos<<1)    ])];
+				curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)(chan->realsamp.bit8[(chan->pos<<1) + 1])];
+			}
 		} else {
-			curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
-			curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
+			if (chan->status&MIXRQ_PLAY16BIT)
+			{
+				curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][((uint16_t)(chan->realsamp.bit16[chan->pos]))>>8];
+				curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][((uint16_t)(chan->realsamp.bit16[chan->pos]))>>8];
+			} else {
+				curvols[0]=mixrFadeChannelvoltab[chan->curvols[0]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
+				curvols[1]=mixrFadeChannelvoltab[chan->curvols[1]][(uint8_t)(chan->realsamp.bit8[chan->pos])];
+			}
 		}
 		while (fillen)
 		{
@@ -352,6 +441,9 @@ void mixrFade(int32_t *buf, int32_t *fade, int len)
 
 	do
 	{
+		if (samp0 || samp1)
+		{
+		}
 		*(buf++)=samp0;
 		*(buf++)=samp1;
 		samp0 = ((samp0<<7) - samp0)>>7;

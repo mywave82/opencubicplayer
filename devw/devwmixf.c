@@ -476,7 +476,7 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 				chn->dontramp=1;
 				chn->newsamp=1;
 
-				dwmixfa_state.voiceflags[ch]&=~(MIXF_PLAYING|MIXF_LOOPED);
+				dwmixfa_state.voiceflags[ch]&=~(MIXF_PLAYING|MIXF_LOOPED|MIXF_PLAYSTEREO);
 
 				dwmixfa_state.freqw[ch]=0;
 				dwmixfa_state.freqf[ch]=0;
@@ -486,6 +486,12 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 				dwmixfa_state.freso[ch]=0;
 				dwmixfa_state.smpposf[ch]=0;
 				dwmixfa_state.smpposw[ch]=(float *)chn->samp;
+				if (chn->samptype & mcpSampInterleavedStereo)
+				{
+					dwmixfa_state.voiceflags[ch] |= MIXF_PLAYSTEREO;
+					dwmixfa_state.fl2[ch]=0;
+					dwmixfa_state.fb2[ch]=0;
+				}
 
 				if (chn->samptype&mcpSampSLoop)
 				{
@@ -502,10 +508,10 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 				if (dwmixfa_state.voiceflags[ch]&MIXF_LOOPED)
 				{
 					dwmixfa_state.looplen[ch]=chn->loopend-chn->loopstart;
-					dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->loopend;
+					dwmixfa_state.loopend[ch]=(float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
 				} else {
 					dwmixfa_state.looplen[ch]=chn->length;
-					dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->length-1;
+					dwmixfa_state.loopend[ch]=(float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
 				}
 			}
 			break;
@@ -564,10 +570,10 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			if (dwmixfa_state.voiceflags[ch]&MIXF_LOOPED)
 			{
 				dwmixfa_state.looplen[ch]=chn->loopend-chn->loopstart;
-				dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->loopend;
+				dwmixfa_state.loopend[ch]=(float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
 			} else {
 				dwmixfa_state.looplen[ch]=chn->length;
-				dwmixfa_state.loopend[ch]=(float *)chn->samp+chn->length-1;
+				dwmixfa_state.loopend[ch]=(float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
 			}
 
 			break;
@@ -749,6 +755,8 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 		chn->status|=MIX_PLAYING;
 	if (dwmixfa_state.voiceflags[ch]&MIXF_INTERPOLATE)
 		chn->status|=MIX_INTERPOLATE;
+	if (dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)
+		chn->status|=MIX_PLAYSTEREO;
 }
 
 
@@ -765,14 +773,14 @@ static void getrealvol(int ch, int *l, int *r)
 
 static int devwMixFLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
 {
-	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToMono|mcpRedToFloat|mcpRedNoPingPong))
+	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToFloat|mcpRedNoPingPong))
 		return 0;
 
 #ifdef MIXER_DEBUG
 	{
 		int i;
 		for (i=0;i<n;i++)
-			fprintf(stderr, "sample #% 3d: %p - %p\n", i, sil[i].ptr, sil[i].ptr + sil[i].length*sizeof(float));
+			fprintf(stderr, "sample #% 3d: %p - %p\n", i, sil[i].ptr, sil[i].ptr + sil[i].length*sizeof(float)<<(!!(sil[i].flags&MIXF_STEREO)) );
 	}
 #endif
 

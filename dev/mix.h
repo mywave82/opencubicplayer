@@ -48,6 +48,7 @@ extern const struct mixAPI_t *mixAPI;
 #define MIX_INTERPOLATE 32
 #define MIX_MAX 64
 #define MIX_PLAYFLOAT 128
-#define MIX_ALL 255
+#define MIX_PLAYSTEREO 256
+#define MIX_ALL 511
 
 #endif

@@ -115,11 +115,6 @@ static void putchn(struct mixchannel *chn, unsigned int len, int opt)
 	{
 		int voll=chn->vol.vols[0];
 		int volr=chn->vol.vols[1];
-		if (!(opt&mcpGetSampleStereo))
-		{
-			voll=(voll+volr)>>1;
-			volr=0;
-		}
 		if (voll<0)
 			voll=0;
 		if (voll>64)
@@ -185,7 +180,6 @@ static int mixMixChanSamples (struct cpifaceSessionAPI_t *cpifaceSession, unsign
 		channels[i].status&=~MIX_MUTE;
 
 		putchn(&channels[i], len, opt);
-
 	}
 	len<<=stereo;
 
@@ -206,18 +200,19 @@ static void mixGetRealVolume(int ch, int *l, int *r)
 	chn.status&=~MIX_MUTE;
 	if (chn.status&MIX_PLAYING)
 	{
-		uint32_t v=mixAddAbs(&chn, 256);
+		uint32_t v_l=0, v_r=0;
 		uint32_t i;
+		mixAddAbs(&chn, 256, &v_l, &v_r);
 		if (chn.status&MIX_PLAYFLOAT)
 		{
-			i=((int)(v*(chn.vol.volfs[0]*64.0)))>>16;
+			i=((int)(v_l*(chn.vol.volfs[0]*64.0)))>>16;
 			*l=(i>255)?255:i;
-			i=((int)(v*(chn.vol.volfs[1]*64.0)))>>16;
+			i=((int)(v_r*(chn.vol.volfs[1]*64.0)))>>16;
 			*r=(i>255)?255:i;
 		} else {
-			i=(v*chn.vol.vols[0])>>16;
+			i=(v_l*chn.vol.vols[0])>>16;
 			*l=(i>255)?255:i;
-			i=(v*chn.vol.vols[1])>>16;
+			i=(v_r*chn.vol.vols[1])>>16;
 			*r=(i>255)?255:i;
 		}
 	} else
@@ -234,12 +229,12 @@ static void mixGetRealMasterVolume(int *l, int *r)
 	*l=*r=0;
 	for (i=0; i<channum; i++)
 	{
-		uint32_t v;
+		uint32_t v_l=0, v_r=0;
 		if ((channels[i].status&MIX_MUTE)||!(channels[i].status&MIX_PLAYING))
 			continue;
-		v=mixAddAbs(&channels[i], 256);
-		(*l)+=(((v*channels[i].vol.vols[0])>>16)*amplify)>>18;
-		(*r)+=(((v*channels[i].vol.vols[1])>>16)*amplify)>>18;
+		mixAddAbs(&channels[i], 256, &v_l, &v_r);
+		(*l)+=(((v_l*channels[i].vol.vols[0])>>16)*amplify)>>18;
+		(*r)+=(((v_r*channels[i].vol.vols[1])>>16)*amplify)>>18;
 	}
 	*l=(*l>255)?255:*l;
 	*r=(*r>255)?255:*r;

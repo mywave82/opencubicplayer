@@ -37,103 +37,222 @@
 int8_t (*mixIntrpolTab)[256][2];
 int16_t (*mixIntrpolTab2)[256][2];
 
-uint32_t mixAddAbs(const struct mixchannel *chan, uint32_t len)
+void mixAddAbs(const struct mixchannel *chan, uint32_t len, uint32_t *l, uint32_t *r)
 {
-	unsigned long retval=0;
-
-	if (chan->status&MIX_PLAY16BIT)
+	if (chan->status&MIX_PLAYSTEREO)
 	{
-		int replen=chan->replen;
-		int16_t *pos=chan->realsamp.fmt16+chan->pos; /* actual position */
-		int16_t *end=chan->realsamp.fmt16+chan->length; /* actual EOS */
-		int16_t *target=pos+len; /* target EOS */
-		while(1)
+		uint32_t retval_l=0;
+		uint32_t retval_r=0;
+
+		if (chan->status&MIX_PLAY16BIT)
 		{
-			int16_t *_temptarget=target;
-			if (_temptarget<end)
+			int replen=chan->replen;
+			int16_t *pos=chan->realsamp.fmt16+(chan->pos<<1); /* actual position */
+			int16_t *end=chan->realsamp.fmt16+(chan->length<<1); /* actual EOS */
+			int16_t *target=pos+(len<<1); /* target EOS */
+			while(1)
 			{
-				replen=0;
-			} else {
-				_temptarget=end;
-			}
-			do {
-				int16_t sample;
-				sample=*pos++;
-				if (sample<0)
+				int16_t *_temptarget=target;
+				if (_temptarget<end)
 				{
-					sample=0-sample;
+					replen=0;
+				} else {
+					_temptarget=end;
 				}
-				retval+=sample;
-			} while (pos<_temptarget);
+				do {
+					int16_t sample_l, sample_r;
+					sample_l=*pos++;
+					sample_r=*pos++;
+					if (sample_l<0)
+					{
+						sample_l=0-sample_l;
+					}
+					if (sample_r<0)
+					{
+						sample_r=0-sample_r;
+					}
 
-			if (!replen)
-				goto exit;
-			target-=replen;
-			pos-=replen;
-		}
+					retval_l+=sample_l;
+					retval_r+=sample_r;
 
-	} else if (chan->status&MIX_PLAYFLOAT)
-	{
-		int replen=chan->replen;
-		float *pos=chan->realsamp.fmtfloat+chan->pos; /* actual position */
-		float *end=chan->realsamp.fmtfloat+chan->length; /* actual EOS */
-		float *target=pos+len; /* target EOS */
-		while(1)
+				} while (pos<_temptarget);
+
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
+
+		} else if (chan->status&MIX_PLAYFLOAT)
 		{
-			float *_temptarget=target;
-			if (_temptarget<end)
+			int replen=chan->replen;
+			float *pos=chan->realsamp.fmtfloat+(chan->pos<<1); /* actual position */
+			float *end=chan->realsamp.fmtfloat+(chan->length<<1); /* actual EOS */
+			float *target=pos+(len<<1); /* target EOS */
+			while(1)
 			{
-				replen=0;
-			} else {
-				_temptarget=end;
-			}
-			do {
-				float sample;
-				sample=*pos++;
-				if (sample<0)
+				float *_temptarget=target;
+				if (_temptarget<end)
 				{
-					sample=0-sample;
+					replen=0;
+				} else {
+					_temptarget=end;
 				}
-				retval+=sample;
-			} while (pos<_temptarget);
-			if (!replen)
-				goto exit;
-			target-=replen;
-			pos-=replen;
-		}
+				do {
+					float sample_l, sample_r;
+					sample_l=*pos++;
+					sample_r=*pos++;
+					if (sample_l<0)
+					{
+						sample_l=0-sample_l;
+					}
+					if (sample_r<0)
+					{
+						sample_r=0-sample_r;
+					}
+					retval_l+=sample_l;
+					retval_r+=sample_r;
+				} while (pos<_temptarget);
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
 
-	} else { /* 8 bit*/
-		int replen=chan->replen;
-		int8_t *pos=chan->realsamp.fmt8+chan->pos; /* actual position */
-		int8_t *end=chan->realsamp.fmt8+chan->length; /* actual EOS */
-		int8_t *target=pos+len; /* target EOS */
-		while(1)
+		} else { /* 8 bit*/
+			int replen=chan->replen;
+			int8_t *pos=chan->realsamp.fmt8+(chan->pos<<1); /* actual position */
+			int8_t *end=chan->realsamp.fmt8+(chan->length<<1); /* actual EOS */
+			int8_t *target=pos+(len<<1); /* target EOS */
+			while(1)
+			{
+				int8_t *_temptarget=target;
+				if (_temptarget<end)
+				{
+					replen=0;
+				} else {
+					_temptarget=end;
+				}
+				do {
+					int8_t sample_l, sample_r;
+					sample_l=*pos++;
+					sample_r=*pos++;
+					if (sample_l<0)
+					{
+						sample_l=0-sample_l;
+					}
+					if (sample_r<0)
+					{
+						sample_r=0-sample_r;
+					}
+					retval_l+=sample_l;
+					retval_r+=sample_r;
+				} while (pos<_temptarget);
+
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
+		}
+		*l = retval_l;
+		*r = retval_r;
+	} else {
+		uint32_t retval=0;
+
+		if (chan->status&MIX_PLAY16BIT)
 		{
-			int8_t *_temptarget=target;
-			if (_temptarget<end)
+			int replen=chan->replen;
+			int16_t *pos=chan->realsamp.fmt16+chan->pos; /* actual position */
+			int16_t *end=chan->realsamp.fmt16+chan->length; /* actual EOS */
+			int16_t *target=pos+len; /* target EOS */
+			while(1)
 			{
-				replen=0;
-			} else {
-				_temptarget=end;
-			}
-			do {
-				int8_t sample;
-				sample=*pos++;
-				if (sample<0)
+				int16_t *_temptarget=target;
+				if (_temptarget<end)
 				{
-					sample=0-sample;
+					replen=0;
+				} else {
+					_temptarget=end;
 				}
-				retval+=sample;
-			} while (pos<_temptarget);
+				do {
+					int16_t sample;
+					sample=*pos++;
+					if (sample<0)
+					{
+						sample=0-sample;
+					}
+					retval+=sample;
+				} while (pos<_temptarget);
 
-			if (!replen)
-				goto exit;
-			target-=replen;
-			pos-=replen;
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
+
+		} else if (chan->status&MIX_PLAYFLOAT)
+		{
+			int replen=chan->replen;
+			float *pos=chan->realsamp.fmtfloat+chan->pos; /* actual position */
+			float *end=chan->realsamp.fmtfloat+chan->length; /* actual EOS */
+			float *target=pos+len; /* target EOS */
+			while(1)
+			{
+				float *_temptarget=target;
+				if (_temptarget<end)
+				{
+					replen=0;
+				} else {
+					_temptarget=end;
+				}
+				do {
+					float sample;
+					sample=*pos++;
+					if (sample<0)
+					{
+						sample=0-sample;
+					}
+					retval+=sample;
+				} while (pos<_temptarget);
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
+
+		} else { /* 8 bit*/
+			int replen=chan->replen;
+			int8_t *pos=chan->realsamp.fmt8+chan->pos; /* actual position */
+			int8_t *end=chan->realsamp.fmt8+chan->length; /* actual EOS */
+			int8_t *target=pos+len; /* target EOS */
+			while(1)
+			{
+				int8_t *_temptarget=target;
+				if (_temptarget<end)
+				{
+					replen=0;
+				} else {
+					_temptarget=end;
+				}
+				do {
+					int8_t sample;
+					sample=*pos++;
+					if (sample<0)
+					{
+						sample=0-sample;
+					}
+					retval+=sample;
+				} while (pos<_temptarget);
+
+				if (!replen)
+					break;
+				target-=replen;
+				pos-=replen;
+			}
 		}
+		*r = *l = retval;
 	}
-exit:
-	return retval;
 }
 
 void mixClip(int16_t *dst, const int32_t *src, uint32_t len, int16_t (*tab)[256], int32_t max)
@@ -174,10 +293,10 @@ static uint32_t *voltabs[2]={0,0};
 
 static void playmono(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -194,12 +313,35 @@ static void playmono(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereo(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmono_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst)  +=(voltabs[0][src[0]]);
+		*(dst++)+=(voltabs[1][src[1]]);
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereo(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -216,17 +358,39 @@ static void playstereo(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmonoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereo_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
-		uint8_t vol = (uint8_t)( mixIntrpolTab[ fpos>>12 ][src[ 0 ]][ 0 ] +
-		                         mixIntrpolTab[ fpos>>12 ][src[ 1 ]][ 1 ] );
+		*(dst++)+=voltabs[0][src[0]];
+		*(dst++)+=voltabs[1][src[1]];
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmonoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		uint8_t vol = (uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0] ][ 0 ] +
+		                         mixIntrpolTab[ fpos>>12 ][ src[1] ][ 1 ] );
 
 		*(dst  )+=voltabs[0][vol];
 		*(dst++)+=voltabs[1][vol];
@@ -241,12 +405,38 @@ static void playmonoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonoi_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst)  +=voltabs[0][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0] ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[2] ][ 1 ] )];
+		*(dst++)+=voltabs[1][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[1] ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[3] ][ 1 ] )];
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+
+		len--;
+	}
+}
+
+static void playstereoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -266,12 +456,37 @@ static void playstereoi(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmonoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereoi_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst++)+=voltabs[0][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0] ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[2] ][ 1 ] )];
+		*(dst++)+=voltabs[1][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[1] ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[3] ][ 1 ] )];
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmonoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -293,12 +508,42 @@ static void playmonoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonoir_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint8_t *src=(uint8_t *)ch->realsamp.fmt8+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		uint16_t volL = mixIntrpolTab2[ fpos>>11 ][ src[0] ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[2] ][ 1 ] ;
+		uint16_t volR = mixIntrpolTab2[ fpos>>11 ][ src[1] ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[3] ][ 1 ] ;
+
+		*(dst)  +=voltabs[ 0 ][ (volL>>8)        ] +
+		          voltabs[ 0 ][ (volL&255) + 256 ] ;
+		*(dst++)+=voltabs[ 1 ][ (volR>>8)        ] +
+		          voltabs[ 1 ][ (volR&255) + 256 ] ;
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -320,12 +565,42 @@ static void playstereoir(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmono16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereoir_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint8_t  *src = (uint8_t *)ch->realsamp.fmt8 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		uint16_t volL = mixIntrpolTab2[ fpos>>11 ][ src[0] ][ 0 ]+
+			        mixIntrpolTab2[ fpos>>11 ][ src[3] ][ 1 ];
+		uint16_t volR = mixIntrpolTab2[ fpos>>11 ][ src[1] ][ 0 ]+
+			        mixIntrpolTab2[ fpos>>11 ][ src[3] ][ 1 ];
+
+		*(dst++)+=voltabs[ 0 ][ (volL>>8)        ] +
+		          voltabs[ 0 ][ (volL&255) + 256 ] ;
+		*(dst++)+=voltabs[ 1 ][ (volR>>8)        ] +
+		          voltabs[ 1 ][ (volR&255) + 256 ] ;
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmono16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -342,12 +617,34 @@ static void playmono16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereo16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmono16_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst)  +=voltabs[ 0 ][ (src[0])>>8 ];
+		*(dst++)+=voltabs[ 1 ][ (src[1])>>8 ];
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereo16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -364,12 +661,35 @@ static void playstereo16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmonoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereo16_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst++)+=voltabs[ 0 ][ (src[0])>>8 ];
+		*(dst++)+=voltabs[ 1 ][ (src[1])>>8 ];
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmonoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 
 	while (len)
@@ -390,12 +710,37 @@ static void playmonoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonoi16_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst)  +=voltabs[0][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0]>>8 ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[2]>>8 ][ 1 ] )];
+		*(dst++)+=voltabs[1][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[1]>>8 ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[3]>>8 ][ 1 ] )];
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -415,12 +760,37 @@ static void playstereoi16(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmonoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereoi16_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst++)+=voltabs[0][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[0]>>8 ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[2]>>8 ][ 1 ] )];
+		*(dst++)+=voltabs[1][(uint8_t)( mixIntrpolTab[ fpos>>12 ][ src[1]>>8 ][ 0 ] +
+		                                mixIntrpolTab[ fpos>>12 ][ src[3]>>8 ][ 1 ])];
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmonoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
@@ -442,17 +812,47 @@ static void playmonoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonoi16r_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	uint16_t *src=(uint16_t *)ch->realsamp.fmt16+ch->pos; /* Remove sign */
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
 
 	while (len)
 	{
-		uint16_t vol = mixIntrpolTab2[fpos>>11][src[0]>>8][0]+
-			       mixIntrpolTab2[fpos>>11][src[1]>>8][1];
+		uint16_t volL = mixIntrpolTab2[ fpos>>11 ][ src[0]>>8 ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[2]>>8 ][ 1 ] ;
+		uint16_t volR = mixIntrpolTab2[ fpos>>11 ][ src[1]>>8 ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[3]>>8 ][ 1 ] ;
+
+		*(dst)  +=voltabs[ 0 ][ (volL>>8)        ] +
+		          voltabs[ 0 ][ (volL&255) + 256 ] ;
+		*(dst++)+=voltabs[ 1 ][ (volR>>8)        ] +
+		          voltabs[ 1 ][ (volR&255) + 256 ] ;
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + ch->pos; /* Remove sign */
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		uint16_t vol = mixIntrpolTab2[ fpos>>11 ][ src[0]>>8 ][ 0 ] +
+			       mixIntrpolTab2[ fpos>>11 ][ src[1]>>8 ][ 1 ] ;
 
 		*(dst++) += voltabs[ 0 ][ (vol>>8)        ] +
 		            voltabs[ 0 ][ (vol&255) + 256 ];
@@ -469,14 +869,44 @@ static void playstereoi16r(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playmonof(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playstereoi16r_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	float scale = ch->vol.volfs[0] * 64.0 +
-	              ch->vol.volfs[1] * 64.0;
-	float *src = ch->realsamp.fmtfloat+ch->pos;
+	uint16_t *src = (uint16_t *)ch->realsamp.fmt16 + (ch->pos<<1); /* Remove sign */
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		uint16_t volL = mixIntrpolTab2[ fpos>>11 ][ src[0]>>8 ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[2]>>8 ][ 1 ] ;
+		uint16_t volR = mixIntrpolTab2[ fpos>>11 ][ src[1]>>8 ][ 0 ] +
+			        mixIntrpolTab2[ fpos>>11 ][ src[3]>>8 ][ 1 ] ;
+
+		*(dst++)+=voltabs[ 0 ][ (volL>>8)        ] +
+		          voltabs[ 0 ][ (volL&255) + 256 ] ;
+		*(dst++)+=voltabs[ 1 ][ (volR>>8)        ] +
+		          voltabs[ 1 ][ (volR&255) + 256 ] ;
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playmonof(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	float scale   = ch->vol.volfs[0] * 32.0 +
+	                ch->vol.volfs[1] * 32.0;
+	float    *src = ch->realsamp.fmtfloat+ch->pos;
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t  add  = ch->step>>16;
 
 	while (len)
 	{
@@ -492,14 +922,39 @@ static void playmonof(int32_t *dst, uint32_t len, struct mixchannel *ch)
 	}
 }
 
-static void playstereof(int32_t *dst, uint32_t len, struct mixchannel *ch)
+static void playmonof_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
 {
-	float scale0 = ch->vol.volfs[0] * 64.0;
-	float scale1 = ch->vol.volfs[1] * 64.0;
-	float *src = ch->realsamp.fmtfloat+ch->pos;
+	float  scale0 = ch->vol.volfs[0] * 32.0;
+        float  scale1 = ch->vol.volfs[1] * 32.0;
+	float    *src = ch->realsamp.fmtfloat+(ch->pos<<1);
 	uint32_t fpos = ch->fpos;
 	uint16_t fadd = ch->step&0xffff;
-	int16_t add = ch->step>>16;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst)  +=(int32_t)((src[0])*scale0);
+		*(dst++)+=(int32_t)((src[1])*scale1);
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereof(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	float  scale0 = ch->vol.volfs[0] * 64.0;
+	float  scale1 = ch->vol.volfs[1] * 64.0;
+	float    *src = ch->realsamp.fmtfloat+ch->pos;
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t  add = ch->step>>16;
 
 	while (len)
 	{
@@ -511,6 +966,31 @@ static void playstereof(int32_t *dst, uint32_t len, struct mixchannel *ch)
 			fpos-=0x10000;
 			src++;
 		}
+		src+=add;
+		len--;
+	}
+}
+
+static void playstereof_s(int32_t *dst, uint32_t len, struct mixchannel *ch)
+{
+	float  scale0 = ch->vol.volfs[0] * 64.0;
+	float  scale1 = ch->vol.volfs[1] * 64.0;
+	float    *src = ch->realsamp.fmtfloat+(ch->pos<<1);
+	uint32_t fpos = ch->fpos;
+	uint16_t fadd = ch->step&0xffff;
+	int16_t   add = ch->step>>16;
+
+	while (len)
+	{
+		*(dst++)+=(int32_t)((src[0])*scale0);
+		*(dst++)+=(int32_t)((src[1])*scale1);
+
+		if ((fpos+=fadd)>=0x10000)
+		{
+			fpos-=0x10000;
+			src+=2;
+		}
+		src+=add;
 		src+=add;
 		len--;
 	}
@@ -549,57 +1029,115 @@ void mixPlayChannel(int32_t *dst, uint32_t len, struct mixchannel *ch, int stere
 		voltabs[1]=ch->voltabs[1];
 	}
 
-	if (stereo)
+	if (ch->status&MIX_PLAYSTEREO)
 	{
-		if (playfloat)
+		if (stereo)
 		{
-			playrout=playstereof; /* this overrides all other settings, since we only have one (dummy) 32bit player odd */
-		} else {
-			if (interpolate)
+			if (playfloat)
 			{
-				if (render16bit)
+				playrout=playstereof_s; /* this overrides all other settings, since we only have one (dummy) 32bit player odd */
+			} else {
+				if (interpolate)
 				{
+					if (render16bit)
+					{
+						if (play16bit)
+							playrout=playstereoi16r_s;
+						else
+							playrout=playstereoir_s;
+					} else {
+						if (play16bit)
+							playrout=playstereoi16_s;
+						else
+							playrout=playstereoi_s;
+					}
+				} else  { /* no interpolate */
 					if (play16bit)
-						playrout=playstereoi16r;
+						playrout=playstereo16_s;
 					else
-						playrout=playstereoir;
-				} else {
-					if (play16bit)
-						playrout=playstereoi16;
-					else
-						playrout=playstereoi;
+						playrout=playstereo_s;
 				}
-			} else  { /* no interpolate */
-				if (play16bit)
-					playrout=playstereo16;
-				else
-					playrout=playstereo;
+			}
+		} else {
+			if (playfloat)
+			{
+				playrout=playmonof_s; /* this overrides all other settings, since we only have one 32bit player mono */
+			} else {
+				if (interpolate)
+				{
+					if (render16bit)
+					{
+						if (play16bit)
+							playrout=playmonoi16r_s;
+						else
+							playrout=playmonoir_s;
+					} else {
+						if (play16bit)
+							playrout=playmonoi16_s;
+						else
+							playrout=playmonoi_s;
+					}
+				} else  { /* no interpolate */
+					if (play16bit)
+						playrout=playmono16_s;
+					else
+						playrout=playmono_s;
+				}
 			}
 		}
 	} else {
-		if (playfloat)
+		if (stereo)
 		{
-			playrout=playmonof; /* this overrides all other settings, since we only have one 32bit player mono */
-		} else {
-			if (interpolate)
+			if (playfloat)
 			{
-				if (render16bit)
+				playrout=playstereof; /* this overrides all other settings, since we only have one (dummy) 32bit player odd */
+			} else {
+				if (interpolate)
 				{
+					if (render16bit)
+					{
+						if (play16bit)
+							playrout=playstereoi16r;
+						else
+							playrout=playstereoir;
+					} else {
+						if (play16bit)
+							playrout=playstereoi16;
+						else
+							playrout=playstereoi;
+					}
+				} else  { /* no interpolate */
 					if (play16bit)
-						playrout=playmonoi16r;
+						playrout=playstereo16;
 					else
-						playrout=playmonoir;
-				} else {
-					if (play16bit)
-						playrout=playmonoi16;
-					else
-						playrout=playmonoi;
+						playrout=playstereo;
 				}
-			} else  { /* no interpolate */
-				if (play16bit)
-					playrout=playmono16;
-				else
-					playrout=playmono;
+			}
+		} else {
+			if (playfloat)
+			{
+				playrout=playmonof; /* this overrides all other settings, since we only have one 32bit player mono */
+			} else {
+				if (interpolate)
+				{
+					if (render16bit)
+					{
+						if (play16bit)
+							playrout=playmonoi16r;
+						else
+							playrout=playmonoir;
+					} else {
+						if (play16bit)
+							playrout=playmonoi16;
+						else
+							playrout=playmonoi;
+					}
+				} else  { /* no interpolate */
+					if (play16bit)
+						playrout=playmono16;
+					else
+						playrout=playmono;
+				}
 			}
 		}
 	}

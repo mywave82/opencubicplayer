@@ -338,13 +338,27 @@ static void fadechanq(int *fade, struct channel *c)
 	 *         playchannelq
 	 */
 {
-	int s;
-	if (c->status&MIXRQ_PLAY16BIT)
-		s=c->realsamp.bit16[c->pos];
-	else
-		s=(c->realsamp.bit8[c->pos])<<8;
-	fade[0]+=(c->curvols[0]*s)>>8;
-	fade[1]+=(c->curvols[1]*s)>>8;
+	int sl, sr;
+	if (c->status&MIXRQ_PLAYSTEREO)
+	{
+		if (c->status&MIXRQ_PLAY16BIT)
+		{
+			sl=c->realsamp.bit16[(c->pos<<1)    ];
+			sr=c->realsamp.bit16[(c->pos<<1) + 1];
+		} else {
+			sl=(c->realsamp.bit8[(c->pos<<1)    ])<<8;
+			sr=(c->realsamp.bit8[(c->pos<<1) + 1])<<8;
+		}
+	} else {
+		if (c->status&MIXRQ_PLAY16BIT)
+		{
+			sl=sr=c->realsamp.bit16[c->pos];
+		} else {
+			sl=sr=(c->realsamp.bit8[c->pos])<<8;
+		}
+	}
+	fade[0]+=(c->curvols[0]*sl)>>8;
+	fade[1]+=(c->curvols[1]*sr)>>8;
 	c->curvols[0]=c->curvols[1]=0;
 }
 
@@ -371,16 +385,16 @@ static void amplifyfadeq(uint32_t pos, uint32_t cl, int32_t *curvol, int32_t dst
 		l=cl;
 	if (dstvol<*curvol)
 	{
-		mixqAmplifyChannelDown(buf32+pos, scalebuf, l, *curvol, 4 << 1 /* stereo */);
+		mixqAmplifyChannelDown(buf32 + pos, scalebuf + pos, l, *curvol);
 		*curvol-=l;
 	} else if (dstvol>*curvol)
 	{
-		mixqAmplifyChannelUp(buf32+pos, scalebuf, l, *curvol,  4 << 1 /* stereo */);
+		mixqAmplifyChannelUp(buf32 + pos, scalebuf + pos, l, *curvol);
 		*curvol+=l;
 	}
 	cl-=l;
 	if (*curvol&&cl)
-		mixqAmplifyChannel(buf32+pos+(l << 1 /* stereo */ ), scalebuf+l, cl, *curvol, 4 << 1 /* stereo */);
+		mixqAmplifyChannel(buf32 + pos + (l << 1 /* stereo */ ), scalebuf + pos + (l << 1), cl, *curvol);
 }
 
 static void playchannelq(int ch, uint32_t len)
@@ -391,6 +405,7 @@ static void playchannelq(int ch, uint32_t len)
 	if (c->status&MIXRQ_PLAYING)
 	{
 		int quiet=!c->curvols[0]&&!c->curvols[1]&&!c->dstvols[0]&&!c->dstvols[1];
+
 		mixqPlayChannel(scalebuf, len, c, quiet);
 		if (quiet)
 			return;
@@ -783,6 +798,8 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 		chn->status|=MIX_PLAYING;
 	if (c->status&MIXRQ_INTERPOLATE)
 		chn->status|=MIX_INTERPOLATE;
+	if (c->status&MIXRQ_PLAYSTEREO)
+		chn->status|=MIX_PLAYSTEREO;
 }
 
 static int devwMixLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
@@ -805,7 +822,7 @@ static int devwMixLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struc
 	samplenum=n;
 
 #else
-	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, mcpRedToMono))
+	if (!cpifaceSession->mcpAPI->ReduceSamples(sil, n, 0x40000000, 0))
 		return 0;
 
 	samples=sil;
@@ -851,7 +868,7 @@ static int devwMixOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t *
 	} else {
 		voltabsr=0;
 		interpoltabr=0;
-		if (!(scalebuf=malloc(sizeof(int16_t)*MIXBUFLEN))) /* new short [MIXBUFLEN];*/
+		if (!(scalebuf=malloc (MIXBUFLEN * sizeof(int16_t) * 2 /* stereo */)))
 		{
 			goto error_out;
 		}
