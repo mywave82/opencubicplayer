@@ -630,7 +630,8 @@ OCP_INTERNAL int LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 								/* TODO data & 0x04 == 0x00, reset waveform on note-hit, else it is sticky */
 								break;
 							case 0x8:
-								putcmd(&cp, cmdRowPanSlide, (data&0x0f) | ((data&0x0f) << 4));
+								/* handled further up with `if ((command==0x13)&&((data>>4)==0x8))` and cmdPlayPan */
+								break;
 							case 0x9:
 								if (data == 0x01)
 								{
