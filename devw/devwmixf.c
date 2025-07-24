@@ -180,17 +180,17 @@ static void calcstep(struct channel *c)
 {
 	int n=c->handle;
 	uint32_t rstep;
-	if (!(dwmixfa_state.voiceflags[n]&MIXF_PLAYING))
+	if (!(dwmixfa_state.ch[n].voiceflags & MIXF_PLAYING))
 		return;
 	if (!c->orgdiv)
 		return;
 
 	rstep=imuldiv(imuldiv(c->orgfrq, c->orgrate, c->orgdiv)<<8, relpitch, dwmixfa_state.samprate);
-	dwmixfa_state.freqw[n]=rstep>>16;
-	dwmixfa_state.freqf[n]=rstep<<16;
+	dwmixfa_state.ch[n].freqw = rstep >> 16;
+	dwmixfa_state.ch[n].freqf = rstep & 0xffff;
 
-	dwmixfa_state.voiceflags[n]&=~(MIXF_INTERPOLATE|MIXF_INTERPOLATEQ);
-	dwmixfa_state.voiceflags[n]|=interpolation?((interpolation>1)?MIXF_INTERPOLATEQ:MIXF_INTERPOLATE):0;
+	dwmixfa_state.ch[n].voiceflags &= ~(MIXF_INTERPOLATE|MIXF_INTERPOLATEQ);
+	dwmixfa_state.ch[n].voiceflags |= interpolation?((interpolation>1)?MIXF_INTERPOLATEQ:MIXF_INTERPOLATE):0;
 }
 
 static void calcsteps(void)
@@ -215,7 +215,7 @@ static void transformvol(struct channel *ch)
 	if (volopt^ch->volopt)
 		ch->vol[1]=-ch->vol[1];
 
-	if (dwmixfa_state.voiceflags[n]&MIXF_MUTE)
+	if (dwmixfa_state.ch[n].voiceflags & MIXF_MUTE)
 	{
 		ch->dstvols[0]=ch->dstvols[1]=0;
 	} else {
@@ -265,19 +265,19 @@ static void calcvols(void)
 static void stopchan(struct channel *c)
 {
 	int n=c->handle;
-	if (!(dwmixfa_state.voiceflags[n]&MIXF_PLAYING))
+	if (!(dwmixfa_state.ch[n].voiceflags & MIXF_PLAYING))
 		return;
 
 	/* cool end-of-sample-declicking */
-	if (!(dwmixfa_state.voiceflags[n] & MIXF_QUIET))
+	if (!(dwmixfa_state.ch[n].voiceflags & MIXF_QUIET))
 	{
-		int offs = ( dwmixfa_state.voiceflags[n] & MIXF_INTERPOLATEQ ) ? 1 : 0;
-		float ff2 = dwmixfa_state.ffreq[n] * dwmixfa_state.ffreq[n];
-		dwmixfa_state.fadeleft += ff2*dwmixfa_state.volleft[n] * dwmixfa_state.smpposw[n][offs];
-		dwmixfa_state.faderight += ff2*dwmixfa_state.volright[n] * dwmixfa_state.smpposw[n][offs];
+		int offs = ( dwmixfa_state.ch[n].voiceflags & MIXF_INTERPOLATEQ ) ? 1 : 0;
+		float ff2 = dwmixfa_state.ch[n].ffreq * dwmixfa_state.ch[n].ffreq;
+		dwmixfa_state.fadeleft += ff2*dwmixfa_state.ch[n].volleft * dwmixfa_state.ch[n].smpposw[offs];
+		dwmixfa_state.faderight += ff2*dwmixfa_state.ch[n].volright * dwmixfa_state.ch[n].smpposw[offs];
 	}
 
-	dwmixfa_state.voiceflags[n]&=~MIXF_PLAYING;
+	dwmixfa_state.ch[n].voiceflags &= ~MIXF_PLAYING;
 }
 
 static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
@@ -322,38 +322,38 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 			}
 
 			/* set-up mixing core variables */
-			for (i=0; i<channelnum; i++) if (dwmixfa_state.voiceflags[i]&MIXF_PLAYING)
+			for (i=0; i<channelnum; i++) if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYING)
 			{
 				struct channel *ch=&channels[i];
 
-				dwmixfa_state.volleft[i]=frchk(dwmixfa_state.volleft[i]);
-				dwmixfa_state.volright[i]=frchk(dwmixfa_state.volright[i]);
+				dwmixfa_state.ch[i].volleft  = frchk(dwmixfa_state.ch[i].volleft);
+				dwmixfa_state.ch[i].volright = frchk(dwmixfa_state.ch[i].volright);
 
-				if (!dwmixfa_state.volleft[i] && !dwmixfa_state.volright[i] && !dwmixfa_state.rampleft[i] && !dwmixfa_state.rampright[i])
-					dwmixfa_state.voiceflags[i]|=MIXF_QUIET;
+				if (!dwmixfa_state.ch[i].volleft && !dwmixfa_state.ch[i].volright && !dwmixfa_state.ch[i].rampleft && !dwmixfa_state.ch[i].rampright)
+					dwmixfa_state.ch[i].voiceflags |= MIXF_QUIET;
 				else
-					dwmixfa_state.voiceflags[i]&=~MIXF_QUIET;
+					dwmixfa_state.ch[i].voiceflags &= ~MIXF_QUIET;
 
 
-				if (dwmixfa_state.ffreq[i]!=1 || dwmixfa_state.freso[i]!=0)
-					dwmixfa_state.voiceflags[i]|=MIXF_FILTER;
+				if (dwmixfa_state.ch[i].ffreq != 1 || dwmixfa_state.ch[i].freso != 0)
+					dwmixfa_state.ch[i].voiceflags |= MIXF_FILTER;
 				else
-					dwmixfa_state.voiceflags[i]&=~MIXF_FILTER;
+					dwmixfa_state.ch[i].voiceflags &= ~MIXF_FILTER;
 
 				/* declick start of sample */
 				if (ch->newsamp)
 				{
-					if (!(dwmixfa_state.voiceflags[i] & MIXF_QUIET))
+					if (!(dwmixfa_state.ch[i].voiceflags & MIXF_QUIET))
 					{
-						int offs = ( dwmixfa_state.voiceflags[i] & MIXF_INTERPOLATEQ ) ? 1 : 0;
-						float ff2 = dwmixfa_state.ffreq[i] * dwmixfa_state.ffreq[i];
-						dwmixfa_state.fadeleft -= ff2 * dwmixfa_state.volleft[i] * dwmixfa_state.smpposw[i][offs];
-						dwmixfa_state.faderight -= ff2 * dwmixfa_state.volright[i] * dwmixfa_state.smpposw[i][offs];
+						int offs = ( dwmixfa_state.ch[i].voiceflags & MIXF_INTERPOLATEQ ) ? 1 : 0;
+						float ff2 = dwmixfa_state.ch[i].ffreq * dwmixfa_state.ch[i].ffreq;
+						dwmixfa_state.fadeleft  -= ff2 * dwmixfa_state.ch[i].volleft  * dwmixfa_state.ch[i].smpposw[offs];
+						dwmixfa_state.faderight -= ff2 * dwmixfa_state.ch[i].volright * dwmixfa_state.ch[i].smpposw[offs];
 					}
 					ch->newsamp=0;
 				}
 
-				/*voiceflags[i]|=isstereo; <- this was hard to track down*/
+				/*ch[i].voiceflags |= isstereo; <- this was hard to track down*/
 			}
 			dwmixfa_state.nsamples = targetlength;
 			dwmixfa_state.outbuf=((uint8_t *)(targetbuf));
@@ -367,14 +367,14 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 				fprintf(stderr, "nsamples=%d\n", targetlength);
 				for (i=0;i<channelnum;i++)
 				{
-					if (!(dwmixfa_state.voiceflags[i] & MIXF_QUIET))
+					if (!(dwmixfa_state.ch[i].voiceflags & MIXF_QUIET))
 					{
 						fprintf(stderr, "voice #%d\n", i);
 						fprintf(stderr, "  samp: %p\n", channels[i].samp);
-						fprintf(stderr, "  looplen: %08x\n", dwmixfa_state.looplen[i]);
-						fprintf(stderr, "  voiceflags: 0x%08x\n", dwmixfa_state.voiceflags[i]);
-						fprintf(stderr, "  freq: 0x%08x:0x%08x\n", dwmixfa_state.freqw[i], dwmixfa_state.freqf[i]);
-						fprintf(stderr, "  vol %lf %lf\n", dwmixfa_state.volleft[i], dwmixfa_state.volright[i]);
+						fprintf(stderr, "  looplen: %08x\n", dwmixfa_state.ch[i].looplen);
+						fprintf(stderr, "  voiceflags: 0x%08x\n", dwmixfa_state.ch[i].voiceflags);
+						fprintf(stderr, "  freq: 0x%08x:0x%08x\n", dwmixfa_state.ch[i].freqw, dwmixfa_state.ch[i].freqf);
+						fprintf(stderr, "  vol %lf %lf\n", dwmixfa_state.ch[i].volleft, dwmixfa_state.ch[i].volright);
 					}
 				}
 				fprintf(stderr, "\n");
@@ -395,26 +395,27 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 				invt2g=256.0/tickwidth;
 
 				/* set up volume ramping */
-				for (i=0; i<channelnum; i++) if (dwmixfa_state.voiceflags[i]&MIXF_PLAYING)
+				for (i=0; i<channelnum; i++) if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYING)
 				{
 					struct channel *ch=&channels[i];
 					if (ch->dontramp)
 					{
-						dwmixfa_state.volleft[i]=frchk(ch->dstvols[0]);
-						dwmixfa_state.volright[i]=frchk(ch->dstvols[1]);
-						dwmixfa_state.rampleft[i]=dwmixfa_state.rampright[i]=0;
+						dwmixfa_state.ch[i].volleft  = frchk(ch->dstvols[0]);
+						dwmixfa_state.ch[i].volright = frchk(ch->dstvols[1]);
+						dwmixfa_state.ch[i].rampleft  = 0;
+						dwmixfa_state.ch[i].rampright = 0;
 						if (volramp)
 							ch->dontramp=0;
 					} else {
-						dwmixfa_state.rampleft[i]=frchk(invt2g*(ch->dstvols[0]-dwmixfa_state.volleft[i]));
-						if (dwmixfa_state.rampleft[i]==0)
-							dwmixfa_state.volleft[i]=ch->dstvols[0];
-						dwmixfa_state.rampright[i]=frchk(invt2g*(ch->dstvols[1]-dwmixfa_state.volright[i]));
-						if (dwmixfa_state.rampright[i]==0)
-							dwmixfa_state.volright[i]=ch->dstvols[1];
+						dwmixfa_state.ch[i].rampleft = frchk(invt2g*(ch->dstvols[0] - dwmixfa_state.ch[i].volleft));
+						if (dwmixfa_state.ch[i].rampleft==0)
+							dwmixfa_state.ch[i].volleft  = ch->dstvols[0];
+						dwmixfa_state.ch[i].rampright = frchk(invt2g*(ch->dstvols[1] - dwmixfa_state.ch[i].volright));
+						if (dwmixfa_state.ch[i].rampright==0)
+							dwmixfa_state.ch[i].volright = ch->dstvols[1];
 					}
 					/* filter resonance */
-					dwmixfa_state.freso[i]=pow(ch->orgfrez,dwmixfa_state.ffreq[i]);
+					dwmixfa_state.ch[i].freso = pow(ch->orgfrez, dwmixfa_state.ch[i].ffreq);
 				}
 			}
 
@@ -450,10 +451,10 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			{
 				int reswasmute;
 				stopchan(chn);
-				reswasmute=dwmixfa_state.voiceflags[ch]&MIXF_MUTE;
+				reswasmute=dwmixfa_state.ch[ch].voiceflags & MIXF_MUTE;
 				memset(chn, 0, sizeof(struct channel));
 				chn->handle=ch;
-				dwmixfa_state.voiceflags[ch]=reswasmute;
+				dwmixfa_state.ch[ch].voiceflags = reswasmute;
 			}
 			break;
 
@@ -476,42 +477,42 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 				chn->dontramp=1;
 				chn->newsamp=1;
 
-				dwmixfa_state.voiceflags[ch]&=~(MIXF_PLAYING|MIXF_LOOPED|MIXF_PLAYSTEREO);
+				dwmixfa_state.ch[ch].voiceflags &= ~(MIXF_PLAYING|MIXF_LOOPED|MIXF_PLAYSTEREO);
 
-				dwmixfa_state.freqw[ch]=0;
-				dwmixfa_state.freqf[ch]=0;
-				dwmixfa_state.fl1[ch]=0;
-				dwmixfa_state.fb1[ch]=0;
-				dwmixfa_state.ffreq[ch]=1;
-				dwmixfa_state.freso[ch]=0;
-				dwmixfa_state.smpposf[ch]=0;
-				dwmixfa_state.smpposw[ch]=(float *)chn->samp;
+				dwmixfa_state.ch[ch].freqw = 0;
+				dwmixfa_state.ch[ch].freqf = 0;
+				dwmixfa_state.ch[ch].fl1 = 0;
+				dwmixfa_state.ch[ch].fb1 = 0;
+				dwmixfa_state.ch[ch].ffreq = 1;
+				dwmixfa_state.ch[ch].freso = 0;
+				dwmixfa_state.ch[ch].smpposf = 0;
+				dwmixfa_state.ch[ch].smpposw = (float *)chn->samp;
 				if (chn->samptype & mcpSampInterleavedStereo)
 				{
-					dwmixfa_state.voiceflags[ch] |= MIXF_PLAYSTEREO;
-					dwmixfa_state.fl2[ch]=0;
-					dwmixfa_state.fb2[ch]=0;
+					dwmixfa_state.ch[ch].voiceflags |= MIXF_PLAYSTEREO;
+					dwmixfa_state.ch[ch].fl2 = 0;
+					dwmixfa_state.ch[ch].fb2 = 0;
 				}
 
 				if (chn->samptype&mcpSampSLoop)
 				{
-					dwmixfa_state.voiceflags[ch]|=MIXF_LOOPED;
+					dwmixfa_state.ch[ch].voiceflags |= MIXF_LOOPED;
 					chn->loopstart=chn->orgsloopstart;
 					chn->loopend=chn->orgsloopend;
 				} else if (chn->samptype&mcpSampLoop)
 				{
-					dwmixfa_state.voiceflags[ch]|=MIXF_LOOPED;
+					dwmixfa_state.ch[ch].voiceflags |= MIXF_LOOPED;
 					chn->loopstart=chn->orgloopstart;
 					chn->loopend=chn->orgloopend;
 				}
 
-				if (dwmixfa_state.voiceflags[ch]&MIXF_LOOPED)
+				if (dwmixfa_state.ch[ch].voiceflags & MIXF_LOOPED)
 				{
-					dwmixfa_state.looplen[ch]=chn->loopend-chn->loopstart;
-					dwmixfa_state.loopend[ch]=(float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
+					dwmixfa_state.ch[ch].looplen = chn->loopend-chn->loopstart;
+					dwmixfa_state.ch[ch].loopend = (float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYSTEREO)) );
 				} else {
-					dwmixfa_state.looplen[ch]=chn->length;
-					dwmixfa_state.loopend[ch]=(float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
+					dwmixfa_state.ch[ch].looplen = chn->length;
+					dwmixfa_state.ch[ch].loopend = (float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYSTEREO)) );
 				}
 			}
 			break;
@@ -519,17 +520,17 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			if (!val)
 				stopchan(chn);
 			else {
-				if (dwmixfa_state.smpposw[ch] >= (float *)(chn->samp)+chn->length)
+				if (dwmixfa_state.ch[ch].smpposw >= (float *)(chn->samp)+chn->length)
 					break;
-				dwmixfa_state.voiceflags[ch]|=MIXF_PLAYING;
+				dwmixfa_state.ch[ch].voiceflags |= MIXF_PLAYING;
 				calcstep(chn);
 			}
 			break;
 		case mcpCMute:
 			if (val)
-				dwmixfa_state.voiceflags[ch]|=MIXF_MUTE;
+				dwmixfa_state.ch[ch].voiceflags |= MIXF_MUTE;
 			else
-				dwmixfa_state.voiceflags[ch]&=~MIXF_MUTE;
+				dwmixfa_state.ch[ch].voiceflags &= ~MIXF_MUTE;
 			calcvol(chn);
 			break;
 		case mcpCVolume:
@@ -547,7 +548,7 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			transformvol(chn);
 			break;
 		case mcpCLoop:
-			dwmixfa_state.voiceflags[ch]&=~MIXF_LOOPED;
+			dwmixfa_state.ch[ch].voiceflags &= ~MIXF_LOOPED;
 
 			if ((val==1)&&!(chn->samptype&mcpSampSLoop))
 				val=2;
@@ -556,40 +557,40 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 
 			if (val==1)
 			{
-				dwmixfa_state.voiceflags[ch]|=MIXF_LOOPED;
+				dwmixfa_state.ch[ch].voiceflags |= MIXF_LOOPED;
 				chn->loopstart=chn->orgsloopstart;
 				chn->loopend=chn->orgsloopend;
 			}
 			if (val==2)
 			{
-				dwmixfa_state.voiceflags[ch]|=MIXF_LOOPED;
+				dwmixfa_state.ch[ch].voiceflags |= MIXF_LOOPED;
 				chn->loopstart=chn->orgloopstart;
 				chn->loopend=chn->orgloopend;
 			}
 
-			if (dwmixfa_state.voiceflags[ch]&MIXF_LOOPED)
+			if (dwmixfa_state.ch[ch].voiceflags & MIXF_LOOPED)
 			{
-				dwmixfa_state.looplen[ch]=chn->loopend-chn->loopstart;
-				dwmixfa_state.loopend[ch]=(float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
+				dwmixfa_state.ch[ch].looplen = chn->loopend-chn->loopstart;
+				dwmixfa_state.ch[ch].loopend = (float *)chn->samp + ( chn->loopend << (!!(dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYSTEREO)) );
 			} else {
-				dwmixfa_state.looplen[ch]=chn->length;
-				dwmixfa_state.loopend[ch]=(float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)) );
+				dwmixfa_state.ch[ch].looplen = chn->length;
+				dwmixfa_state.ch[ch].loopend = (float *)chn->samp + ( (chn->length-1) << (!!(dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYSTEREO)) );
 			}
 
 			break;
 		case mcpCPosition:
 			{
 				int poswasplaying;
-				poswasplaying=dwmixfa_state.voiceflags[ch]&MIXF_PLAYING;
+				poswasplaying = dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYING;
 				stopchan(chn);
 				chn->newsamp=1;
 				if (val<0)
 					val=0;
 				if ((unsigned)val>=chn->length)
 					val=chn->length-1;
-				dwmixfa_state.smpposw[ch]=(float *)(chn->samp)+val;
-				dwmixfa_state.smpposf[ch]=0;
-				dwmixfa_state.voiceflags[ch]|=poswasplaying;
+				dwmixfa_state.ch[ch].smpposw = (float *)(chn->samp)+val;
+				dwmixfa_state.ch[ch].smpposf = 0;
+				dwmixfa_state.ch[ch].voiceflags |= poswasplaying;
 			}
 			break;
 		case mcpCPitch:
@@ -617,22 +618,22 @@ static void devwMixFSET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int
 			 */
 			if (!(val&128))
 			{
-				dwmixfa_state.ffreq[ch]=1;
-				dwmixfa_state.freso[ch]=0;
+				dwmixfa_state.ch[ch].ffreq = 1;
+				dwmixfa_state.ch[ch].freso = 0;
 				break;
 			}
-			dwmixfa_state.ffreq[ch]=33075.0*pow(2,(val-255)/24.0)/dwmixfa_state.samprate;
-			if (dwmixfa_state.ffreq[ch]<0)
-				dwmixfa_state.ffreq[ch]=0;
-			if (dwmixfa_state.ffreq[ch]>1)
-				dwmixfa_state.ffreq[ch]=1;
+			dwmixfa_state.ch[ch].ffreq = 33075.0*pow(2,(val-255)/24.0)/dwmixfa_state.samprate;
+			if (dwmixfa_state.ch[ch].ffreq < 0)
+				dwmixfa_state.ch[ch].ffreq = 0;
+			if (dwmixfa_state.ch[ch].ffreq > 1)
+				dwmixfa_state.ch[ch].ffreq = 1;
 			break;
 		case mcpCFilterRez:
 			chn->orgfrez=val/300.0;
 			if (chn->orgfrez>1)
 				chn->orgfrez=1;
-			if (chn->orgfrez==0 && dwmixfa_state.ffreq[ch]==0)
-				dwmixfa_state.ffreq[ch]=1;
+			if (chn->orgfrez==0 && dwmixfa_state.ch[ch].ffreq == 0)
+				dwmixfa_state.ch[ch].ffreq = 1;
 			break;
 		case mcpGSpeed:
 			orgspeed=val;
@@ -699,9 +700,9 @@ static int devwMixFGET (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int 
 	switch (opt)
 	{
 		case mcpCStatus:
-			return !!(dwmixfa_state.voiceflags[ch]&MIXF_PLAYING);
+			return !!(dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYING);
 		case mcpCMute:
-			return !!(dwmixfa_state.voiceflags[ch]&MIXF_MUTE);
+			return !!(dwmixfa_state.ch[ch].voiceflags & MIXF_MUTE);
 		case mcpGTimer:
 			return imuldiv(playsamps - IdleCache, 65536, dwmixfa_state.samprate);
 		case mcpGCmdTimer:
@@ -741,34 +742,36 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 	chn->length=c->length;
 	chn->loopstart=c->loopstart;
 	chn->loopend=c->loopend;
-	chn->fpos=dwmixfa_state.smpposf[ch]>>16;
-	chn->pos=dwmixfa_state.smpposw[ch]-(float*)c->samp;
+	chn->fpos = dwmixfa_state.ch[ch].smpposf;
+	chn->pos  = dwmixfa_state.ch[ch].smpposw - (float*)c->samp;
 	chn->vol.volfs[0]=fabs(c->vol[0]);
 	chn->vol.volfs[1]=fabs(c->vol[1]);
-	chn->step=imuldiv((dwmixfa_state.freqw[ch]<<16)|(dwmixfa_state.freqf[ch]>>16), dwmixfa_state.samprate, (signed)rate);
+	chn->step=imuldiv((dwmixfa_state.ch[ch].freqw << 16) | dwmixfa_state.ch[ch].freqf, dwmixfa_state.samprate, (signed)rate);
 	chn->status=MIX_PLAYFLOAT;
-	if (dwmixfa_state.voiceflags[ch]&MIXF_MUTE)
+	if (dwmixfa_state.ch[ch].voiceflags & MIXF_MUTE)
 		chn->status|=MIX_MUTE;
-	if (dwmixfa_state.voiceflags[ch]&MIXF_LOOPED)
+	if (dwmixfa_state.ch[ch].voiceflags & MIXF_LOOPED)
 		chn->status|=MIX_LOOPED;
-	if (dwmixfa_state.voiceflags[ch]&MIXF_PLAYING)
+	if (dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYING)
 		chn->status|=MIX_PLAYING;
-	if (dwmixfa_state.voiceflags[ch]&MIXF_INTERPOLATE)
+	if (dwmixfa_state.ch[ch].voiceflags & MIXF_INTERPOLATE)
 		chn->status|=MIX_INTERPOLATE;
-	if (dwmixfa_state.voiceflags[ch]&MIXF_PLAYSTEREO)
+	if (dwmixfa_state.ch[ch].voiceflags & MIXF_PLAYSTEREO)
 		chn->status|=MIX_PLAYSTEREO;
 }
 
 
 static void getrealvol(int ch, int *l, int *r)
 {
-	getchanvol(ch, 256);
-	if (dwmixfa_state.voll<0)
-		dwmixfa_state.voll=-dwmixfa_state.voll;
-	*l=(dwmixfa_state.voll>16319)?255:(dwmixfa_state.voll/64.0);
-	if (dwmixfa_state.volr<0)
-		dwmixfa_state.volr=-dwmixfa_state.volr;
-	*r=(dwmixfa_state.volr>16319)?255:(dwmixfa_state.volr/64.0);
+	float voll, volr;
+	getchanvol(ch, 256, &voll, &volr);
+	if (voll<0)
+		voll=-voll;
+	*l=(voll>16319)?255:(voll/64.0);
+
+	if (volr<0)
+		volr=-volr;
+	*r=(volr>16319)?255:(volr/64.0);
 }
 
 static int devwMixFLoadSamples (struct cpifaceSessionAPI_t *cpifaceSession, struct sampleinfo *sil, int n)
@@ -835,7 +838,7 @@ static int devwMixFOpenPlayer(int chan, void (*proc)(struct cpifaceSessionAPI_t 
 	for (i=0; i<chan; i++)
 	{
 		channels[i].handle=i;
-		dwmixfa_state.voiceflags[i]=0;
+		dwmixfa_state.ch[i].voiceflags = 0;
 	}
 
 	dopause=0;

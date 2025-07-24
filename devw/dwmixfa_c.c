@@ -23,57 +23,10 @@
 
 #define MAXVOICES MIXF_MAXCHAN
 
-#define state dwmixfa_state
-dwmixfa_state_t state;
-
-#if 0
-float   *tempbuf;               /* pointer to 32 bit mix buffer (nsamples * 4) */
-void    *outbuf;                /* pointer to mixed buffer (nsamples * 2) */
-uint32_t nsamples;              /* # of samples to mix */
-uint32_t nvoices;               /* # of voices to mix */
-uint32_t freqw[MAXVOICES];      /* frequency (whole part) */
-uint32_t freqf[MAXVOICES];      /* frequency (fractional part) */
-float   *smpposw[MAXVOICES];    /* sample position (whole part (pointer!)) */
-uint32_t smpposf[MAXVOICES];    /* sample position (fractional part) */
-float   *loopend[MAXVOICES];    /* pointer to loop end */
-uint32_t looplen[MAXVOICES];    /* loop length in samples */
-float    volleft[MAXVOICES];    /* float: left volume (1.0=normal) */
-float    volright[MAXVOICES];   /* float: rite volume (1.0=normal) */
-float    rampleft[MAXVOICES];   /* float: left volramp (dvol/sample) */
-float    rampright[MAXVOICES];  /* float: rite volramp (dvol/sample) */
-uint32_t voiceflags[MAXVOICES]; /* voice status flags */
-float    ffreq[MAXVOICES];      /* filter frequency (0<=x<=1) */
-float    freso[MAXVOICES];      /* filter resonance (0<=x<1) */
-float    fadeleft=0.0;          /* 0 */
-float    fl1[MAXVOICES];        /* filter lp buffer */
-float    fb1[MAXVOICES];        /* filter bp buffer */
-float    faderight=0.0;         /* 0 */
-int      outfmt;                /* output format */
-float    voll=0.0;
-float    volr=0.0;
-float    ct0[256];              /* interpolation tab for s[-1] */
-float    ct1[256];              /* interpolation tab for s[0] */
-float    ct2[256];              /* interpolation tab for s[1] */
-float    ct3[256];              /* interpolation tab for s[2] */
-struct PostProcFPRegStruct *postprocs;
-                                /* pointer to postproc list */
-uint32_t samprate;              /* sampling rate */
-
-static float volrl;
-static float volrr;
-#endif
+dwmixfa_state_t dwmixfa_state;
 
 static const float cremoveconst = 0.992;
 static const float minampl = 0.0001;
-
-#if 0
-static uint32_t mixlooplen; /* 32bit in assembler used, decimal. lenght of loop in samples*/
-static uint32_t looptype; /* 32bit in assembler used, local version of voiceflags[N] */
-static float ffrq;
-static float frez;
-static float __fl1;
-static float __fb1;
-#endif
 
 typedef void(*clippercall)(float *input, void *output, uint_fast32_t count);
 
@@ -89,21 +42,22 @@ static const clippercall clippers[4] = {clip_8s, clip_8u, clip_16s, clip_16u};
 static const clippercall clippers[1] = {clip_16s};
 #endif
 
-
-typedef void(*mixercall)(float *destptr, float **sample_pos, uint32_t *sample_pos_fract, uint32_t sample_pitch, uint32_t sample_pitch_fract, float *loopend);
+typedef void(*mixercall)(float *destptr, dwmixfa_channel_t * const c);
 
 void
 prepare_mixer (void)
 {
 	int i;
 
-	state.fadeleft  = 0.0;
-	state.faderight = 0.0;
-	state.volrl = 0.0;
-	state.volrr = 0.0;
+	dwmixfa_state.fadeleft  = 0.0;
+	dwmixfa_state.faderight = 0.0;
 
 	for (i = 0; i < MAXVOICES; i++)
-		state.volleft[i] = dwmixfa_state.volright[i] = 0.0;
+	{
+		dwmixfa_state.ch[i].volleft  = 0.0;
+		dwmixfa_state.ch[i].volright = 0.0;
+
+	}
 }
 
 static inline
@@ -113,36 +67,34 @@ void clearbufs(float *samples, int count)
 
 	for (i = 0; i < count; i++)
 	{
-		*samples++ = state.fadeleft;
-		*samples++ = state.faderight;
-		state.fadeleft *= cremoveconst;
-		state.faderight *= cremoveconst;
+		*samples++ = dwmixfa_state.fadeleft;
+		*samples++ = dwmixfa_state.faderight;
+		dwmixfa_state.fadeleft *= cremoveconst;
+		dwmixfa_state.faderight *= cremoveconst;
 	}
 }
 
 
 static void
 mix_0(float *destptr,
-      float **sample_pos, uint32_t *sample_pos_fract,
-      uint32_t sample_pitch, uint32_t sample_pitch_fract,
-      float *loopend)
+      dwmixfa_channel_t * const c)
 {
 	int i;
 
-	for (i = 0; i < state.nsamples; i++)
+	for (i = 0; i < dwmixfa_state.nsamples; i++)
 	{
-		*sample_pos_fract += sample_pitch_fract;
-		*sample_pos += sample_pitch + (*sample_pos_fract >> 16);
-		*sample_pos_fract &= 0xffff;
-		while (*sample_pos >= loopend)
+		c->smpposf += c->freqf;
+		c->smpposw += c->freqw + (c->smpposf >> 16);
+		c->smpposf &= 0xffff;
+		while (c->smpposw >= c->loopend)
 		{
-			if (!(state.looptype & MIXF_LOOPED))
+			if (!(c->voiceflags & MIXF_LOOPED))
 			{
-				state.looptype &= ~MIXF_PLAYING;
+				c->voiceflags &= ~MIXF_PLAYING;
 				goto out;
 			}
-			assert(state.mixlooplen > 0);
-			*sample_pos -= state.mixlooplen;
+			assert(c->looplen > 0);
+			c->smpposw -= c->looplen;
 		}
 	}
 out:
@@ -150,17 +102,17 @@ out:
 }
 
 static inline float
-filter_none(const float sample)
+filter_none(const float sample, dwmixfa_channel_t * const c)
 {
 	return sample;
 }
 
 static inline float
-filter_mixf(const float sample)
+filter_mixf(const float sample, dwmixfa_channel_t * const c)
 {
-	state.__fb1  =  state.__fb1  *  state.frez  +  state.ffrq  *  (  sample  -  state.__fl1  );
+	c->fb1 = c->fb1 * c->freso + c->ffreq * ( sample - c->fl1 );
 
-	return state.__fl1  +=  state.ffrq  *  state.__fb1;
+	return c->fl1 += c->ffreq * c->fb1;
 }
 
 static inline float
@@ -181,18 +133,16 @@ static inline float
 interp_cub(const float* samples, const uint_fast16_t sample_pos_fract)
 {
 	int idx = sample_pos_fract >> 8;
-	return samples[0] * state.ct0[idx]
-	        + samples[1] * state.ct1[idx]
-	        + samples[2] * state.ct2[idx]
-	        + samples[3] * state.ct3[idx];
+	return samples[0] * dwmixfa_state.ct0[idx]
+	        + samples[1] * dwmixfa_state.ct1[idx]
+	        + samples[2] * dwmixfa_state.ct2[idx]
+	        + samples[3] * dwmixfa_state.ct3[idx];
 }
 
 #define MIX_TEMPLATE_M(NAME, INTERP, FILTER, PROTECT)                   \
 static void                                                             \
 mix##NAME(float *destptr,                                               \
-       float **sample_pos, uint32_t *sample_pos_fract,                  \
-       uint32_t sample_pitch, uint32_t sample_pitch_fract,              \
-       float *loopend)                                                  \
+       dwmixfa_channel_t * const c)                                     \
 {                                                                       \
     int i = 0;                                                          \
     float sample;                                                       \
@@ -203,78 +153,78 @@ mix##NAME(float *destptr,                                               \
     /* Do we need to add data past loopend, to simplify linear and      \
        cubic interpolation sample read-out? */                          \
     assert(PROTECT <= SAMPEND);                                         \
-    if (PROTECT && (state.looptype & MIXF_LOOPED))                      \
+    if (PROTECT && (c->voiceflags & MIXF_LOOPED))                       \
     {                                                                   \
         restore = 1;                                                    \
         for (i = 0; i < PROTECT; i++)                                   \
         {                                                               \
-           sbuf[i] = loopend[i];                                        \
-           loopend[i] = (loopend - state.mixlooplen)[i];                \
+           sbuf[i] = c->loopend[i];                                     \
+           c->loopend[i] = (c->loopend - c->looplen)[i];                \
         }                                                               \
     }                                                                   \
                                                                         \
-    for (i = 0; i < state.nsamples; i++)                                \
+    for (i = 0; i < dwmixfa_state.nsamples; i++)                        \
       {                                                                 \
-        sample = filter_##FILTER(interp_##INTERP(*sample_pos, *sample_pos_fract)); \
-        *destptr++ += state.voll * sample;                              \
-        state.voll += state.volrl;                                      \
-        *destptr++ += state.volr * sample;                              \
-        state.volr += state.volrr;                                      \
+        sample = filter_##FILTER(interp_##INTERP(c->smpposw, c->smpposf), c); \
+        *destptr++  += c->volleft * sample;                             \
+        c->volleft  += c->rampleft;                                     \
+        *destptr++  += c->volright * sample;                            \
+        c->volright += c->rampright;                                    \
                                                                         \
-        *sample_pos_fract += sample_pitch_fract;                        \
-        *sample_pos += sample_pitch + (*sample_pos_fract >> 16);        \
-        *sample_pos_fract &= 0xffff;                                    \
+        c->smpposf += c->freqf;                                         \
+        c->smpposw += c->freqw + (c->smpposf >> 16);                    \
+        c->smpposf &= 0xffff;                                           \
                                                                         \
-        while (*sample_pos >= loopend)                                  \
+        while (c->smpposw >= c->loopend)                                \
           {                                                             \
-            if (!(state.looptype & MIXF_LOOPED)) {                      \
-                state.looptype &= ~MIXF_PLAYING;                        \
+            if (!(c->voiceflags & MIXF_LOOPED)) {                       \
+                c->voiceflags &= ~MIXF_PLAYING;                         \
                 goto fade;                                              \
             }                                                           \
-            assert(state.mixlooplen > 0);                               \
-            *sample_pos -= state.mixlooplen;                            \
+            assert(c->looplen > 0);                                     \
+            c->smpposw -= c->looplen;                                   \
           }                                                             \
       }                                                                 \
     goto out;                                                           \
                                                                         \
 fade:                                                                   \
                                                                         \
-    for (; i < state.nsamples; i++)                                     \
+    for (; i < dwmixfa_state.nsamples; i++)                             \
       {                                                                 \
-        *destptr++ += state.voll * sample;                              \
-        state.voll += state.volrl;                                      \
-        *destptr++ += state.volr * sample;                              \
-        state.volr += state.volrr;                                      \
+        *destptr++  += c->volleft  * sample;                            \
+        c->volleft  += c->rampleft;                                     \
+        *destptr++  += c->volright * sample;                            \
+        c->volright += c->rampright;                                    \
     }                                                                   \
                                                                         \
-    state.fadeleft += state.voll * sample;                              \
-    state.faderight += state.volr * sample;                             \
+    dwmixfa_state.fadeleft  += c->volleft  * sample;                    \
+    dwmixfa_state.faderight += c->volright * sample;                    \
                                                                         \
 out:                                                                    \
     if (PROTECT && restore)                                             \
     {                                                                   \
         for (i = PROTECT - 1; i >= 0; i--)                              \
         {                                                               \
-            loopend[i] = sbuf[i];                                       \
+            c->loopend[i] = sbuf[i];                                    \
         }                                                               \
     }                                                                   \
 }
 
 static inline void
-filter_none_S(const float inL, const float inR, float * const outL, float * const outR)
+filter_none_S(const float inL, const float inR, float * const outL, float * const outR, dwmixfa_channel_t * const c)
 {
 	*outL = inL;
 	*outR = inR;
 }
 
 static inline void
-filter_mixf_S(const float inL, const float inR, float * const outL, float * const outR)
+filter_mixf_S(const float inL, const float inR, float * const outL, float * const outR, dwmixfa_channel_t * const c)
 {
-	state.__fb1  =  state.__fb1  *  state.frez  +  state.ffrq  *  (  inL  -  state.__fl1  );
-	*outL = state.__fl1  +=  state.ffrq  *  state.__fb1;
+	c->fb1 = c->fb1 * c->freso + c->ffreq * ( inL - c->fl1 );
+	*outL = c->fl1 += c->ffreq * c->fb1;
 
-	state.__fb2  =  state.__fb2  *  state.frez  +  state.ffrq  *  (  inR  -  state.__fl2  );
-	*outR = state.__fl2  +=  state.ffrq  *  state.__fb2;
+	c->fb2 = c->fb2 * c->freso + c->ffreq * ( inR - c->fl2 );
+	*outR = c->fl2 += c->ffreq * c->fb2;
 }
 
 static inline void
@@ -299,22 +249,20 @@ static inline void
 interp_cub_S(const float* samples, const uint_fast16_t sample_pos_fract, float * const outL, float * const outR)
 {
 	int idx = sample_pos_fract >> 8;
-	*outL = samples[0] * state.ct0[idx]
-	      + samples[2] * state.ct1[idx]
-	      + samples[4] * state.ct2[idx]
-	      + samples[6] * state.ct3[idx];
-	*outR = samples[1] * state.ct0[idx]
-	      + samples[3] * state.ct1[idx]
-	      + samples[5] * state.ct2[idx]
-	      + samples[7] * state.ct3[idx];
+	*outL = samples[0] * dwmixfa_state.ct0[idx]
+	      + samples[2] * dwmixfa_state.ct1[idx]
+	      + samples[4] * dwmixfa_state.ct2[idx]
+	      + samples[6] * dwmixfa_state.ct3[idx];
+	*outR = samples[1] * dwmixfa_state.ct0[idx]
+	      + samples[3] * dwmixfa_state.ct1[idx]
+	      + samples[5] * dwmixfa_state.ct2[idx]
+	      + samples[7] * dwmixfa_state.ct3[idx];
 }
 
 #define MIX_TEMPLATE_S(NAME, INTERP, FILTER, PROTECT)                   \
 static void                                                             \
 mix##NAME(float *destptr,                                               \
-       float **sample_pos, uint32_t *sample_pos_fract,                  \
-       uint32_t sample_pitch, uint32_t sample_pitch_fract,              \
-       float *loopend)                                                  \
+       dwmixfa_channel_t * const c)                                     \
 {                                                                       \
     int i = 0;                                                          \
     float sampleL, sampleR;                                             \
@@ -325,61 +273,61 @@ mix##NAME(float *destptr,                                               \
     /* Do we need to add data past loopend, to simplify linear and      \
        cubic interpolation sample read-out? */                          \
     assert(PROTECT <= SAMPEND);                                         \
-    if (PROTECT && (state.looptype & MIXF_LOOPED))                      \
+    if (PROTECT && (c->voiceflags & MIXF_LOOPED))                       \
     {                                                                   \
         restore = 1;                                                    \
         for (i = 0; i < PROTECT; i++)                                   \
         {                                                               \
-           sbuf[i] = loopend[i];                                        \
-           loopend[i] = (loopend - state.mixlooplen)[i];                \
+           sbuf[i] = c->loopend[i];                                     \
+           c->loopend[i] = (c->loopend - c->looplen)[i];                \
         }                                                               \
     }                                                                   \
                                                                         \
-    for (i = 0; i < state.nsamples; i++)                                \
+    for (i = 0; i < dwmixfa_state.nsamples; i++)                        \
       {                                                                 \
         float iL, iR;                                                   \
-        interp_##INTERP##_S(*sample_pos, *sample_pos_fract, &iL, &iR);  \
-        filter_##FILTER##_S(iL, iR, &sampleL, &sampleR);                \
-        *destptr++ += state.voll * sampleL;                             \
-        state.voll += state.volrl;                                      \
-        *destptr++ += state.volr * sampleR;                             \
-        state.volr += state.volrr;                                      \
+        interp_##INTERP##_S(c->smpposw, c->smpposf, &iL, &iR);          \
+        filter_##FILTER##_S(iL, iR, &sampleL, &sampleR, c);             \
+        *destptr++  += c->volleft * sampleL;                            \
+        c->volleft  += c->rampleft;                                     \
+        *destptr++  += c->volright * sampleR;                           \
+        c->volright += c->rampright;                                    \
                                                                         \
-        *sample_pos_fract += sample_pitch_fract;                        \
-        *sample_pos += (sample_pitch + (*sample_pos_fract >> 16))<<1;   \
-        *sample_pos_fract &= 0xffff;                                    \
+        c->smpposf += c->freqf;                                         \
+        c->smpposw += (c->freqw + (c->smpposf >> 16))<<1;               \
+        c->smpposf &= 0xffff;                                           \
                                                                         \
-        while (*sample_pos >= loopend)                                  \
+        while (c->smpposw >= c->loopend)                                \
           {                                                             \
-            if (!(state.looptype & MIXF_LOOPED)) {                      \
-                state.looptype &= ~MIXF_PLAYING;                        \
+            if (!(c->voiceflags & MIXF_LOOPED)) {                       \
+                c->voiceflags &= ~MIXF_PLAYING;                         \
                 goto fade;                                              \
             }                                                           \
-            assert(state.mixlooplen > 0);                               \
-            *sample_pos -= state.mixlooplen;                            \
+            assert(c->looplen > 0);                                     \
+            c->smpposw -= c->looplen;                                   \
           }                                                             \
       }                                                                 \
     goto out;                                                           \
                                                                         \
 fade:                                                                   \
                                                                         \
-    for (; i < state.nsamples; i++)                                     \
+    for (; i < dwmixfa_state.nsamples; i++)                             \
       {                                                                 \
-        *destptr++ += state.voll * sampleL;                             \
-        state.voll += state.volrl;                                      \
-        *destptr++ += state.volr * sampleR;                             \
-        state.volr += state.volrr;                                      \
+        *destptr++  += c->volleft  * sampleL;                           \
+        c->volleft  += c->rampleft;                                     \
+        *destptr++  += c->volright * sampleR;                           \
+        c->volright += c->rampright;                                    \
     }                                                                   \
                                                                         \
-    state.fadeleft += state.voll * sampleR;                             \
-    state.faderight += state.volr * sampleL;                            \
+    dwmixfa_state.fadeleft  += c->volleft  * sampleR;                   \
+    dwmixfa_state.faderight += c->volright * sampleL;                   \
                                                                         \
 out:                                                                    \
     if (PROTECT && restore)                                             \
     {                                                                   \
         for (i = PROTECT - 1; i >= 0; i--)                              \
         {                                                               \
-            loopend[i] = sbuf[i];                                       \
+            c->loopend[i] = sbuf[i];                                    \
         }                                                               \
     }                                                                   \
 }
@@ -414,70 +362,34 @@ mixer (struct cpifaceSessionAPI_t *cpifaceSession)
 	int i;
 	int voice;
 
-	if (fabsf(state.fadeleft) < minampl)
-		state.fadeleft = 0.0;
+	if (fabsf(dwmixfa_state.fadeleft) < minampl)
+		dwmixfa_state.fadeleft = 0.0;
 
-	if (fabsf(state.faderight) < minampl)
-		state.faderight = 0.0;
+	if (fabsf(dwmixfa_state.faderight) < minampl)
+		dwmixfa_state.faderight = 0.0;
 
-	if (state.nsamples == 0)
+	if (dwmixfa_state.nsamples == 0)
 		return;
 
-	clearbufs(state.tempbuf, state.nsamples);
+	clearbufs(dwmixfa_state.tempbuf, dwmixfa_state.nsamples);
 
-	for (voice = state.nvoices - 1; voice >= 0; voice--)
+	for (voice = dwmixfa_state.nvoices - 1; voice >= 0; voice--)
 	{
 		mixercall mixer;
 
-		if (!(state.voiceflags[voice] & MIXF_PLAYING))
+		if (!(dwmixfa_state.ch[voice].voiceflags & MIXF_PLAYING))
 			continue;
 
-		state.looptype = state.voiceflags[voice];
-		state.voll = state.volleft[voice];
-		state.volr = state.volright[voice];
-		state.volrl = state.rampleft[voice];
-		state.volrr = state.rampright[voice];
-
-		state.ffrq = state.ffreq[voice];
-		state.frez = state.freso[voice];
-		state.__fl1 = state.fl1[voice];
-		state.__fb1 = state.fb1[voice];
-
-		/* only used by stereo-samples */
-		state.__fl2 = state.fl2[voice];
-		state.__fb2 = state.fb2[voice];
-
-
-		state.mixlooplen = state.looplen[voice];
-/*
-		assert((state.freqf[voice] & 0xffff) == 0);
-		assert((state.smpposf[voice] & 0xffff) == 0);
-*/
-		mixer = mixers[state.voiceflags[voice] & 0x0f];
-		state.smpposf[voice] >>= 16;
-		mixer(state.tempbuf,
-		      &state.smpposw[voice], &state.smpposf[voice],
-		      state.freqw[voice], state.freqf[voice] >> 16,
-		      state.loopend[voice]);
-		state.smpposf[voice] <<= 16;
-
-		state.voiceflags[voice] = state.looptype;
-		state.volleft[voice] = state.voll;
-		state.volright[voice] = state.volr;
-		state.fl1[voice] = state.__fl1;
-		state.fb1[voice] = state.__fb1;
-
-		/* only used by stereo-samples */
-		state.fl2[voice] = state.__fl2;
-		state.fb2[voice] = state.__fb2;
+		mixer = mixers[dwmixfa_state.ch[voice].voiceflags & (MIXF_INTERPOLATE | MIXF_INTERPOLATEQ | MIXF_FILTER | MIXF_PLAYSTEREO)];
+		mixer(dwmixfa_state.tempbuf, &dwmixfa_state.ch[voice]);
 	}
 
-	for (i=0; i < state.postprocs; i++)
+	for (i=0; i < dwmixfa_state.postprocs; i++)
 	{
-		state.postproc[i]->Process(cpifaceSession, state.tempbuf, state.nsamples, state.samprate);
+		dwmixfa_state.postproc[i]->Process(cpifaceSession, dwmixfa_state.tempbuf, dwmixfa_state.nsamples, dwmixfa_state.samprate);
 	}
 
-	clippers[0](state.tempbuf, state.outbuf, 2 /* stereo */ * state.nsamples);
+	clippers[0](dwmixfa_state.tempbuf, dwmixfa_state.outbuf, 2 /* stereo */ * dwmixfa_state.nsamples);
 }
 
 static void
@@ -552,72 +464,72 @@ static void clip_8u(float *input, void *output, uint_fast32_t count)
 #endif
 
 void
-getchanvol(int n, int len)
+getchanvol(int n, int len, float * const voll, float * const volr)
 {
-	float *sample_pos = state.smpposw[n];
-	int sample_pos_fract = state.smpposf[n] >> 16;
+	float *sample_pos = dwmixfa_state.ch[n].smpposw;
+	int sample_pos_fract = dwmixfa_state.ch[n].smpposf;
 	int i;
 
-	if (!(state.voiceflags[n] & MIXF_PLAYING))
+	if (!(dwmixfa_state.ch[n].voiceflags & MIXF_PLAYING))
 	{
-		state.voll = 0;
-		state.volr = 0;
+		*voll = 0;
+		*volr = 0;
 		return;
 	}
 
-	if (state.voiceflags[n] & MIXF_PLAYSTEREO)
+	if (dwmixfa_state.ch[n].voiceflags & MIXF_PLAYSTEREO)
 	{
 		float sumL = 0.0;
 		float sumR = 0.0;
 
-		for (i = 0; i < state.nsamples; i++)
+		for (i = 0; i < dwmixfa_state.nsamples; i++)
 		{
 			sumL += fabsf(sample_pos[0]);
 			sumR += fabsf(sample_pos[1]);
 
-			sample_pos_fract += state.freqf[n] >> 16;
-			sample_pos += (state.freqw[n] + (sample_pos_fract >> 16))<<1;
+			sample_pos_fract += dwmixfa_state.ch[n].freqf;
+			sample_pos += (dwmixfa_state.ch[n].freqw + (sample_pos_fract >> 16))<<1;
 			sample_pos_fract &= 0xffff;
-			while (sample_pos >= state.loopend[n])
+			while (sample_pos >= dwmixfa_state.ch[n].loopend)
 			{
-				if (!(state.voiceflags[n] & MIXF_LOOPED))
+				if (!(dwmixfa_state.ch[n].voiceflags & MIXF_LOOPED))
 				{
-					state.voiceflags[n] &= ~MIXF_PLAYING;
+					dwmixfa_state.ch[n].voiceflags &= ~MIXF_PLAYING;
 					goto outs;
 				}
-				assert(state.looplen[n] > 0);
-				sample_pos -= state.looplen[n];
+				assert(dwmixfa_state.ch[n].looplen > 0);
+				sample_pos -= dwmixfa_state.ch[n].looplen;
 			}
 		}
 outs:
-		sumL /= state.nsamples;
-		sumR /= state.nsamples;
-		state.voll = sumL * state.volleft[n];
-		state.volr = sumR * state.volright[n];
+		sumL /= dwmixfa_state.nsamples;
+		sumR /= dwmixfa_state.nsamples;
+		*voll = sumL * dwmixfa_state.ch[n].volleft;
+		*volr = sumR * dwmixfa_state.ch[n].volright;
 	} else {
 		float sum = 0.0;
 
-		for (i = 0; i < state.nsamples; i++)
+		for (i = 0; i < dwmixfa_state.nsamples; i++)
 		{
 			sum += fabsf(*sample_pos);
 
-			sample_pos_fract += state.freqf[n] >> 16;
-			sample_pos += state.freqw[n] + (sample_pos_fract >> 16);
+			sample_pos_fract += dwmixfa_state.ch[n].freqf;
+			sample_pos += dwmixfa_state.ch[n].freqw + (sample_pos_fract >> 16);
 			sample_pos_fract &= 0xffff;
-			while (sample_pos >= state.loopend[n])
+			while (sample_pos >= dwmixfa_state.ch[n].loopend)
 			{
-				if (!(state.voiceflags[n] & MIXF_LOOPED))
+				if (!(dwmixfa_state.ch[n].voiceflags & MIXF_LOOPED))
 				{
-					state.voiceflags[n] &= ~MIXF_PLAYING;
+					dwmixfa_state.ch[n].voiceflags &= ~MIXF_PLAYING;
 					goto outm;
 				}
-				assert(state.looplen[n] > 0);
-				sample_pos -= state.looplen[n];
+				assert(dwmixfa_state.ch[n].looplen > 0);
+				sample_pos -= dwmixfa_state.ch[n].looplen;
 			}
 		}
 outm:
-		sum /= state.nsamples;
-		state.voll = sum * state.volleft[n];
-		state.volr = sum * state.volright[n];
+		sum /= dwmixfa_state.nsamples;
+		*voll = sum * dwmixfa_state.ch[n].volleft;
+		*volr = sum * dwmixfa_state.ch[n].volright;
 	}
 }

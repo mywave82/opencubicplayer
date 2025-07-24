@@ -76,7 +76,7 @@ static void OpenPlayer(int chan)
 
 	for (i=0; i<chan; i++)
 	{
-		dwmixfa_state.voiceflags[i]=0;
+		dwmixfa_state.ch[i].voiceflags=0;
 	}
 
 	dwmixfa_state.samprate=/*plrRate*/44100;
@@ -167,30 +167,30 @@ int main(int argc, char *argv[])
 	dwmixfa_state.outbuf=output+2;
 	dwmixfa_state.nsamples=308;//508;
 
-	dwmixfa_state.voiceflags[0] = MIXF_PLAYING|MIXF_LOOPED; /* this is so broken! */
+	dwmixfa_state.ch[0].voiceflags = MIXF_PLAYING|MIXF_LOOPED; /* this is so broken! */
 
-	dwmixfa_state.freqf[0]=0x3a987654; /* pitch */
-	dwmixfa_state.freqw[0]=0x00000000; /* pitch */
+	dwmixfa_state.ch[0].freqf = 0x3a987654; /* pitch */
+	dwmixfa_state.ch[0].freqw = 0x00000000; /* pitch */
 
-	dwmixfa_state.fl1[0]=0; /* reset filter */
-	dwmixfa_state.fb1[0]=0; /* reset feilter */
+	dwmixfa_state.ch[0].fl1 = 0; /* reset filter */
+	dwmixfa_state.ch[0].fb1 = 0; /* reset feilter */
 
-	dwmixfa_state.ffreq[0] = 1;      /* filter frequency (0<=x<=1) TODO, needs testing / study */
-	dwmixfa_state.freso[0] = 0;      /* filter resonance (0<=x<1)  TODO, needs testing / study*/
+	dwmixfa_state.ch[0].ffreq = 1;      /* filter frequency (0<=x<=1) TODO, needs testing / study */
+	dwmixfa_state.ch[0].freso = 0;      /* filter resonance (0<=x<1)  TODO, needs testing / study*/
 
-	dwmixfa_state.smpposf[0]=0;
-	dwmixfa_state.smpposw[0]=sample_1;
+	dwmixfa_state.ch[0].smpposf = 0;
+	dwmixfa_state.ch[0].smpposw = sample_1;
 
-	dwmixfa_state.looplen[0]=4;
-	dwmixfa_state.loopend[0]=&sample_1[7];
+	dwmixfa_state.ch[0].looplen = 4;
+	dwmixfa_state.ch[0].loopend = &sample_1[7];
 
-	dwmixfa_state.volleft[0]=0.125f;
-	dwmixfa_state.volright[0]=0.125f;
-	dwmixfa_state.rampleft[0]=0.0f;
-	dwmixfa_state.rampright[0]=0.0f;
+	dwmixfa_state.ch[0].volleft = 0.125f;
+	dwmixfa_state.ch[0].volright = 0.125f;
+	dwmixfa_state.ch[0].rampleft = 0.0f;
+	dwmixfa_state.ch[0].rampright = 0.0f;
 
-	dwmixfa_state.fadeleft=0.5f;
-	dwmixfa_state.faderight=-0.5f;
+	dwmixfa_state.fadeleft = 0.5f;
+	dwmixfa_state.faderight = -0.5f;
 
 	mixer(0);
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\n");
 	}
 
-	fprintf(stderr, "smppos: %u.%u\n", (unsigned int)(dwmixfa_state.smpposw[0]-sample_1), dwmixfa_state.smpposf[0]);
+	fprintf(stderr, "smppos: %u.%u\n", (unsigned int)(dwmixfa_state.ch[0].smpposw - sample_1), dwmixfa_state.ch[0].smpposf);
 
 	ClosePlayer();
 

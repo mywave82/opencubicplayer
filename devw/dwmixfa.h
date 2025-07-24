@@ -14,9 +14,38 @@
 struct cpifaceSessionAPI_t;
 extern void mixer (struct cpifaceSessionAPI_t *);
 extern void prepare_mixer (void);
-extern void getchanvol (int n, int len);
+extern void getchanvol (int n, int len, float * const voll, float * const volr);
 
 #define MAXVOICES MIXF_MAXCHAN
+
+typedef struct
+{
+	uint32_t  freqw;     /* frequency (whole part) */
+	uint32_t  freqf;     /* frequency (fractional part) */
+
+	float    *smpposw;   /* sample position (whole part (pointer!)) */
+	uint32_t  smpposf;   /* sample position (fractional part) */
+
+	float    *loopend;   /* pointer to loop end */
+	uint32_t  looplen;   /* loop length in samples */
+
+	float   volleft;     /* float: left volume (1.0=normal) */
+	float   volright;    /* float: right volume (1.0=normal) */
+	float   rampleft;    /* float: left volramp (dvol/sample) */
+	float   rampright;   /* float: right volramp (dvol/sample) */
+
+	uint32_t voiceflags; /* voice status flags */
+
+	float   ffreq;       /* filter frequency (0<=x<=1) */
+	float   freso;       /* filter resonance (0<=x<1) */
+
+	float   fl1;         /* filter lp buffer */
+	float   fb1;         /* filter bp buffer */
+
+	float   fl2;         /* filter lp buffer, right channel in stereo samples */
+	float   fb2;         /* filter bp buffer, right channel in stereo samples */
+} dwmixfa_channel_t;
+
 
 typedef struct
 {
@@ -25,34 +54,9 @@ typedef struct
 	uint32_t  nsamples;        /* # of samples to generate */
 	uint32_t  nvoices;         /* # of voices */
 
-	uint32_t  freqw[MIXF_MAXCHAN]; /* frequency (whole part) */
-	uint32_t  freqf[MIXF_MAXCHAN]; /* frequency (fractional part) */
+	dwmixfa_channel_t ch[MIXF_MAXCHAN];
 
-	float    *smpposw[MIXF_MAXCHAN]; /* sample position (whole part (pointer!)) */
-	uint32_t  smpposf[MIXF_MAXCHAN]; /* sample position (fractional part) */
-
-	float    *loopend[MIXF_MAXCHAN]; /* pointer to loop end */
-	uint32_t  looplen[MIXF_MAXCHAN]; /* loop length in samples */
-
-	float   volleft[MIXF_MAXCHAN];   /* float: left volume (1.0=normal) */
-	float   volright[MIXF_MAXCHAN];  /* float: right volume (1.0=normal) */
-	float   rampleft[MIXF_MAXCHAN];  /* float: left volramp (dvol/sample) */
-	float   rampright[MIXF_MAXCHAN]; /* float: right volramp (dvol/sample) */
-
-	uint32_t voiceflags[MIXF_MAXCHAN]; /* voice status flags */
-
-	float   ffreq[MIXF_MAXCHAN]; /* filter frequency (0<=x<=1) */
-	float   freso[MIXF_MAXCHAN]; /* filter resonance (0<=x<1) */
-
-	float   fadeleft,faderight; /* temp holding register - TODO, check if they should be local for channel */
-
-	float   fl1[MIXF_MAXCHAN]; /* filter lp buffer */
-	float   fb1[MIXF_MAXCHAN]; /* filter bp buffer */
-
-	float   fl2[MIXF_MAXCHAN]; /* filter lp buffer, right channel in stereo samples */
-	float   fb2[MIXF_MAXCHAN]; /* filter bp buffer, right channel in stereo samples */
-
-	float   voll, volr; /* output volume */
+	float   fadeleft, faderight; /* global declicking. Last sample is accumulated into register, register has roll-off as it is applied to the output buffer */
 
 	float   ct0[256]; /* interpolation tab for s[-1] */
 	float   ct1[256]; /* interpolation tab for s[0] */
@@ -64,21 +68,6 @@ typedef struct
 #define MIXF_MAX_POSTPROC 10
 	const struct PostProcFPRegStruct *postproc[MIXF_MAX_POSTPROC];
 	int                               postprocs;
-
-	/* private to mixer, used be dwmixfa_8087.c */
-	float volrl; /* volume current left */
-	float volrr; /* volume current right */
-	uint16_t clipval;    /* used in clippers in order to transfer into register */
-	uint32_t mixlooplen; /* lenght of loop in samples*/
-	uint32_t looptype;  /* local version of voiceflags[N] */
-	float magic1;  /* internal dumping variable for filters */
-	float ffrq;
-	float frez;
-	float __fl1;
-	float __fb1;
-	float __fl2;
-	float __fb2;
-
 } dwmixfa_state_t;
 
 extern dwmixfa_state_t dwmixfa_state;
