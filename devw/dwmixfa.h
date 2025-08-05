@@ -29,10 +29,15 @@ typedef struct
 	float    *loopend;   /* pointer to loop end */
 	uint32_t  looplen;   /* loop length in samples */
 
-	float   volleft;     /* float: left volume (1.0=normal) */
-	float   volright;    /* float: right volume (1.0=normal) */
-	float   rampleft;    /* float: left volramp (dvol/sample) */
-	float   rampright;   /* float: right volramp (dvol/sample) */
+	float   mono_volleft;     /* float: left volume (1.0=normal) */
+	float   mono_volright;    /* float: right volume (1.0=normal) */
+	float   mono_rampleft;    /* float: left volramp (dvol/sample) */
+	float   mono_rampright;   /* float: right volramp (dvol/sample) */
+
+	float   stereo_volleft[2];     /* float: left volume (1.0=normal) */
+	float   stereo_volright[2];    /* float: right volume (1.0=normal) */
+	float   stereo_rampleft[2];    /* float: left volramp (dvol/sample) */
+	float   stereo_rampright[2];   /* float: right volramp (dvol/sample) */
 
 	uint32_t voiceflags; /* voice status flags */
 

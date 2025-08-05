@@ -82,6 +82,11 @@ static volatile int clipbusy;
 
 static unsigned long amplify;
 static unsigned short transform[2][2];
+/*           [_][0]       [_][1]
+ * [0][_]                            Output Left
+ * [1][_]                            Output Right
+ *         Source Left  Sourge Right
+ */
 static int volopt;
 static unsigned long relpitch;
 static int interpolation;
@@ -265,29 +270,42 @@ static void calcspeed(void)
 		newtickwidth=imuldiv(256*256*256, samprate, orgspeed*relspeed);
 }
 
+static int32_t rangelimit (const int32_t i)
+{
+	if (i > 0x10000) return 0x10000;
+	if (i < -0x10000) return -0x10000;
+	return i;
+}
+
 static void transformvol(struct channel *ch)
 	/* Used by calcvol
 	 *         calcvols
 	 *         SET
 	 */
 {
-	int32_t v;
+	ch->vol[0][0] = rangelimit ( transform[0][0] * ch->orgvol[0] + 192) >> 8;
+	ch->vol[0][1] = rangelimit ( transform[0][1] * ch->orgvol[1] + 192) >> 8;
+	ch->vol[1][0] = rangelimit ( transform[1][0] * ch->orgvol[0] + 192) >> 8;
+	ch->vol[1][1] = rangelimit ( transform[1][1] * ch->orgvol[1] + 192) >> 8;
 
-	v=transform[0][0]*ch->orgvol[0]+transform[0][1]*ch->orgvol[1];
-	ch->vol[0]=(v>0x10000)?256:(v<-0x10000)?-256:((v+192)>>8);
-
-	v=transform[1][0]*ch->orgvol[0]+transform[1][1]*ch->orgvol[1];
 	if (volopt^ch->volopt)
-		v=-v;
-	ch->vol[1]=(v>0x10000)?256:(v<-0x10000)?-256:((v+192)>>8);
+	{
+		ch->vol[1][0] = -ch->vol[1][0];
+		ch->vol[1][1] = -ch->vol[1][1];
+	}
 
 	if (ch->status&MIXRQ_MUTE)
 	{
-		ch->dstvols[0]=ch->dstvols[1]=0;
-		return;
+		ch->dstvols[0][0] = 0;
+		ch->dstvols[0][1] = 0;
+		ch->dstvols[1][0] = 0;
+		ch->dstvols[1][1] = 0;
+	} else {
+		ch->dstvols[0][0] = ch->vol[0][0];
+		ch->dstvols[0][1] = ch->vol[0][1];
+		ch->dstvols[1][0] = ch->vol[1][0];
+		ch->dstvols[1][1] = ch->vol[1][1];
 	}
-	ch->dstvols[0]=ch->vol[0];
-	ch->dstvols[1]=ch->vol[1];
 }
 
 static void calcvol(struct channel *chn)
@@ -357,9 +375,13 @@ static void fadechanq(int *fade, struct channel *c)
 			sl=sr=(c->realsamp.bit8[c->pos])<<8;
 		}
 	}
-	fade[0]+=(c->curvols[0]*sl)>>8;
-	fade[1]+=(c->curvols[1]*sr)>>8;
-	c->curvols[0]=c->curvols[1]=0;
+	fade[0] += ( c->curvols[0][0] * sl + c->curvols[0][1] * sr ) >> 8;
+	fade[1] += ( c->curvols[1][0] * sl + c->curvols[1][1] * sr ) >> 8;
+	c->curvols[0][0] = 0;
+	c->curvols[0][1] = 0;
+	c->curvols[1][0] = 0;
+	c->curvols[1][1] = 0;
+
 }
 
 static void stopchan(struct channel *c)
@@ -375,26 +397,29 @@ static void stopchan(struct channel *c)
 	c->status&=~MIXRQ_PLAYING;
 }
 
-static void amplifyfadeq(uint32_t pos, uint32_t cl, int32_t *curvol, int32_t dstvol)
+static void amplifyfadeq(uint32_t targetpos, uint32_t sourcepos, uint32_t cl, int32_t *curvol, int32_t dstvol)
 	/* Used by playchannelq
 	 */
 {
 	uint32_t l=abs(dstvol-*curvol);
 
+  if (!*curvol && !dstvol)
+		return;
+
 	if (l>cl)
 		l=cl;
 	if (dstvol<*curvol)
 	{
-		mixqAmplifyChannelDown(buf32 + pos, scalebuf + pos, l, *curvol);
+		mixqAmplifyChannelDown(buf32 + targetpos, scalebuf + sourcepos, l, *curvol);
 		*curvol-=l;
 	} else if (dstvol>*curvol)
 	{
-		mixqAmplifyChannelUp(buf32 + pos, scalebuf + pos, l, *curvol);
+		mixqAmplifyChannelUp(buf32 + targetpos, scalebuf + sourcepos, l, *curvol);
 		*curvol+=l;
 	}
 	cl-=l;
 	if (*curvol&&cl)
-		mixqAmplifyChannel(buf32 + pos + (l << 1 /* stereo */ ), scalebuf + pos + (l << 1), cl, *curvol);
+		mixqAmplifyChannel(buf32 + targetpos + (l << 1 /* stereo */ ), scalebuf + sourcepos + (l << 1 /* stereo */), cl, *curvol);
 }
 
 static void playchannelq(int ch, uint32_t len)
@@ -404,14 +429,23 @@ static void playchannelq(int ch, uint32_t len)
 	struct channel *c=&channels[ch];
 	if (c->status&MIXRQ_PLAYING)
 	{
-		int quiet=!c->curvols[0]&&!c->curvols[1]&&!c->dstvols[0]&&!c->dstvols[1];
+		int quiet = !c->curvols[0][0] &&
+		            !c->curvols[0][1] &&
+		            !c->curvols[1][0] &&
+		            !c->curvols[1][1] &&
+		            !c->dstvols[0][0] &&
+		            !c->dstvols[0][1] &&
+		            !c->dstvols[1][0] &&
+		            !c->dstvols[1][1];
 
 		mixqPlayChannel(scalebuf, len, c, quiet);
 		if (quiet)
 			return;
 
-		amplifyfadeq(0, len, &c->curvols[0], c->dstvols[0]);
-		amplifyfadeq(1, len, &c->curvols[1], c->dstvols[1]);
+		amplifyfadeq(0, 0, len, &c->curvols[0][0], c->dstvols[0][0]);
+		amplifyfadeq(0, 1, len, &c->curvols[0][1], c->dstvols[0][1]);
+		amplifyfadeq(1, 0, len, &c->curvols[1][0], c->dstvols[1][0]);
+		amplifyfadeq(1, 1, len, &c->curvols[1][1], c->dstvols[1][1]);
 
 		if (!(c->status&MIXRQ_PLAYING))
 			fadechanq(fadedown, c);
@@ -774,6 +808,7 @@ static void devwMixGetVolRegs (struct cpifaceSessionAPI_t *cpifaceSession, void 
 static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate)
 	/* Refered to by OpenPlayer to mixInit */
 {
+#warning GetMixChannel assumes volume data is for mono-sample
 	struct channel *c=&channels[ch];
 
 	chn->realsamp.fmt=c->samp;
@@ -782,8 +817,8 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 	chn->loopend=c->loopend;
 	chn->fpos=c->fpos;
 	chn->pos=c->pos;
-	chn->vol.vols[0]=abs(c->vol[0]);
-	chn->vol.vols[1]=abs(c->vol[1]);
+	chn->vol.vols[0]=abs(rangelimit(c->vol[0][0] + c->vol[0][1]));
+	chn->vol.vols[1]=abs(rangelimit(c->vol[1][0] + c->vol[1][1]));
 	chn->step=imuldiv(c->step, samprate, (signed)rate);
 	chn->status=0;
 	if (c->status&MIXRQ_MUTE)
@@ -997,7 +1032,6 @@ static void devwMixClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 	free(channels);
 	free(amptab);
 	free(buf32);
-	scalebuf=0;
 
 	voltabsr=NULL;
 	interpoltabr=NULL;

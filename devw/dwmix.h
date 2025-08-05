@@ -30,10 +30,10 @@ struct channel
 	uint32_t pos;
 	uint16_t fpos;
 	uint16_t status;
-	int32_t curvols[4]; /* negativ volume = panning */
-	int32_t dstvols[4]; /* -- " -- */
+	int32_t curvols[2][2]; /* negativ volume = panning */
+	int32_t dstvols[2][2]; /* -- " -- */
 
-	int32_t vol[2];     /* -- " -- */
+	int32_t vol[2][2];     /* -- " -- */
 	int32_t orgvol[2];  /* -- " -- */
 	uint32_t orgrate;
 	uint32_t orgfrq;

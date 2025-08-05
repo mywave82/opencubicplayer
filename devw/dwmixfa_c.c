@@ -54,9 +54,12 @@ prepare_mixer (void)
 
 	for (i = 0; i < MAXVOICES; i++)
 	{
-		dwmixfa_state.ch[i].volleft  = 0.0;
-		dwmixfa_state.ch[i].volright = 0.0;
-
+		dwmixfa_state.ch[i].mono_volleft  = 0.0;
+		dwmixfa_state.ch[i].mono_volright = 0.0;
+		dwmixfa_state.ch[i].stereo_volleft[0]  = 0.0;
+		dwmixfa_state.ch[i].stereo_volleft[1]  = 0.0;
+		dwmixfa_state.ch[i].stereo_volright[0] = 0.0;
+		dwmixfa_state.ch[i].stereo_volright[1] = 0.0;
 	}
 }
 
@@ -166,10 +169,10 @@ mix##NAME(float *destptr,                                               \
     for (i = 0; i < dwmixfa_state.nsamples; i++)                        \
       {                                                                 \
         sample = filter_##FILTER(interp_##INTERP(c->smpposw, c->smpposf), c); \
-        *destptr++  += c->volleft * sample;                             \
-        c->volleft  += c->rampleft;                                     \
-        *destptr++  += c->volright * sample;                            \
-        c->volright += c->rampright;                                    \
+        *destptr++       += c->mono_volleft * sample;                   \
+        c->mono_volleft  += c->mono_rampleft;                           \
+        *destptr++       += c->mono_volright * sample;                  \
+        c->mono_volright += c->mono_rampright;                          \
                                                                         \
         c->smpposf += c->freqf;                                         \
         c->smpposw += c->freqw + (c->smpposf >> 16);                    \
@@ -191,14 +194,14 @@ fade:                                                                   \
                                                                         \
     for (; i < dwmixfa_state.nsamples; i++)                             \
       {                                                                 \
-        *destptr++  += c->volleft  * sample;                            \
-        c->volleft  += c->rampleft;                                     \
-        *destptr++  += c->volright * sample;                            \
-        c->volright += c->rampright;                                    \
+        *destptr++       += c->mono_volleft  * sample;                  \
+        c->mono_volleft  += c->mono_rampleft;                           \
+        *destptr++       += c->mono_volright * sample;                  \
+        c->mono_volright += c->mono_rampright;                          \
     }                                                                   \
                                                                         \
-    dwmixfa_state.fadeleft  += c->volleft  * sample;                    \
-    dwmixfa_state.faderight += c->volright * sample;                    \
+    dwmixfa_state.fadeleft  += c->mono_volleft  * sample;               \
+    dwmixfa_state.faderight += c->mono_volright * sample;               \
                                                                         \
 out:                                                                    \
     if (PROTECT && restore)                                             \
@@ -288,11 +291,12 @@ mix##NAME(float *destptr,                                               \
         float iL, iR;                                                   \
         interp_##INTERP##_S(c->smpposw, c->smpposf, &iL, &iR);          \
         filter_##FILTER##_S(iL, iR, &sampleL, &sampleR, c);             \
-        *destptr++  += c->volleft * sampleL;                            \
-        c->volleft  += c->rampleft;                                     \
-        *destptr++  += c->volright * sampleR;                           \
-        c->volright += c->rampright;                                    \
-                                                                        \
+        *destptr++  += c->stereo_volleft[0]  * sampleL + c->stereo_volleft[1]  * sampleR; \
+        *destptr++  += c->stereo_volright[0] * sampleL + c->stereo_volright[1] * sampleR; \
+        c->stereo_volleft[0]  += c->stereo_rampleft[0];                 \
+        c->stereo_volleft[1]  += c->stereo_rampleft[1];                 \
+        c->stereo_volright[0] += c->stereo_rampright[0];                \
+        c->stereo_volright[1] += c->stereo_rampright[1];                \
         c->smpposf += c->freqf;                                         \
         c->smpposw += (c->freqw + (c->smpposf >> 16))<<1;               \
         c->smpposf &= 0xffff;                                           \
@@ -313,14 +317,16 @@ fade:                                                                   \
                                                                         \
     for (; i < dwmixfa_state.nsamples; i++)                             \
       {                                                                 \
-        *destptr++  += c->volleft  * sampleL;                           \
-        c->volleft  += c->rampleft;                                     \
-        *destptr++  += c->volright * sampleR;                           \
-        c->volright += c->rampright;                                    \
+        *destptr++  += c->stereo_volleft[0]  * sampleL + c->stereo_volleft[1]  * sampleR; \
+        *destptr++  += c->stereo_volright[0] * sampleR + c->stereo_volright[1] * sampleR; \
+        c->stereo_volleft[0]  += c->stereo_rampleft[0];                 \
+        c->stereo_volleft[1]  += c->stereo_rampleft[1];                 \
+        c->stereo_volright[0] += c->stereo_rampright[0];                \
+        c->stereo_volright[1] += c->stereo_rampright[1];                \
     }                                                                   \
                                                                         \
-    dwmixfa_state.fadeleft  += c->volleft  * sampleR;                   \
-    dwmixfa_state.faderight += c->volright * sampleL;                   \
+    dwmixfa_state.fadeleft  += c->stereo_volleft[0]  * sampleL + c->stereo_volleft[1]  * sampleR; \
+    dwmixfa_state.faderight += c->stereo_volright[0] * sampleL + c->stereo_volright[1] * sampleR; \
                                                                         \
 out:                                                                    \
     if (PROTECT && restore)                                             \
@@ -504,8 +510,8 @@ getchanvol(int n, int len, float * const voll, float * const volr)
 outs:
 		sumL /= dwmixfa_state.nsamples;
 		sumR /= dwmixfa_state.nsamples;
-		*voll = sumL * dwmixfa_state.ch[n].volleft;
-		*volr = sumR * dwmixfa_state.ch[n].volright;
+		*voll = sumL * dwmixfa_state.ch[n].stereo_volleft[0]  + sumR * dwmixfa_state.ch[n].stereo_volleft[1];
+		*volr = sumL * dwmixfa_state.ch[n].stereo_volright[0] + sumR * dwmixfa_state.ch[n].stereo_volright[1];
 	} else {
 		float sum = 0.0;
 
@@ -529,7 +535,7 @@ outs:
 		}
 outm:
 		sum /= dwmixfa_state.nsamples;
-		*voll = sum * dwmixfa_state.ch[n].volleft;
-		*volr = sum * dwmixfa_state.ch[n].volright;
+		*voll = sum * dwmixfa_state.ch[n].mono_volleft;
+		*volr = sum * dwmixfa_state.ch[n].mono_volright;
 	}
 }

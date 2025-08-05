@@ -78,6 +78,11 @@ static int samplenum;
 static volatile int clipbusy=0;
 static float amplify;
 static float transform[2][2];
+/*           [_][0]       [_][1]
+ * [0][_]                            Output Left
+ * [1][_]                            Output Right
+ *         Source Left  Sourge Right
+ */
 static int   volopt;
 static uint32_t relpitch;
 static int interpolation;
@@ -98,15 +103,14 @@ struct channel
 
 	int   newsamp;
 
-	float dstvols[2];
+	float dstvols[2][2]; /* same as vol, but with MUTE applied */
 	int   dontramp;
 
-	float vol[2];
-	float orgvol[2];
-
-	float orgvolx;
-	float orgpan;
-	float orgfrez;
+	float vol[2][2]; /* holding variable for volume created by transformvol(), without muting applied. Used by GetMixChannel, which does not take into account master panning, balance and volume */
+	float orgvol[2]; /* resulting volume requested by track, after applying track panning (created by calcvol()) */
+	float orgvolx; /* volume requested by track */
+	float orgpan;  /* panning requsted by track */
+	float orgfrez; /* filter resonance requested by track */
 
 	uint32_t orgrate;
 	uint32_t orgfrq;
@@ -210,17 +214,27 @@ static void transformvol(struct channel *ch)
 {
 	int n=ch->handle;
 
-	ch->vol[0]=transform[0][0]*ch->orgvol[0]+transform[0][1]*ch->orgvol[1];
-	ch->vol[1]=transform[1][0]*ch->orgvol[0]+transform[1][1]*ch->orgvol[1];
+	ch->vol[0][0]=transform[0][0]*ch->orgvol[0];
+	ch->vol[0][1]=transform[0][1]*ch->orgvol[1];
+	ch->vol[1][0]=transform[1][0]*ch->orgvol[0];
+	ch->vol[1][1]=transform[1][1]*ch->orgvol[1];
 	if (volopt^ch->volopt)
-		ch->vol[1]=-ch->vol[1];
+	{
+		ch->vol[1][0]=-ch->vol[1][0];
+		ch->vol[1][1]=-ch->vol[1][1];
+	}
 
 	if (dwmixfa_state.ch[n].voiceflags & MIXF_MUTE)
 	{
-		ch->dstvols[0]=ch->dstvols[1]=0;
+		ch->dstvols[0][0] = 0;
+		ch->dstvols[0][1] = 0;
+		ch->dstvols[1][0] = 0;
+		ch->dstvols[1][1] = 0;
 	} else {
-		ch->dstvols[0]=ch->vol[0];
-		ch->dstvols[1]=ch->vol[1];
+		ch->dstvols[0][0] = ch->vol[0][0];
+		ch->dstvols[0][1] = ch->vol[0][1];
+		ch->dstvols[1][0] = ch->vol[1][0];
+		ch->dstvols[1][1] = ch->vol[1][1];
 	}
 }
 
@@ -273,8 +287,16 @@ static void stopchan(struct channel *c)
 	{
 		int offs = ( dwmixfa_state.ch[n].voiceflags & MIXF_INTERPOLATEQ ) ? 1 : 0;
 		float ff2 = dwmixfa_state.ch[n].ffreq * dwmixfa_state.ch[n].ffreq;
-		dwmixfa_state.fadeleft += ff2*dwmixfa_state.ch[n].volleft * dwmixfa_state.ch[n].smpposw[offs];
-		dwmixfa_state.faderight += ff2*dwmixfa_state.ch[n].volright * dwmixfa_state.ch[n].smpposw[offs];
+		if (dwmixfa_state.ch[n].voiceflags & MIXF_PLAYSTEREO)
+		{
+			dwmixfa_state.fadeleft  += ff2*dwmixfa_state.ch[n].stereo_volleft[0]  * dwmixfa_state.ch[n].smpposw[(offs<<1)  ];
+			dwmixfa_state.fadeleft  += ff2*dwmixfa_state.ch[n].stereo_volleft[1]  * dwmixfa_state.ch[n].smpposw[(offs<<1)+2];
+			dwmixfa_state.faderight += ff2*dwmixfa_state.ch[n].stereo_volright[0] * dwmixfa_state.ch[n].smpposw[(offs<<1)  ];
+			dwmixfa_state.faderight += ff2*dwmixfa_state.ch[n].stereo_volright[1] * dwmixfa_state.ch[n].smpposw[(offs<<1)+2];
+		} else {
+			dwmixfa_state.fadeleft  += ff2*dwmixfa_state.ch[n].mono_volleft  * dwmixfa_state.ch[n].smpposw[offs];
+			dwmixfa_state.faderight += ff2*dwmixfa_state.ch[n].mono_volright * dwmixfa_state.ch[n].smpposw[offs];
+		}
 	}
 
 	dwmixfa_state.ch[n].voiceflags &= ~MIXF_PLAYING;
@@ -326,14 +348,40 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 			{
 				struct channel *ch=&channels[i];
 
-				dwmixfa_state.ch[i].volleft  = frchk(dwmixfa_state.ch[i].volleft);
-				dwmixfa_state.ch[i].volright = frchk(dwmixfa_state.ch[i].volright);
+				if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYSTEREO)
+				{
+					dwmixfa_state.ch[i].stereo_volleft[0]  = frchk(dwmixfa_state.ch[i].stereo_volleft[0]);
+					dwmixfa_state.ch[i].stereo_volleft[1]  = frchk(dwmixfa_state.ch[i].stereo_volleft[1]);
+					dwmixfa_state.ch[i].stereo_volright[0] = frchk(dwmixfa_state.ch[i].stereo_volright[0]);
+					dwmixfa_state.ch[i].stereo_volright[1] = frchk(dwmixfa_state.ch[i].stereo_volright[1]);
 
-				if (!dwmixfa_state.ch[i].volleft && !dwmixfa_state.ch[i].volright && !dwmixfa_state.ch[i].rampleft && !dwmixfa_state.ch[i].rampright)
-					dwmixfa_state.ch[i].voiceflags |= MIXF_QUIET;
-				else
-					dwmixfa_state.ch[i].voiceflags &= ~MIXF_QUIET;
+					if (!dwmixfa_state.ch[i].stereo_volleft[0] &&
+					    !dwmixfa_state.ch[i].stereo_volleft[1] &&
+					    !dwmixfa_state.ch[i].stereo_volright[0] &&
+					    !dwmixfa_state.ch[i].stereo_volright[1] &&
+					    !dwmixfa_state.ch[i].stereo_rampleft[0] &&
+					    !dwmixfa_state.ch[i].stereo_rampleft[1] &&
+					    !dwmixfa_state.ch[i].stereo_rampright[0] &&
+					    !dwmixfa_state.ch[i].stereo_rampright[1])
+					{
+						dwmixfa_state.ch[i].voiceflags |= MIXF_QUIET;
+					} else {
+						dwmixfa_state.ch[i].voiceflags &= ~MIXF_QUIET;
+					}
+				} else {
+					dwmixfa_state.ch[i].mono_volleft  = frchk(dwmixfa_state.ch[i].mono_volleft);
+					dwmixfa_state.ch[i].mono_volright = frchk(dwmixfa_state.ch[i].mono_volright);
 
+					if (!dwmixfa_state.ch[i].mono_volleft &&
+					    !dwmixfa_state.ch[i].mono_volright &&
+					    !dwmixfa_state.ch[i].mono_rampleft &&
+					    !dwmixfa_state.ch[i].mono_rampright)
+					{
+						dwmixfa_state.ch[i].voiceflags |= MIXF_QUIET;
+					} else {
+						dwmixfa_state.ch[i].voiceflags &= ~MIXF_QUIET;
+					}
+				}
 
 				if (dwmixfa_state.ch[i].ffreq != 1 || dwmixfa_state.ch[i].freso != 0)
 					dwmixfa_state.ch[i].voiceflags |= MIXF_FILTER;
@@ -347,8 +395,16 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 					{
 						int offs = ( dwmixfa_state.ch[i].voiceflags & MIXF_INTERPOLATEQ ) ? 1 : 0;
 						float ff2 = dwmixfa_state.ch[i].ffreq * dwmixfa_state.ch[i].ffreq;
-						dwmixfa_state.fadeleft  -= ff2 * dwmixfa_state.ch[i].volleft  * dwmixfa_state.ch[i].smpposw[offs];
-						dwmixfa_state.faderight -= ff2 * dwmixfa_state.ch[i].volright * dwmixfa_state.ch[i].smpposw[offs];
+						if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYSTEREO)
+						{
+							dwmixfa_state.fadeleft  -= ff2 * dwmixfa_state.ch[i].stereo_volleft[0]  * dwmixfa_state.ch[i].smpposw[(offs<<1)];
+							dwmixfa_state.fadeleft  -= ff2 * dwmixfa_state.ch[i].stereo_volleft[1]  * dwmixfa_state.ch[i].smpposw[(offs<<1)+2];
+							dwmixfa_state.faderight -= ff2 * dwmixfa_state.ch[i].stereo_volright[0] * dwmixfa_state.ch[i].smpposw[(offs<<1)];
+							dwmixfa_state.faderight -= ff2 * dwmixfa_state.ch[i].stereo_volright[1] * dwmixfa_state.ch[i].smpposw[(offs<<1)+2];
+						} else {
+							dwmixfa_state.fadeleft  -= ff2 * dwmixfa_state.ch[i].mono_volleft  * dwmixfa_state.ch[i].smpposw[offs];
+							dwmixfa_state.faderight -= ff2 * dwmixfa_state.ch[i].mono_volright * dwmixfa_state.ch[i].smpposw[offs];
+						}
 					}
 					ch->newsamp=0;
 				}
@@ -400,19 +456,61 @@ static void devwMixFIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 					struct channel *ch=&channels[i];
 					if (ch->dontramp)
 					{
-						dwmixfa_state.ch[i].volleft  = frchk(ch->dstvols[0]);
-						dwmixfa_state.ch[i].volright = frchk(ch->dstvols[1]);
-						dwmixfa_state.ch[i].rampleft  = 0;
-						dwmixfa_state.ch[i].rampright = 0;
+						if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYSTEREO)
+						{
+							dwmixfa_state.ch[i].stereo_volleft[0]  = frchk ( ch->dstvols[0][0] );
+							dwmixfa_state.ch[i].stereo_volleft[1]  = frchk ( ch->dstvols[0][1] );
+							dwmixfa_state.ch[i].stereo_volright[0] = frchk ( ch->dstvols[1][0] );
+							dwmixfa_state.ch[i].stereo_volright[1] = frchk ( ch->dstvols[1][1] );
+							dwmixfa_state.ch[i].stereo_rampleft[0]  = 0;
+							dwmixfa_state.ch[i].stereo_rampleft[1]  = 0;
+							dwmixfa_state.ch[i].stereo_rampright[1] = 0;
+							dwmixfa_state.ch[i].stereo_rampright[1] = 0;
+						} else {
+							dwmixfa_state.ch[i].mono_volleft  = frchk ( ch->dstvols[0][0] + ch->dstvols[0][1] );
+							dwmixfa_state.ch[i].mono_volright = frchk ( ch->dstvols[1][0] + ch->dstvols[1][1] );
+							dwmixfa_state.ch[i].mono_rampleft  = 0;
+							dwmixfa_state.ch[i].mono_rampright = 0;
+						}
 						if (volramp)
 							ch->dontramp=0;
 					} else {
-						dwmixfa_state.ch[i].rampleft = frchk(invt2g*(ch->dstvols[0] - dwmixfa_state.ch[i].volleft));
-						if (dwmixfa_state.ch[i].rampleft==0)
-							dwmixfa_state.ch[i].volleft  = ch->dstvols[0];
-						dwmixfa_state.ch[i].rampright = frchk(invt2g*(ch->dstvols[1] - dwmixfa_state.ch[i].volright));
-						if (dwmixfa_state.ch[i].rampright==0)
-							dwmixfa_state.ch[i].volright = ch->dstvols[1];
+						if (dwmixfa_state.ch[i].voiceflags & MIXF_PLAYSTEREO)
+						{
+							dwmixfa_state.ch[i].stereo_rampleft[0]  = frchk(invt2g*(ch->dstvols[0][0] - dwmixfa_state.ch[i].stereo_volleft[0]));
+							dwmixfa_state.ch[i].stereo_rampleft[1]  = frchk(invt2g*(ch->dstvols[0][1] - dwmixfa_state.ch[i].stereo_volleft[1]));
+							dwmixfa_state.ch[i].stereo_rampright[0] = frchk(invt2g*(ch->dstvols[1][0] - dwmixfa_state.ch[i].stereo_volright[0]));
+							dwmixfa_state.ch[i].stereo_rampright[1] = frchk(invt2g*(ch->dstvols[1][1] - dwmixfa_state.ch[i].stereo_volright[1]));
+
+							if (dwmixfa_state.ch[i].stereo_rampleft[0] ==  0)
+							{
+								dwmixfa_state.ch[i].stereo_volleft[0] = ch->dstvols[0][0];
+							}
+							if (dwmixfa_state.ch[i].stereo_rampleft[1] == 0)
+							{
+								dwmixfa_state.ch[i].stereo_volleft[1] = ch->dstvols[0][1];
+							}
+							if (dwmixfa_state.ch[i].stereo_rampright[0] == 0)
+							{
+								dwmixfa_state.ch[i].stereo_volright[0] = ch->dstvols[1][0];
+							}
+							if (dwmixfa_state.ch[i].stereo_rampright[1] == 0)
+							{
+								dwmixfa_state.ch[i].stereo_volright[1] = ch->dstvols[1][1];
+							}
+						} else {
+							dwmixfa_state.ch[i].mono_rampleft  = frchk(invt2g*(ch->dstvols[0][0] + ch->dstvols[0][1] - dwmixfa_state.ch[i].mono_volleft));
+							dwmixfa_state.ch[i].mono_rampright = frchk(invt2g*(ch->dstvols[1][0] + ch->dstvols[1][1] - dwmixfa_state.ch[i].mono_volright));
+
+							if (dwmixfa_state.ch[i].mono_rampleft==0)
+							{
+								dwmixfa_state.ch[i].mono_volleft = ch->dstvols[0][0] + ch->dstvols[0][1];
+							}
+							if (dwmixfa_state.ch[i].mono_rampright==0)
+							{
+								dwmixfa_state.ch[i].mono_volright = ch->dstvols[1][0] + ch->dstvols[1][1];
+							}
+						}
 					}
 					/* filter resonance */
 					dwmixfa_state.ch[i].freso = pow(ch->orgfrez, dwmixfa_state.ch[i].ffreq);
@@ -744,8 +842,9 @@ static void GetMixChannel(unsigned int ch, struct mixchannel *chn, uint32_t rate
 	chn->loopend=c->loopend;
 	chn->fpos = dwmixfa_state.ch[ch].smpposf;
 	chn->pos  = dwmixfa_state.ch[ch].smpposw - (float*)c->samp;
-	chn->vol.volfs[0]=fabs(c->vol[0]);
-	chn->vol.volfs[1]=fabs(c->vol[1]);
+#warning GetMixChannel assumes volume data is for mono-sample
+	chn->vol.volfs[0] = fabs(c->vol[0][0] + c->vol[0][1]);
+	chn->vol.volfs[1] = fabs(c->vol[1][0] + c->vol[1][1]);
 	chn->step=imuldiv((dwmixfa_state.ch[ch].freqw << 16) | dwmixfa_state.ch[ch].freqf, dwmixfa_state.samprate, (signed)rate);
 	chn->status=MIX_PLAYFLOAT;
 	if (dwmixfa_state.ch[ch].voiceflags & MIXF_MUTE)
