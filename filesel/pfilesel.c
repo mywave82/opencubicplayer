@@ -1129,7 +1129,9 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	cpiKeyHelpClear,
 	cpiKeyHelpDisplay,
 	fsDraw,
-	fsForceNextRescan
+	fsForceNextRescan,
+	filesystem_resolve_dirdb_dir,
+	filesystem_resolve_dirdb_file
 };
 
 static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)
