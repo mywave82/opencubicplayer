@@ -20,21 +20,10 @@
 
 #include "config.h"
 #include <assert.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
-#ifdef _WIN32
-# include <windows.h>
-# include <fileapi.h>
-# include <windows.h>
-#endif
 #include "types.h"
 #include "boot/plinkman.h"
 #include "boot/psetting.h"
@@ -47,7 +36,6 @@
 #include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
-#include "stuff/utf-8.h"
 #include "stuff/poutput.h"
 
 #include "sidconfig.h"
@@ -66,6 +54,7 @@ struct browser_t
 	int isparent;
 #ifdef _WIN32
 	int isdrive;
+	char drive;
 #endif
 	uint32_t dirdb_ref;
 	char hash_4096[33];
@@ -623,89 +612,53 @@ static int float100x_to_int(const char *src)
 	return retval;
 }
 
-static void rom_md5 (char md5[33], uint32_t dirdb_ref, int size, const struct DevInterfaceAPI_t *API)
+static void rom_md5s (char md5_4096[33], char md5_8192[33], uint32_t dirdb_ref, const struct DevInterfaceAPI_t *API)
 {
-	char *romPath = 0;
-#ifdef _WIN32
-	HANDLE f;
-#else
-	int fd;
-#endif
-	uint8_t buffer[4096];
-	MD5_CTX ctx;
+	struct ocpfile_t *file = 0;
+	struct ocpfilehandle_t *h;
+	uint8_t buffer[8192];
+	int fill = 0;
 
-	md5[0] = '-';
-	md5[1] = 0;
-	md5[32] = 0;
+	md5_4096[0] = '-';
+	md5_4096[1] = 0;
+	md5_4096[32] = 0;
 
-#ifdef _WIN32
-	API->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
+	md5_8192[0] = '-';
+	md5_8192[1] = 0;
+	md5_8192[32] = 0;
 
-	f = CreateFile (romPath,             /* lpFileName */
-	                GENERIC_READ,          /* dwDesiredAccess */
-	                FILE_SHARE_READ,       /* dwShareMode */
-	                0,                     /* lpSecurityAttributes */
-	                OPEN_EXISTING,         /* dwCreationDisposition */
-	                FILE_ATTRIBUTE_NORMAL, /* dwFlagsAndAttributes */
-	                0);                    /* hTemplateFile */
-	free (romPath);
-	if (f == INVALID_HANDLE_VALUE)
+	API->filesystem_resolve_dirdb_file (dirdb_ref, 0, &file);
+	if (!file)
 	{
 		return;
 	}
-#else
-	API->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
-	fd = open (romPath, O_RDONLY);
-	free (romPath);
-	if (fd < 0)
+	h = file->open (file);
+	if (h)
 	{
-		return;
-	}
-#endif
-
-	MD5Init (&ctx);
-
-	while (size)
-	{
-#ifdef _WIN32
-		DWORD NumberOfBytesRead = 0;
-		BOOL Result;
-		Result = ReadFile (f, buffer, 4096, &NumberOfBytesRead, 0);
-		if ((!Result) || (NumberOfBytesRead != 4096))
-		{
-			CloseHandle (f);
-			return;
-		}
-		MD5Update (&ctx, buffer, 4096);
-		size -= 4096;
-#else
-		int result = read (fd, buffer, 4096);
-		if (result < 0)
-		{
-			if (errno == EINTR)
-			{
-				continue;
-			}
-			close (fd);
-			return;
-		}
-		if (result == 0)
-		{
-			close (fd);
-			return;
-		}
-		MD5Update (&ctx, buffer, 4096);
-		size -= result;
-#endif
+		fill = h->read (h, buffer, 8192);
+		h->unref (h);
+		h = 0;
 	}
 
-#ifdef _WIN32
-	CloseHandle (f);
-#else
-	close (fd);
-#endif
-	MD5Final (md5, &ctx);
+	file->unref (file);
+	file = 0;
+
+	if (fill >= 4096)
+	{
+		MD5_CTX ctx;
+		MD5Init (&ctx);
+		MD5Update (&ctx, buffer, 4096);
+		MD5Final (md5_4096, &ctx);
+	}
+	if (fill >= 8192)
+	{
+		MD5_CTX ctx;
+		MD5Init (&ctx);
+		MD5Update (&ctx, buffer, 8192);
+		MD5Final (md5_8192, &ctx);
+	}
 }
+
 
 static void sidDrawDir (const int esel, const int expect, const struct DevInterfaceAPI_t *API)
 {
@@ -791,12 +744,17 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 		{
 			if (entries_data[masterindex].isparent)
 			{
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o..%0.7o ", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1);
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o..", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1);
 			} else {
 				const char *dirname;
 				API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &dirname);
-				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o%*S%0.7o ", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth - 2, dirname);
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o%*S", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, mlWidth, dirname);
 			}
+#ifdef _WIN32
+		} else if (entries_data[masterindex].isdrive)
+		{
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%*.*o%c:", (masterindex==esel)?0x6:0x0, (masterindex==esel)?0x1:0x1, entries_data[masterindex].drive);
+#endif
 		} else {
 			const char *filename;
 			API->dirdb->GetName_internalstr (entries_data[masterindex].dirdb_ref, &filename);
@@ -855,6 +813,10 @@ static int cmp(const void *a, const void *b)
 	{
 		return 1;
 	}
+	if (p1->isdrive)
+	{
+		return p1->drive - p2->drive;
+	}
 #endif
 
 	cmp_API->dirdb->GetName_internalstr (p1->dirdb_ref, &n1);
@@ -890,7 +852,6 @@ static void entries_append_parent (uint32_t ref, const struct DevInterfaceAPI_t 
 {
 	if (entries_append())
 	{
-		API->dirdb->Unref (ref, dirdb_use_file);
 		return;
 	}
 	entries_data[entries_count].isdir = 1;
@@ -898,6 +859,7 @@ static void entries_append_parent (uint32_t ref, const struct DevInterfaceAPI_t 
 #ifdef _WIN32
 	entries_data[entries_count].isdrive = 0;
 #endif
+	API->dirdb->Ref (ref, dirdb_use_file);
 	entries_data[entries_count].dirdb_ref = ref;
 	entries_data[entries_count].hash_4096[0] = 0;
 	entries_data[entries_count].hash_8192[0] = 0;
@@ -908,7 +870,6 @@ static void entries_append_dir (uint32_t ref, const struct DevInterfaceAPI_t *AP
 {
 	if (entries_append())
 	{
-		API->dirdb->Unref (ref, dirdb_use_file);
 		return;
 	}
 	entries_data[entries_count].isdir = 1;
@@ -916,6 +877,7 @@ static void entries_append_dir (uint32_t ref, const struct DevInterfaceAPI_t *AP
 #ifdef _WIN32
 	entries_data[entries_count].isdrive = 0;
 #endif
+	API->dirdb->Ref (ref, dirdb_use_file);
 	entries_data[entries_count].dirdb_ref = ref;
 	entries_data[entries_count].hash_4096[0] = 0;
 	entries_data[entries_count].hash_8192[0] = 0;
@@ -926,11 +888,14 @@ static void entries_append_file (uint32_t ref, const char *hash_4096, const char
 {
 	if (entries_append())
 	{
-		API->dirdb->Unref (ref, dirdb_use_file);
 		return;
 	}
 	entries_data[entries_count].isdir = 0;
 	entries_data[entries_count].isparent = 0;
+#ifdef _WIN32
+	entries_data[entries_count].isdrive = 0;
+#endif
+	API->dirdb->Ref (ref, dirdb_use_file);
 	entries_data[entries_count].dirdb_ref = ref;
 	strcpy (entries_data[entries_count].hash_4096, hash_4096);
 	strcpy (entries_data[entries_count].hash_8192, hash_8192);
@@ -938,7 +903,7 @@ static void entries_append_file (uint32_t ref, const char *hash_4096, const char
 }
 
 #ifdef _WIN32
-static void entries_append_drive (uint32_t ref, const struct DevInterfaceAPI_t *API)
+static void entries_append_drive (uint32_t ref, const struct DevInterfaceAPI_t *API, char drive)
 {
 	if (ref == DIRDB_CLEAR)
 	{
@@ -951,7 +916,8 @@ static void entries_append_drive (uint32_t ref, const struct DevInterfaceAPI_t *
 	entries_data[entries_count].isdir = 0;
 	entries_data[entries_count].isparent = 0;
 	entries_data[entries_count].isdrive = 1;
-	API->dirdb->Unref(ref, dirdb_use_file);
+	entries_data[entries_count].drive = drive;
+	API->dirdb->Ref(ref, dirdb_use_file);
 	entries_data[entries_count].dirdb_ref = ref;
 	entries_data[entries_count].hash_4096[0] = 0;
 	entries_data[entries_count].hash_8192[0] = 0;
@@ -959,9 +925,51 @@ static void entries_append_drive (uint32_t ref, const struct DevInterfaceAPI_t *
 }
 #endif
 
+static void refresh_dir_add_file (void *token, struct ocpfile_t *file)
+{
+	const struct DevInterfaceAPI_t *API = token;
+	const char *filename = 0;
+	size_t len;
+	API->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
+	if (!filename)
+	{
+		return;
+	}
+	len = strlen (filename);
+	if (len <= 4)
+	{
+		return;
+	}
+	if ((!strcasecmp (filename + len - 4, ".rom")) ||
+	    (!strcasecmp (filename + len - 4, ".bin")))
+	{
+		char md5_4096[33];
+		char md5_8192[33];
+		rom_md5s (md5_4096, md5_8192, file->dirdb_ref, API);
+		entries_append_file (file->dirdb_ref, md5_4096, md5_8192, API);
+	}
+}
+
+static void refresh_dir_add_dir (void *token, struct ocpdir_t *dir)
+{
+	const struct DevInterfaceAPI_t *API = token;
+	const char *dirname = 0;
+	API->dirdb->GetName_internalstr (dir->dirdb_ref, &dirname);
+	if (!dirname)
+	{
+		return;
+	}
+	if ((strcmp (dirname, ".")) &&
+	    (strcmp (dirname, "..")))
+	{
+		entries_append_dir (dir->dirdb_ref, API);
+	}
+}
+
 static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct DevInterfaceAPI_t *API)
 {
-	DIR *d;
+	struct ocpdir_t *dir = 0;
+	//DIR *d;
 	int i;
 
 	*esel = 0;
@@ -974,77 +982,36 @@ static void refresh_dir (uint32_t ref, uint32_t old, int *esel, const struct Dev
 	API->dirdb->GetFullname_malloc (ref, &entries_location, DIRDB_FULLNAME_NODRIVE);
 #endif
 
+	API->filesystem_resolve_dirdb_dir (ref, 0, &dir);
+	if (dir)
 	{
+		ocpdirhandle_pt iter;
+		if (dir->parent)
+		{
+			entries_append_parent (dir->parent->dirdb_ref, API);
+		}
+		iter = dir->readdir_start (dir, refresh_dir_add_file, refresh_dir_add_dir, (void *)API);
+		while (dir->readdir_iterate (iter))
+		{
+		}
+		dir->readdir_cancel (iter);
+		dir->unref (dir);
+		dir = 0;
+	} else {
 		uint32_t dir_ref = API->dirdb->GetParentAndRef (ref, dirdb_use_file);
 		if (dir_ref != UINT32_MAX)
 		{
 			entries_append_parent (dir_ref, API);
 		}
+		 API->dirdb->Unref (dir_ref, dirdb_use_file);
 	}
 
-	d = opendir (entries_location);
-	if (d)
-	{
-		struct dirent *de;
-		while ((de = readdir (d)))
-		{
-			struct stat st;
-			if (!strcmp (de->d_name, "."))
-			{
-				continue;
-			}
-			if (!strcmp (de->d_name, ".."))
-			{
-				continue;
-			}
-			{
-				char *temp = malloc (strlen (entries_location) + 1 + strlen (de->d_name) + 1);
-				int res;
-				if (!temp)
-				{
-					continue;
-				}
-				sprintf (temp, "%s/%s", entries_location, de->d_name);
-				res = stat (temp, &st);
-				free (temp);
-				if (res < 0)
-				{
-					continue;
-				}
-			}
-			if ((st.st_mode & S_IFMT) == S_IFDIR)
-			{
-				entries_append_dir (API->dirdb->FindAndRef (ref, de->d_name, dirdb_use_file), API);
-				continue;
-			} else if ((st.st_mode & S_IFMT) == S_IFREG)
-			{
-				int len = strlen (de->d_name);
-				char md5_4096[33];
-				char md5_8192[33];
-				uint32_t newref;
-				if (len < 4)
-				{
-					continue;
-				}
-				if (strcasecmp (de->d_name + len - 4, ".rom") &&
-				    strcasecmp (de->d_name + len - 4, ".bin"))
-				{
-					continue;
-				}
-				newref = API->dirdb->FindAndRef (ref, de->d_name, dirdb_use_file);
-				rom_md5 (md5_4096, newref, 4096, API);
-				rom_md5 (md5_8192, newref, 8192, API);
-				entries_append_file (newref, md5_4096, md5_8192, API);
-			}
-		}
-		closedir (d);
-	}
 #ifdef _WIN32
 	for (i=0; i < 26; i++)
 	{
 		if (API->dmDriveLetters[i])
 		{
-			entries_append_drive (API->dmDriveLetters[i]->cwd->dirdb_ref, API);
+			entries_append_drive (API->dmDriveLetters[i]->cwd->dirdb_ref, API, i + 'A');
 		}
 	}
 #endif
@@ -1094,12 +1061,9 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	entry_basic.dirdb_ref   = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_basic,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 	entry_chargen.dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_chargen, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 
-	rom_md5 (entry_kernal .hash_8192, entry_kernal .dirdb_ref, 8192, API);
-	rom_md5 (entry_kernal .hash_4096, entry_kernal .dirdb_ref, 4096, API);
-	rom_md5 (entry_basic  .hash_8192, entry_basic  .dirdb_ref, 8192, API);
-	rom_md5 (entry_basic  .hash_4096, entry_basic  .dirdb_ref, 4096, API);
-	rom_md5 (entry_chargen.hash_8192, entry_chargen.dirdb_ref, 8192, API);
-	rom_md5 (entry_chargen.hash_4096, entry_chargen.dirdb_ref, 4096, API);
+	rom_md5s (entry_kernal .hash_4096, entry_kernal .hash_8192, entry_kernal .dirdb_ref, API);
+	rom_md5s (entry_basic  .hash_4096, entry_basic  .hash_8192, entry_basic  .dirdb_ref, API);
+	rom_md5s (entry_chargen.hash_4096, entry_chargen.hash_8192, entry_chargen.dirdb_ref, API);
 
 	while (1)
 	{
@@ -1223,9 +1187,9 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 										)
 										{
 											uint32_t dir = entries_data[dsel].dirdb_ref;
-											API->dirdb->Ref (dir, dirdb_use_file);
+											API->dirdb->Ref (dir, dirdb_use_dir);
 											refresh_dir (dir, dir_ref, &dsel, API);
-											API->dirdb->Unref (dir_ref, dirdb_use_file);
+											API->dirdb->Unref (dir_ref, dirdb_use_dir);
 											dir_ref = dir;
 										} else {
 											char *newpath = 0;

@@ -33,6 +33,9 @@ struct DevInterfaceAPI_t
 
 	void (*fsDraw) (void); /* Draws the filesystem browser, great for virtual devices that has a dialog */
 	void (*fsForceNextRescan) (void); /* Next time fsFileSelect() is oalled, enforce a rescan */
+
+	int (*filesystem_resolve_dirdb_dir) (uint32_t ref, struct dmDrive **drive, struct ocpdir_t **dir);
+	int (*filesystem_resolve_dirdb_file) (uint32_t ref, struct dmDrive **drive, struct ocpfile_t **file);
 };
 
 struct IOCTL_DevInterface
