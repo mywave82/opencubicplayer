@@ -1139,7 +1139,7 @@ static uint32_t utf16_try_decode (uint16_t *data_he, int *length)
 		return 0;
 	}
 	(*length) = 0;
-	return ((uint_fast32_t)(data_he[0] & 0x03ff) << 10) | (data_he[1] & 0x03ff);
+	return (((uint_fast32_t)(data_he[0] & 0x03ff) << 10) | (data_he[1] & 0x03ff)) + 0x10000;
 }
 
 /* duplicate from utf8.c: poutput.so is not available yet, and SDL 1.x is only for legacy use */
