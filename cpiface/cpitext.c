@@ -130,14 +130,15 @@ static void cpiSetFocus (struct cpifaceSessionAPI_t *cpifaceSession, const char 
 
 void cpiTextSetMode (struct cpifaceSessionAPI_t *cpifaceSession, const char *name)
 {
-	if (!name)
-		name=cpiFocusHandle;
 	if (!modeactive)
 	{
-		strcpy(cpiFocusHandle, name);
+		if (name && (cpiFocusHandle != name))
+		{
+			strcpy(cpiFocusHandle, name);
+		}
 		cpiSetMode("text");
 	} else {
-		cpiSetFocus (cpifaceSession, name);
+		cpiSetFocus (cpifaceSession, name ? name : cpiFocusHandle);
 		cpiTextRecalc (&cpifaceSessionAPI.Public);
 	}
 }
