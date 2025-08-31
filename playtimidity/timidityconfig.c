@@ -25,8 +25,10 @@
 #include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
+# warning WIN32 currently uses non widechar API, since paths are within ASCII-range, and TiMidity project uses this too.
 # include <handleapi.h>
 # include <fileapi.h>
+# include <sysinfoapi.h>
 #else
 # include <sys/stat.h>
 #endif
@@ -354,14 +356,18 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 {
 	reset_configfiles ();
 
-#ifdef _WIN32
 	try_user (API, "timidity.cfg");
+#ifdef _WIN32
 	try_user (API, "_timidity.cfg");
 #endif
-	try_user (API, "timidity.cfg");
 
-#ifdef __W32
-	try_global ("C:\\WINDOWS\\timidity.cfg");
+#ifdef _WIN32
+	{
+		char local[1024];
+		GetWindowsDirectory (local, 1023 - 13);
+		strcat (local, "\\TIMIDITY.CFG");
+		try_global (local); // "C:\\WINDOWS\\timidity.cfg"
+	}
 	try_global ("C:\\timidity\\timidity.cfg");
 	try_global ("C:\\TiMidity++\\timidity.cfg");
 	scan_config_directory ("C:\\timidity\\*");
