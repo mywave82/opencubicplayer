@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <assert.h>
+#include <ctype.h>
 #include <fcntl.h>
 #ifdef HAVE_PWD_H
 # include <pwd.h>
@@ -628,9 +629,23 @@ uint32_t dirdbResolvePathWithBaseAndRef(uint32_t base, const char *name, int fla
 					goto nodrive;
 				}
 			}
-
 			strncpy (segment, next, split - next);
 			segment[split - next] = 0;
+#ifdef _WIN32
+			/* Force drive letters to upper-case */
+			if (segment[1] == ':')
+			{
+				segment[0] = toupper(segment[0]);
+			} else
+#endif
+			{	/* force lower-case for all protocols */
+				char *iter;
+				for (iter = segment; *iter; iter++)
+				{
+					*iter = tolower (*iter);
+				}
+			}
+
 			if (flags & DIRDB_RESOLVE_WINDOWS_SLASH)
 			{
 				strreplace (segment, '/', '\\');

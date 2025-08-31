@@ -447,7 +447,7 @@ static int mlecmp (const void *a, const void *b)
 
 	if (e1->flags & MODLIST_FLAG_DRV)
 	{
-		return strcasecmp (e1->utf8_16_dot_3, e2->utf8_16_dot_3);
+		return strcmp (e1->utf8_16_dot_3, e2->utf8_16_dot_3); /* On windows, drive letters are all capital letters, and should appear infront of the other protocols, hence we use strcmp */
 	}
 
 	dirdbGetName_internalstr (e1->file ? e1->file->dirdb_ref : e1->dir->dirdb_ref, &n1);
