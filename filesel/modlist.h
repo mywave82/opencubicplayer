@@ -8,6 +8,7 @@ struct modlistentry
 {
 	char utf8_8_dot_3  [12*4+1];  /* UTF-8 ready */
 	char utf8_16_dot_3 [20*4+1]; /* UTF-8 ready */
+	char *utf8_casefolded;
 
 #define MODLIST_FLAG_DRV     1
 #define MODLIST_FLAG_DOTDOT  2

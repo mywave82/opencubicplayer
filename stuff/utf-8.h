@@ -28,5 +28,6 @@ int EditStringUTF8(unsigned int y, unsigned int x, unsigned int w, char **s);
 /* zero-terminated, forever long dynamic buffer */
 int EditStringASCII(unsigned int y, unsigned int x, unsigned int w, char **s);
 
+char *utf8_casefold (const char *src);
 
 #endif
