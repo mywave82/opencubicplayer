@@ -66,6 +66,45 @@ do_cmake () {
   cd ..
 }
 
+WGET="wget --tries=20 --waitretry=5 --retry-connrefused"
+
+#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4
+test -f ax_cxx_compile_stdcxx.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4 )
+#WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4
+test -f ax_check_compile_flag.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4 )
+#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4
+test -f ax_cflags_warn_all.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4 )
+#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4
+test -f ax_compiler_vendor.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4 )
+#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4
+test -f ax_prepend_flag.m4       || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4 )
+#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O ax_require_defined.m4
+test -f ax_require_defined.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O ax_require_defined.m4 )
+
+test -f bzip2-$BZIP2_VERSION.tar.gz                 || $WGET https://sourceware.org/pub/bzip2/bzip2-$BZIP2_VERSION.tar.gz -O bzip2-$BZIP2_VERSION.tar.gz                                                                                     || rm bzip2-$BZIP2_VERSION.tar.gz                 || false
+test -f libmad-$LIBMAD_VERSION.tar.gz               || $WGET https://sourceforge.net/projects/mad/files/libmad/$LIBMAD_VERSION/libmad-$LIBMAD_VERSION.tar.gz/download -O libmad-$LIBMAD_VERSION.tar.gz                                       || rm libmad-$LIBMAD_VERSION.tar.gz               || false
+test -f libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz  || $WGET https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/$LIBJPEGTURBO_VERSION/libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz -O libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz || rm libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz  || false
+test -f libpng-$LIBPNG_VERSION.tar.gz               || $WGET https://download.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz -O libpng-$LIBPNG_VERSION.tar.gz                                                                          || rm libpng-$LIBPNG_VERSION.tar.gz               || false
+test -f libogg-$LIBOGG_VERSION.tar.gz               || $WGET https://downloads.xiph.org/releases/ogg/libogg-$LIBOGG_VERSION.tar.gz -O libogg-$LIBOGG_VERSION.tar.gz                                                                          || rm libogg-$LIBOGG_VERSION.tar.gz               || false
+test -f libvorbis-$LIBVORBIS_VERSION.tar.gz         || $WGET https://downloads.xiph.org/releases/vorbis/libvorbis-$LIBVORBIS_VERSION.tar.gz -O libvorbis-$LIBVORBIS_VERSION.tar.gz                                                           || rm libvorbis-$LIBVORBIS_VERSION.tar.gz         || false
+test -f flac-$FLAC_VERSION.tar.xz                   || $WGET https://ftp.osuosl.org/pub/xiph/releases/flac/flac-$FLAC_VERSION.tar.xz -O flac-$FLAC_VERSION.tar.xz                                                                            || rm flac-$FLAC_VERSION.tar.xz                   || false
+test -f SDL2-devel-$SDL2_VERSION-mingw.tar.gz       || $WGET https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-devel-$SDL2_VERSION-mingw.tar.gz -O SDL2-devel-$SDL2_VERSION-mingw.tar.gz                        || rm SDL2-devel-$SDL2_VERSION-mingw.tar.gz       || false
+if test "$host" == "i686-w64-mingw32"; then
+  test -f brotli-$BROTLI_VERSION.tar.gz             || $WGET https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz                                                                     || rm brotli-$BROTLI_VERSION.tar.gz               || false
+fi
+test -f harfbuzz-$HARFBUZZ_VERSION.tar.xz           || $WGET https://github.com/harfbuzz/harfbuzz/releases/download/$HARFBUZZ_VERSION/harfbuzz-$HARFBUZZ_VERSION.tar.xz -O harfbuzz-$HARFBUZZ_VERSION.tar.xz                                 || rm harfbuzz-$HARFBUZZ_VERSION.tar.xz           || false
+test -f freetype-$FREETYPE2_VERSION.tar.gz          || $WGET https://sourceforge.net/projects/freetype/files/freetype2/$FREETYPE2_VERSION/freetype-$FREETYPE2_VERSION.tar.gz/download -O freetype-$FREETYPE2_VERSION.tar.gz                  || rm freetype-$FREETYPE2_VERSION.tar.gz          || false
+#$WGET http://ftp.eu.metabrainz.org/pub/musicbrainz/libdiscid/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip
+test -f libdiscid-$LIBDISCID_VERSION-win.zip        || $WGET https://github.com/metabrainz/libdiscid/releases/download/v$LIBDISCID_VERSION/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip                      || rm libdiscid-$LIBDISCID_VERSION-win.zip        || false
+test -f cJSON-$CJSON_VERSION.tar.gz                 || $WGET https://github.com/DaveGamble/cJSON/archive/refs/tags/v$CJSON_VERSION.tar.gz -O cJSON-$CJSON_VERSION.tar.gz                                                                     || rm cJSON-$CJSON_VERSION.tar.gz                 || false
+test -f ancient-$ANCIENT_VERSION.tar.gz             || $WGET https://github.com/temisu/ancient/archive/refs/tags/v$ANCIENT_VERSION.tar.gz -O ancient-$ANCIENT_VERSION.tar.gz                                                                 || rm ancient-$ANCIENT_VERSION.tar.gz             || false
+test -f libiconv-$LIBICONV_VERSION.tar.gz           || $WGET https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$LIBICONV_VERSION.tar.gz -O libiconv-$LIBICONV_VERSION.tar.gz                                                                     || rm libiconv-$LIBICONV_VERSION.tar.gz           || false
+test -f game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || $WGET https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz -O game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz                                 || rm game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || false
+# Future releases will be here https://github.com/libgme/game-music-emu/tags
+test -f unifont-$UNIFONT_VERSION.otf                || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont-$UNIFONT_VERSION.otf       -O unifont-$UNIFONT_VERSION.otf                                      || rm unifont-$UNIFONT_VERSION.otf                || false
+test -f unifont_csur-$UNIFONT_VERSION.otf           || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_csur-$UNIFONT_VERSION.otf  -O unifont_csur-$UNIFONT_VERSION.otf                                 || rm unifont_csur-$UNIFONT_VERSION.otf           || false
+test -f unifont_upper-$UNIFONT_VERSION.otf          || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_upper-$UNIFONT_VERSION.otf -O unifont_upper-$UNIFONT_VERSION.otf                                || rmunifont_upper-$UNIFONT_VERSION.otf           || false
+
 #wget https://zlib.net/zlib-1.2.13.tar.gz
 #tar xfz zlib-1.2.13.tar.gz
 #cd zlib-1.2.13/
@@ -74,8 +113,7 @@ do_cmake () {
 #cd ..
 
 ########## BZIP2 ##########
-rm -Rf bzip2-*
-wget https://sourceware.org/pub/bzip2/bzip2-$BZIP2_VERSION.tar.gz -O bzip2-$BZIP2_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'bzip2-*'` && rm -Rf $dirs
 tar xfz bzip2-$BZIP2_VERSION.tar.gz
 cd bzip2-$BZIP2_VERSION
 cat <<EOF > Makefile.mingw32
@@ -154,8 +192,7 @@ EOF
  cd ..
 
 ########## MAD ##########
-rm -Rf libmad-*
-wget https://sourceforge.net/projects/mad/files/libmad/$LIBMAD_VERSION/libmad-$LIBMAD_VERSION.tar.gz/download -O libmad-$LIBMAD_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libmad-*'` && rm -Rf $dirs
 tar xfz libmad-$LIBMAD_VERSION.tar.gz
 cd libmad-$LIBMAD_VERSION
 patch -p 1 << EOF
@@ -198,16 +235,14 @@ make all install
 cd ..
 
 ########## LIBJPEG-TURBO ##########
-rm -Rf libjpeg-turbo-*
-wget https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/$LIBJPEGTURBO_VERSION/libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz -O libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libjpeg-turbo-*'` && rm -Rf $dirs
 tar xfz libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
 cd libjpeg-turbo-$LIBJPEGTURBO_VERSION
 do_cmake -DENABLE_SHARED=TRUE
 cd ..
 
 ########## LIBPNG ##########
-rm -Rf libpng-*
-wget https://download.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz -O libpng-$LIBPNG_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libpng-*'` && rm -Rf $dirs
 tar xfz libpng-$LIBPNG_VERSION.tar.gz
 cd libpng-$LIBPNG_VERSION
 #cmake does not use pkg-config for zlib?????
@@ -215,8 +250,7 @@ do_cmake -DZLIB_ROOT=/usr/$host/
 cd ..
 
 ########## LIBOGG ##########
-rm -Rf libogg-*
-wget https://downloads.xiph.org/releases/ogg/libogg-$LIBOGG_VERSION.tar.gz -O libogg-$LIBOGG_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libogg-*'` && rm -Rf $dirs
 tar xfz libogg-$LIBOGG_VERSION.tar.gz
 cd libogg-$LIBOGG_VERSION
 do_cmake
@@ -225,8 +259,7 @@ cd ..
 mv -f $prefix/bin/libogg.dll $prefix/bin/ogg.dll
 
 ########## VORBIS ##########
-rm -Rf libvorbis-*
-wget https://downloads.xiph.org/releases/vorbis/libvorbis-$LIBVORBIS_VERSION.tar.gz -O libvorbis-$LIBVORBIS_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libvorbis-*'` && rm -Rf $dirs
 tar xfz libvorbis-$LIBVORBIS_VERSION.tar.gz
 cd libvorbis-$LIBVORBIS_VERSION
 patch -p1 << EOF
@@ -271,16 +304,14 @@ mv -f $prefix/bin/libvorbisfile.dll $prefix/bin/vorbisfile.dll
 mv -f $prefix/bin/libvorbis.dll $prefix/bin/vorbis.dll
 
 ########## FLAC ##########
-rm -Rf flac-*
-wget https://ftp.osuosl.org/pub/xiph/releases/flac/flac-$FLAC_VERSION.tar.xz -O flac-$FLAC_VERSION.tar.xz
+dirs=`ls -d */|cut -f1|grep 'flac-*'` && rm -Rf $dirs
 tar xfJ flac-$FLAC_VERSION.tar.xz
 cd flac-$FLAC_VERSION
 do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
 cd ..
 
 ########## SDL2 ##########
-rm -Rf SDL2-*
-wget https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-devel-$SDL2_VERSION-mingw.tar.gz -O SDL2-devel-$SDL2_VERSION-mingw.tar.gz
+dirs=`ls -d */|cut -f1|grep 'SDL2-*'` && rm -Rf $dirs
 tar xfz SDL2-devel-$SDL2_VERSION-mingw.tar.gz
 cd SDL2-$SDL2_VERSION
 cp $host/* $prefix -R
@@ -294,9 +325,9 @@ sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/li
 cd ..
 
 ########## BROTLI ##########, only needed for 32bit, unsure why
-rm -Rf brotli-*
+dirs=`ls -d */|cut -f1|grep 'brotli-*'` && rm -Rf $dirs
 if test "$host" == "i686-w64-mingw32"; then
-  wget https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz
+  $WGET https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz
   tar xfz brotli-$BROTLI_VERSION.tar.gz
   cd brotli-$BROTLI_VERSION
   do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
@@ -304,16 +335,14 @@ if test "$host" == "i686-w64-mingw32"; then
 fi
 
 ########## HARFBUZZ #########
-rm -Rf harfbuzz-*
-wget https://github.com/harfbuzz/harfbuzz/releases/download/$HARFBUZZ_VERSION/harfbuzz-$HARFBUZZ_VERSION.tar.xz -O harfbuzz-$HARFBUZZ_VERSION.tar.xz
+dirs=`ls -d */|cut -f1|grep 'harfbuzz-*'` && rm -Rf $dirs
 tar xfJ harfbuzz-$HARFBUZZ_VERSION.tar.xz
 cd harfbuzz-$HARFBUZZ_VERSION
 do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
 cd ..
 
 ########## FREETYPE2 ##########
-rm -Rf freetype-*
-wget https://sourceforge.net/projects/freetype/files/freetype2/$FREETYPE2_VERSION/freetype-$FREETYPE2_VERSION.tar.gz/download -O freetype-$FREETYPE2_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'freetype-*'` && rm -Rf $dirs
 tar xfz freetype-$FREETYPE2_VERSION.tar.gz
 cd freetype-$FREETYPE2_VERSION
 do_cmake -DZLIB_ROOT=/usr/$host/ \
@@ -321,9 +350,7 @@ do_cmake -DZLIB_ROOT=/usr/$host/ \
 cd ..
 
 ########## LIBDISCID ##########
-rm -Rf libdiscid-*
-#wget http://ftp.eu.metabrainz.org/pub/musicbrainz/libdiscid/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip
-wget https://github.com/metabrainz/libdiscid/releases/download/v$LIBDISCID_VERSION/libdiscid-$LIBDISCID_VERSION-win.zip -O libdiscid-$LIBDISCID_VERSION-win.zip
+dirs=`ls -d */|cut -f1|grep 'libdiscid-*'` && rm -Rf $dirs
 unzip libdiscid-$LIBDISCID_VERSION-win.zip
 if test "$host" == "i686-w64-mingw32"; then
   cp -r libdiscid-$LIBDISCID_VERSION-win/Win32/* $prefix/lib
@@ -347,8 +374,7 @@ Cflags:
 EOF
 
 ########## cJSON ##########
-rm -Rf cJSON-*
-wget https://github.com/DaveGamble/cJSON/archive/refs/tags/v$CJSON_VERSION.tar.gz -O cJSON-$CJSON_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'cJSON-*'` && rm -Rf $dirs
 tar xfz cJSON-$CJSON_VERSION.tar.gz
 cd cJSON-$CJSON_VERSION
 patch -p 1 <<EOF
@@ -398,17 +424,17 @@ do_cmake
 cd ..
 
 ########## ancient ##########
-rm -Rf ancient-*
-wget https://github.com/temisu/ancient/archive/refs/tags/v$ANCIENT_VERSION.tar.gz -O ancient-$ANCIENT_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'ancient-*'` && rm -Rf $dirs
 tar xfz ancient-$ANCIENT_VERSION.tar.gz
 cd ancient-$ANCIENT_VERSION
 mkdir -p m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O m4/ax_cxx_compile_stdcxx.m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O m4/ax_check_compile_flag.m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O m4/ax_cflags_warn_all.m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O m4/ax_compiler_vendor.m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O m4/ax_prepend_flag.m4
-wget 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O m4/ax_require_defined.m4
+cp ../ax_cxx_compile_stdcxx.m4 m4/
+cp ../ax_cxx_compile_stdcxx.m4 m4/
+cp ../ax_check_compile_flag.m4 m4/
+cp ../ax_cflags_warn_all.m4    m4/
+cp ../ax_compiler_vendor.m4    m4/
+cp ../ax_prepend_flag.m4       m4/
+cp ../ax_require_defined.m4    m4/
 aclocal -I m4
 autoreconf --install
 ./configure --host $host --prefix=$prefix
@@ -416,8 +442,7 @@ make all install
 cd ..
 
 ########## libiconv ##########
-rm -Rf libiconv-*
-wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$LIBICONV_VERSION.tar.gz -O libiconv-$LIBICONV_VERSION.tar.gz
+dirs=`ls -d */|cut -f1|grep 'libiconv-*'` && rm -Rf $dirs
 tar xfz libiconv-$LIBICONV_VERSION.tar.gz
 cd libiconv-$LIBICONV_VERSION
 ./configure --host $host --prefix=$prefix
@@ -425,19 +450,13 @@ make all install
 cd ..
 
 ########## game-music-emulator ##########
-rm -Rf game-music-emu-*
-wget https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz -O game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
-# Future releases will be here https://github.com/libgme/game-music-emu/tags
+dirs=`ls -d */|cut -f1|grep 'game-music-emu-*'` && rm -Rf $dirs
 tar xfz game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
 cd game-music-emu-$GAMEMUSICEMU_VERSION
 do_cmake -DENABLE_UBSAN=off
 cd ..
 
 ######### unifont ##########
-rm -Rf unifont-* unifont_*-*
-wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont-$UNIFONT_VERSION.otf       -O unifont-$UNIFONT_VERSION.otf
-wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_csur-$UNIFONT_VERSION.otf  -O unifont_csur-$UNIFONT_VERSION.otf
-wget https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_upper-$UNIFONT_VERSION.otf -O unifont_upper-$UNIFONT_VERSION.otf
 
 cd ..
 ./configure \
