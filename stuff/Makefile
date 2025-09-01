@@ -10,8 +10,9 @@ else
 all: $(stuff_libocp_so) sets$(LIB_SUFFIX) poutput$(LIB_SUFFIX) poutput-keyboard.o
 endif
 
-test: compat-test$(EXE_SUFFIX)
+test: compat-test$(EXE_SUFFIX) utf-16-test$(EXE_SUFFIX)
 	./compat-test.sh
+	./utf-16-test$(EXE_SUFFIX)
 
 poutput$(LIB_SUFFIX): $(poutput_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^ $(poutput_so_libs)
@@ -20,7 +21,7 @@ sets$(LIB_SUFFIX): $(sets_so)
 	$(CC) $(SHARED_FLAGS) -o $@ $^
 
 clean:
-	rm -f *.o *$(LIB_SUFFIX) compat-test$(EXE_SUFFIX) pfonts-update
+	rm -f *.o *$(LIB_SUFFIX) compat-test$(EXE_SUFFIX) pfonts-update utf-16-test$(EXE_SUFFIX)
 
 ifeq ($(STATIC_CORE),1)
 install:
@@ -54,7 +55,8 @@ file.o: file.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/compat.h \
-	../stuff/file.h
+	../stuff/file.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 piperun-unix.o: piperun-unix.c \
@@ -66,7 +68,8 @@ piperun-unix.o: piperun-unix.c \
 piperun-windows.o: piperun-windows.c \
 	../config.h \
 	../types.h \
-	piperun.h
+	piperun.h \
+	utf-16.h
 	$(CC) $< -o $@ -c
 
 poutput.o: poutput.c \
@@ -286,3 +289,19 @@ utf-8.o: utf-8.c \
 	framelock.h \
 	utf-8.h
 	$(CC) $< -o $@ -c
+
+utf-16.o: utf-16.c \
+	../config.h \
+	../types.h \
+	utf-16.h \
+	utf-8.h
+	$(CC) $< -o $@ -c
+
+utf-16-test$(EXE_SUFFIX): utf-16-test.c \
+	../config.h \
+	../types.h \
+	utf-8.h \
+	utf-16.h \
+	utf-16.c \
+	utf-8.o
+	$(CC) utf-8.o $< -o $@

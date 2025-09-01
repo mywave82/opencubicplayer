@@ -36,7 +36,7 @@ poutput_so_libs+=$(FREETYPE2_LIBS)
 endif
 
 # libocp_so is linked by parent
-stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o file.o
+stuff_libocp_so:=compat.o err.o framelock.o poll.o poutput-keyboard.o utf-8.o utf-16.o file.o
 
 ifeq ($(WINDOWS),1)
 stuff_libocp_so+=piperun-windows.o

@@ -28,6 +28,7 @@
 #include <windows.h>
 #include "types.h"
 #include "piperun.h"
+#include "stuff/utf-16.h"
 
 struct ocpPipeProcess_t
 {
@@ -66,20 +67,20 @@ int ocpPipeProcess_destroy (void *_process)
 #if 0
 	if (process->hStdInput)
 	{
-		CloseHandle(process->hStdInput);
+		CloseHandle (process->hStdInput);
 		process->hStdInput = NULL;
 	}
 #endif
 
 	if (process->hStdOutput)
 	{
-		CloseHandle(process->hStdOutput);
+		CloseHandle (process->hStdOutput);
 		process->hStdOutput = NULL;
 	}
 
 	if (process->hStdError)
 	{
-		CloseHandle(process->hStdError);
+		CloseHandle (process->hStdError);
 		process->hStdError = NULL;
 	}
 
@@ -172,7 +173,7 @@ static int ocpPipeProcess_create_helper (HANDLE *rd, HANDLE *wr)
 void *ocpPipeProcess_create (const char * const commandLine[])
 {
 	struct ocpPipeProcess_t *process;
-	char *commandLineCombined;
+	uint16_t *commandLineCombined;
 	size_t len;
 	int i, j;
 	int need_quoting;
@@ -185,7 +186,7 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 		1
 	};
 
-	STARTUPINFOA startInfo =
+	STARTUPINFOW startInfo =
 	{
 		sizeof (startInfo),   /* cb */
 		NULL,                 /* lpReserved */
@@ -211,8 +212,8 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 
 	/* spawn stdin, using regular Pipe */
 #if 0
-	if (!CreatePipe(&rd, &wr, &saAttr, 0)) return -1;
-	if (!SetHandleInformation(wr, HANDLE_FLAG_INHERIT, 0)) return -1;
+	if (!CreatePipe (&rd, &wr, &saAttr, 0)) return -1;
+	if (!SetHandleInformation (wr, HANDLE_FLAG_INHERIT, 0)) return -1;
 	fd = _open_osfhandle((subprocess_intptr_t)wr), 0);
 	if (-1 != fd)
 	{
@@ -231,8 +232,8 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 	if (!SetHandleInformation (process->hStdError, HANDLE_FLAG_INHERIT, 0)) goto error;
 
 	/* create event handlers */
-	if (!(process->ov_Output.hEvent = CreateEventA(&saAttr, 1, 1, NULL))) goto error;
-	if (!(process->ov_Error.hEvent  = CreateEventA(&saAttr, 1, 1, NULL))) goto error;
+	if (!(process->ov_Output.hEvent = CreateEventA (&saAttr, 1, 1, NULL))) goto error;
+	if (!(process->ov_Error.hEvent  = CreateEventA (&saAttr, 1, 1, NULL))) goto error;
 
 	// Combine commandLine together into a single string
 	len = 0;
@@ -268,13 +269,14 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 		}
 	}
 
-	commandLineCombined = (char *) _alloca(len);
+	commandLineCombined = (uint16_t *) _alloca(len * 4); /* utf-16, worst case length */
 	if (!commandLineCombined) goto error;
 
 	// Gonna re-use len to store the write index into commandLineCombined
 	len = 0;
 	for (i = 0; commandLine[i]; i++)
 	{
+		uint16_t *w = utf8_to_utf16 (commandLine[i]);
 		if (0 != i)
 		{
 			commandLineCombined[len++] = ' ';
@@ -286,15 +288,15 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 			commandLineCombined[len++] = '"';
 		}
 
-		for (j = 0; '\0' != commandLine[i][j]; j++)
+		for (j = 0; w[j]; j++)
 		{
-			switch (commandLine[i][j])
+			switch (w[j])
 			{
 				default:
 					break;
 
 				case '\\':
-					if (commandLine[i][j + 1] == '"')
+					if (w[j + 1] == '"')
 					{
 						commandLineCombined[len++] = '\\';
 					}
@@ -305,17 +307,18 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 					break;
 			}
 
-			commandLineCombined[len++] = commandLine[i][j];
+			commandLineCombined[len++] = w[j];
 		}
 		if (need_quoting)
 		{
 			commandLineCombined[len++] = '"';
 		}
+		free (w);
 	}
 
 	commandLineCombined[len] = '\0';
 
-	if (!CreateProcessA (NULL,
+	if (!CreateProcessW (NULL,
 	                     commandLineCombined, // command line
 	                     NULL,                // process security attributes
 	                     NULL,                // primary thread security attributes
@@ -374,7 +377,7 @@ int ocpPipeProcess_terminate (void *_process)
 	unsigned int killed_process_exit_code;
 
 	killed_process_exit_code = 99;
-	return TerminateProcess(process->hProcess, killed_process_exit_code);
+	return TerminateProcess (process->hProcess, killed_process_exit_code);
 }
 
 static int ocpPipeProcess_read_common (char *const buffer, unsigned size, HANDLE *h, int *Reading, LPOVERLAPPED ov)
@@ -399,7 +402,7 @@ static int ocpPipeProcess_read_common (char *const buffer, unsigned size, HANDLE
 		return (int32_t)bytes_read;
 	}
 
-	if (!ReadFile(h, buffer, size, &bytes_read, ov))
+	if (!ReadFile (h, buffer, size, &bytes_read, ov))
 	{
 		if (GetLastError() == ERROR_IO_PENDING)
 		{

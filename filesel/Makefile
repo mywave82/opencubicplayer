@@ -122,7 +122,8 @@ download.o: \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
 	../filesel/filesystem-textfile.h \
-	../stuff/piperun.h
+	../stuff/piperun.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 filesystem.o: filesystem.c \
@@ -387,7 +388,8 @@ filesystem-windows.o: filesystem-windows.c \
 	../filesel/filesystem-setup.h \
 	../filesel/filesystem-windows.h \
 	../filesel/pfilesel.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 filesystem-zip.o: filesystem-zip.c \

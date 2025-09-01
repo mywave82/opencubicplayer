@@ -134,6 +134,9 @@ $(SUBDIRS):
 	$(MAKE) -C $@ TOPDIR=../$(TOPDIR)
 
 OCP_OBJECTS+=boot/kickload.o
+ifeq ($(WINDOWS),1)
+OCP_OBJECTS+=boot/utf-8.o boot/utf-16.o
+endif
 ocp$(EXE_SUFFIX): boot
 	$(CC) $(LDFLAGS) -o $@ $(OCP_OBJECTS) @DL_LIBS@ @EFENCE_LIBS@ @DUMA_LIBS@
 ifeq ($(HAIKU),1)

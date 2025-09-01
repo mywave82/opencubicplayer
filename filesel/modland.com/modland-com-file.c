@@ -64,6 +64,7 @@ static int modland_com_ocpfile_mkdir_except_file (const char *path)
 	{
 		struct st;
 		DWORD D;
+		uint16_t *wtemp;
 		if (!next[1])
 		{ /* should not be reachable */
 			break;
@@ -74,7 +75,14 @@ static int modland_com_ocpfile_mkdir_except_file (const char *path)
 			break;
 		}
 		*next = 0;
-		D = GetFileAttributes (temp);
+
+		wtemp = utf8_to_utf16_LFN (temp, 0);
+		if (!wtemp)
+		{
+			return -1;
+		}
+
+		D = GetFileAttributesW (wtemp);
 		if (D == INVALID_FILE_ATTRIBUTES)
 		{
 			DWORD e = GetLastError();
@@ -96,10 +104,11 @@ static int modland_com_ocpfile_mkdir_except_file (const char *path)
 					fprintf(stderr, "GetFileAttributes(%s): %s", temp, lpMsgBuf);
 					LocalFree (lpMsgBuf);
 				}
+				free (wtemp);
 				free (temp);
 				return -1;
 			}
-			if (!CreateDirectory (temp, 0))
+			if (!CreateDirectoryW (wtemp, 0))
 			{
 				char *lpMsgBuf = NULL;
 				if (FormatMessage (
@@ -114,21 +123,24 @@ static int modland_com_ocpfile_mkdir_except_file (const char *path)
 					NULL                                       /* Arguments */
 				))
 				{
-					fprintf(stderr, "CreateDirectory(%s): %s", temp, lpMsgBuf);
+					fprintf(stderr, "CreateDirectoryW(L\"%s\"): %s", temp, lpMsgBuf);
 					LocalFree (lpMsgBuf);
 				}
+				free (wtemp);
 				free (temp);
 				return -1;
 			}
 		} else {
 			if (!(D & FILE_ATTRIBUTE_DIRECTORY))
 			{
-				fprintf (stderr, "GetFileAttributes(%s) & FILE_ATTRIBUTE_DIRECTORY failed\n", temp);
+				fprintf (stderr, "GetFileAttributesW(L\"%s\") & FILE_ATTRIBUTE_DIRECTORY failed\n", temp);
+				free (wtemp);
 				free (temp);
 				return -1;
 			}
 		}
 		*next = '\\';
+		free (wtemp);
 	}
 #else
 	next = strchr (temp + 1, '/');
@@ -171,7 +183,6 @@ static int modland_com_ocpfile_mkdir_except_file (const char *path)
 		*next = '/';
 	}
 #endif
-
 
 	free (temp);
 	return 0;

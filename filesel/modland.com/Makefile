@@ -51,5 +51,6 @@ modland-com.o: \
 	../../stuff/err.h \
 	../../stuff/file.h \
 	../../stuff/framelock.h \
-	../../stuff/poutput.h
+	../../stuff/poutput.h \
+	../../stuff/utf-16.h
 	$(CC) $< -o $@ -c
