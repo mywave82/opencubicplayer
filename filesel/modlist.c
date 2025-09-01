@@ -60,6 +60,7 @@ void modlist_free (struct modlist *modlist)
 			modlist->files[i].file->unref (modlist->files[i].file);
 			modlist->files[i].file = 0;
 		}
+		free (modlist->files[i].utf8_casefolded);
 	}
 	free (modlist->files);
 	free (modlist->sortindex);
@@ -84,7 +85,7 @@ struct modlistentry *modlist_get (const struct modlist *modlist, unsigned int in
 	return &modlist->files[modlist->sortindex[index]];
 }
 
-void modlist_append (struct modlist *modlist, struct modlistentry *entry)
+static void _modlist_append (struct modlist *modlist, struct modlistentry *entry) /* steals entry->utf8_casefolded */
 {
 	if (!entry)
 		return;
@@ -125,6 +126,14 @@ void modlist_append (struct modlist *modlist, struct modlistentry *entry)
 	modlist->num++;
 }
 
+void modlist_append (struct modlist *modlist, struct modlistentry *entry)
+{
+	if (!entry)
+		return;
+	_modlist_append (modlist, entry);
+	modlist->files[modlist->num - 1].utf8_casefolded = strdup (modlist->files[modlist->num - 1].utf8_casefolded);
+}
+
 void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir)
 {
 	struct modlistentry entry = {{0}};
@@ -140,9 +149,11 @@ void modlist_append_dir (struct modlist *modlist, struct ocpdir_t *dir)
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);
 	utf8_XdotY_name (16, 3, entry.utf8_16_dot_3, childpath);
 
+	entry.utf8_casefolded = utf8_casefold (childpath);
+
 	entry.mdb_ref = UINT32_MAX;
 
-	modlist_append (modlist, &entry);
+	_modlist_append (modlist, &entry);
 }
 
 void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir)
@@ -159,9 +170,11 @@ void modlist_append_dotdot (struct modlist *modlist, struct ocpdir_t *dir)
 	strcpy (entry.utf8_8_dot_3,  "..");
 	strcpy (entry.utf8_16_dot_3, "..");
 
+	entry.utf8_casefolded = strdup ("..");
+
 	entry.mdb_ref = UINT32_MAX;
 
-	modlist_append (modlist, &entry);
+	_modlist_append (modlist, &entry);
 }
 
 void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
@@ -180,9 +193,11 @@ void modlist_append_drive (struct modlist *modlist, struct dmDrive *drive)
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);
 	utf8_XdotY_name (16, 3, entry.utf8_16_dot_3, childpath);
 
+	entry.utf8_casefolded = utf8_casefold (childpath);
+
 	entry.mdb_ref = UINT32_MAX;
 
-	modlist_append (modlist, &entry);
+	_modlist_append (modlist, &entry);
 }
 
 void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int ismod, int prescanhint, struct ocpfilehandle_t **retain)
@@ -205,6 +220,8 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int i
 	utf8_XdotY_name (8, 3, entry.utf8_8_dot_3, childpath);
 	utf8_XdotY_name (16, 3, entry.utf8_16_dot_3, childpath);
 
+	entry.utf8_casefolded = utf8_casefold (childpath);
+
 	if (ismod)
 	{
 		entry.mdb_ref = mdbGetModuleReference2 (file->dirdb_ref, file->filesize (file));
@@ -221,7 +238,7 @@ void modlist_append_file (struct modlist *modlist, struct ocpfile_t *file, int i
 		}
 	}
 
-	modlist_append (modlist, &entry);
+	_modlist_append (modlist, &entry);
 }
 
 
@@ -259,6 +276,8 @@ void modlist_clear(struct modlist *modlist)
 			modlist->files[i].file->unref (modlist->files[i].file);
 			modlist->files[i].file = 0;
 		}
+		free (modlist->files[i].utf8_casefolded);
+		modlist->files[i].utf8_casefolded = 0;
 	}
 	modlist->num = 0;
 }
@@ -450,10 +469,20 @@ static int mlecmp (const void *a, const void *b)
 		return strcmp (e1->utf8_16_dot_3, e2->utf8_16_dot_3); /* On windows, drive letters are all capital letters, and should appear infront of the other protocols, hence we use strcmp */
 	}
 
+	/* First compare them as casefolded */
+	{
+		int retval = strcmp (e1->utf8_casefolded, e2->utf8_casefolded);
+		if (retval != 0)
+		{
+			return retval;
+		}
+	}
+
+	/* If they match after casefolded, seperate base regular strcmp, so we get a difference */
 	dirdbGetName_internalstr (e1->file ? e1->file->dirdb_ref : e1->dir->dirdb_ref, &n1);
 	dirdbGetName_internalstr (e2->file ? e2->file->dirdb_ref : e2->dir->dirdb_ref, &n2);
 
-	return strcasecmp(n1, n2);
+	return strcmp(n1, n2);
 }
 
 static int mlecmp_filesonly_groupdir (const void *a, const void *b)
