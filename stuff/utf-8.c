@@ -197,6 +197,7 @@ int utf8_encode (char *dst, uint32_t codepoint)
 	return 0;
 }
 
+#ifndef BOOT
 void displaystr_utf8_overflowleft (uint16_t y, uint16_t x, uint8_t attr, const char *str, uint16_t len)
 {
 	const char *tmppos = str;
@@ -718,6 +719,8 @@ int EditStringASCII(unsigned int y, unsigned int x, unsigned int w, char **s)
 {
 	return _EditStringUTF8 (y, x, w, s, 1);
 }
+
+#endif
 
 #if 0
 

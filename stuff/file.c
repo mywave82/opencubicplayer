@@ -32,7 +32,6 @@
 #ifdef _WIN32
 # include <windows.h>
 # include <fileapi.h>
-# include <windows.h>
 #else
 # include <dirent.h>
 # include <time.h>
@@ -42,6 +41,7 @@
 #include "boot/psetting.h"
 #include "stuff/compat.h"
 #include "stuff/file.h"
+#include "stuff/utf-16.h"
 
 struct osfile_cacheline_t
 {
@@ -90,36 +90,52 @@ struct osfile_t *osfile_open_readwrite (const char *pathname, int dolock, int mu
 	}
 
 #ifdef _WIN32
-	f->h = CreateFile (pathname,                                    /* lpFileName */
-	                   GENERIC_READ | GENERIC_WRITE,                /* dwDesiredAccess */
-	                   dolock?0:(FILE_SHARE_READ|FILE_SHARE_WRITE), /* dwShareMode (exclusive access) */
-	                   0,                                           /* lpSecurityAttributes */
-	                   mustcreate?CREATE_NEW:OPEN_ALWAYS,           /* dwCreationDisposition */
-	                   FILE_ATTRIBUTE_NORMAL,                       /* dwFlagsAndAttributes */
-	                   0);                                          /* hTemplateFile */
-	if (f->h == INVALID_HANDLE_VALUE)
 	{
-		if (!(mustcreate && (GetLastError() == ERROR_FILE_EXISTS)))
+		uint16_t *wpathname;
+		if (!(wpathname = utf8_to_utf16_LFN (pathname, 0)))
 		{
-			char *lpMsgBuf = NULL;
-			if (FormatMessage (
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM     |
-				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
-				NULL,                                      /* lpSource */
-				GetLastError(),                            /* dwMessageId */
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
-				0,                                         /* nSize */
-				NULL                                       /* Arguments */
-			))
-			{
-				fprintf(stderr, "CreateFile(%s): %s", pathname, lpMsgBuf);
-				LocalFree (lpMsgBuf);
-			}
+			fprintf (stderr, "osfile_open_readwrite (%s): utf8 to utf16 convertion failed\n", pathname);
+			free (f->pathname);
 			free (f);
+			return 0;
 		}
-		return 0;
+
+		f->h = CreateFileW (wpathname,                                  /* lpFileName */
+		                   GENERIC_READ | GENERIC_WRITE,                /* dwDesiredAccess */
+		                   dolock?0:(FILE_SHARE_READ|FILE_SHARE_WRITE), /* dwShareMode (exclusive access) */
+		                   0,                                           /* lpSecurityAttributes */
+		                   mustcreate?CREATE_NEW:OPEN_ALWAYS,           /* dwCreationDisposition */
+		                   FILE_ATTRIBUTE_NORMAL,                       /* dwFlagsAndAttributes */
+		                   0);                                          /* hTemplateFile */
+
+		free (wpathname);
+		wpathname = 0;
+
+		if (f->h == INVALID_HANDLE_VALUE)
+		{
+			if (!(mustcreate && (GetLastError() == ERROR_FILE_EXISTS)))
+			{
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf(stderr, "CreateFileW(L\"%s\"): %s", f->pathname, lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
+			}
+			free (f->pathname);
+			free (f);
+			return 0;
+		}
 	}
 #else
 	if ((f->fd = open(pathname,
@@ -177,37 +193,52 @@ struct osfile_t *osfile_open_readonly (const char *pathname, int dolock)
 	}
 
 #ifdef _WIN32
-	f->h = CreateFile (pathname,                                    /* lpFileName */
-	                   GENERIC_READ,                                /* dwDesiredAccess */
-	                   dolock?0:(FILE_SHARE_READ),                  /* dwShareMode (exclusive access) */
-	                   0,                                           /* lpSecurityAttributes */
-	                   OPEN_EXISTING,                               /* dwCreationDisposition */
-	                   FILE_ATTRIBUTE_NORMAL,                       /* dwFlagsAndAttributes */
-	                   0);                                          /* hTemplateFile */
-	if (f->h == INVALID_HANDLE_VALUE)
 	{
-		if (GetLastError() != ERROR_FILE_NOT_FOUND)
+		uint16_t *wpathname;
+		if (!(wpathname = utf8_to_utf16_LFN (f->pathname, 0)))
 		{
-			char *lpMsgBuf = NULL;
-			if (FormatMessage (
-				FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				FORMAT_MESSAGE_FROM_SYSTEM     |
-				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
-				NULL,                                      /* lpSource */
-				GetLastError(),                            /* dwMessageId */
-				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
-				0,                                         /* nSize */
-				NULL                                       /* Arguments */
-			))
+			fprintf (stderr, "osfile_open_readwrite (%s): utf8 to utf16 convertion failed\n", pathname);
+			free (f->pathname);
+			free (f);
+			return 0;
+		}
+
+		f->h = CreateFileW (wpathname,                                  /* lpFileName */
+				   GENERIC_READ,                                /* dwDesiredAccess */
+				   dolock?0:(FILE_SHARE_READ),                  /* dwShareMode (exclusive access) */
+				   0,                                           /* lpSecurityAttributes */
+				   OPEN_EXISTING,                               /* dwCreationDisposition */
+				   FILE_ATTRIBUTE_NORMAL,                       /* dwFlagsAndAttributes */
+				   0);                                          /* hTemplateFile */
+
+		free (wpathname);
+		wpathname = 0;
+
+		if (f->h == INVALID_HANDLE_VALUE)
+		{
+			if (GetLastError() != ERROR_FILE_NOT_FOUND)
 			{
-				fprintf(stderr, "CreateFile(%s): %s", pathname, lpMsgBuf);
-				LocalFree (lpMsgBuf);
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf(stderr, "CreateFileW(L\"%s\"): %s", f->pathname, lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
 			}
 			free (f->pathname);
 			free (f);
+			return 0;
 		}
-		return 0;
 	}
 #else
 	if ((f->fd = open(pathname,
@@ -744,29 +775,34 @@ int64_t osfile_read (struct osfile_t *f, void *data, uint64_t size) /* returns n
 struct osdir_iterate_internal_t
 {
 	HANDLE *d;
-	WIN32_FIND_DATAA data;
-	char *path; /* no need to free, concatted after this "parent" struct */
+	WIN32_FIND_DATAW data;
+	uint16_t *path;
 	struct osdir_iterate_internal_t *child;
 	int opened; /* used by delete, to delay the RemoveDirectory call */
 };
 
-static struct osdir_iterate_internal_t * osdir_iterate_opendir (const char *path)
+static struct osdir_iterate_internal_t * osdir_iterate_opendir (const uint16_t *path)
 {
-	struct osdir_iterate_internal_t *i = calloc (sizeof (*i) + strlen (path) + 1, 1);
-	size_t len = strlen (path) + 2 + 1;
-	char *search = malloc (len);
-	if ((!i) || (!search))
+	int len = wcslen (path);
+	struct osdir_iterate_internal_t *i = calloc (sizeof (*i) + (len + 2 + 1) * sizeof (uint16_t), 1);
+	if (!i)
 	{
-		free (i);
-		free (search);
 		return 0;
 	}
-	i->path = (char *)&(i[1]);
-	strcpy (i->path, path);
+	i->path = (uint16_t *)&(i[1]);
+	wcscpy (i->path, path);
 
-	snprintf (search, len, "%s%s", path, path[strlen(path)-1] == '\\' ? "*" : "\\*");
-	i->d = FindFirstFile (search, &i->data);
-	free (search);
+	if (i->path[len-1] != '\\')
+	{
+		i->path[len] = '\\';
+		len++;
+	}
+
+	i->path[len] = '*';
+	i->path[len+1] = 0;
+
+	i->d = FindFirstFileW (i->path, &i->data);
+	i->path[len] = 0;
 
 	if (i->d == INVALID_HANDLE_VALUE)
 	{
@@ -778,9 +814,18 @@ static struct osdir_iterate_internal_t * osdir_iterate_opendir (const char *path
 
 int osdir_size_start (struct osdir_size_t *r, const char *path)
 {
+	uint16_t *wpath;
+	wpath = utf8_to_utf16_LFN (path, 0); /* osdir_iterate_opendir() keeps track of \ and * */
+
+	if (!wpath)
+	{
+		return -1;
+	}
+
 	/* returns -1 on error, otherwize 0 */
 	memset (r, 0, sizeof (*r));
-	r->internal = osdir_iterate_opendir (path);
+	r->internal = osdir_iterate_opendir (wpath);
+	free (wpath);
 	if (!r->internal)
 	{
 		return -1;
@@ -819,20 +864,21 @@ int osdir_size_iterate (struct osdir_size_t *r)
 
 		if (i->d != INVALID_HANDLE_VALUE)
 		{
-			if (!strcmp (i->data.cFileName, ".")) goto next;
-			if (!strcmp (i->data.cFileName, "..")) goto next;
+			if ((i->data.cFileName[0] == '.') && (i->data.cFileName[1] == 0)) goto next;
+			if ((i->data.cFileName[0] == '.') && (i->data.cFileName[1] == '.') && (i->data.cFileName[2] == 0)) goto next;
 
 			if (i->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			{
-				size_t len = strlen(i->path) + 1 + strlen (i->data.cFileName) + 1;
-				char *temp = malloc (len);
+				size_t filelen = wcslen (i->path);
+				size_t len = filelen + 1 + wcslen (i->data.cFileName) + 1;
+				uint16_t *wtemp = malloc (len * sizeof (uint16_t));
 
 				r->directories_n++;
-				if (temp)
+				if (wtemp)
 				{
-					snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '\\') ? "" : "\\", i->data.cFileName);
-					i->child = osdir_iterate_opendir (temp);
-					free (temp);
+					swprintf (wtemp, len, L"%ls%ls", i->path, i->data.cFileName);
+					i->child = osdir_iterate_opendir (wtemp);
+					free (wtemp);
 				}
 			} else {
 				r->files_n++;
@@ -841,7 +887,7 @@ int osdir_size_iterate (struct osdir_size_t *r)
 			}
 
 next:
-			if (!FindNextFile (i->d, &i->data))
+			if (!FindNextFileW (i->d, &i->data))
 			{
 				FindClose (i->d);
 				i->d = INVALID_HANDLE_VALUE;
@@ -900,9 +946,18 @@ int osdir_trash_perform (const char *path)
 
 int osdir_delete_start   (struct osdir_delete_t *r, const char *path)
 {
+	uint16_t *wpath;
+	wpath = utf8_to_utf16_LFN (path, 0); /* osdir_iterate_opendir() keeps track of \ and * */
+	if (!wpath)
+	{
+		return -1;
+	}
+
 	/* returns -1 on error, otherwize 0 */
 	memset (r, 0, sizeof (*r));
-	r->internal = osdir_iterate_opendir (path);
+	r->internal = osdir_iterate_opendir (wpath);
+	free (wpath);
+
 	if (!r->internal)
 	{
 		return -1;
@@ -941,29 +996,30 @@ int osdir_delete_iterate (struct osdir_delete_t *r)
 
 		if (i->d != INVALID_HANDLE_VALUE)
 		{
-			if (!strcmp (i->data.cFileName, ".")) goto next;
-			if (!strcmp (i->data.cFileName, "..")) goto next;
+			if ((i->data.cFileName[0] == '.') && (i->data.cFileName[1] == 0)) goto next;
+			if ((i->data.cFileName[0] == '.') && (i->data.cFileName[1] == '.') && (i->data.cFileName[2] == 0)) goto next;
 
 			{
-				size_t len = strlen(i->path) + 1 + strlen (i->data.cFileName) + 1;
-				char *temp = malloc (len);
+				size_t filelen = wcslen (i->path);
+				size_t len = filelen + 1 + wcslen (i->data.cFileName) + 1;
+				uint16_t *wtemp = malloc (len * sizeof (uint16_t));
 
-				if (!temp) goto next;
+				if (!wtemp) goto next;
 
-				snprintf (temp, len, "%s%s%s", i->path, (i->path[strlen(i->path) - 1] == '\\') ? "" : "\\", i->data.cFileName);
+				swprintf (wtemp, len, L"%ls%ls", i->path, i->data.cFileName);
 
 				if (i->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				{
 					if (!i->opened)
 					{
 						i->opened = 1; /* delay the loop */
-						i->child = osdir_iterate_opendir (temp);
-						free (temp);
+						i->child = osdir_iterate_opendir (wtemp);
+						free (wtemp);
 						count++;
 						continue;
 					} else {
 						i->opened = 0;
-						if (RemoveDirectory (temp))
+						if (RemoveDirectoryW (wtemp))
 						{
 							r->removed_directories_n++;
 						} else {
@@ -971,7 +1027,7 @@ int osdir_delete_iterate (struct osdir_delete_t *r)
 						}
 					}
 				} else {
-					if (DeleteFile(temp))
+					if (DeleteFileW (wtemp))
 					{
 						r->removed_files_n++;
 					} else {
@@ -979,11 +1035,11 @@ int osdir_delete_iterate (struct osdir_delete_t *r)
 					}
 				}
 				count++;
-				free (temp);
+				free (wtemp);
 			}
 
 next:
-			if (!FindNextFile (i->d, &i->data))
+			if (!FindNextFileW (i->d, &i->data))
 			{
 				FindClose (i->d);
 				i->d = INVALID_HANDLE_VALUE;

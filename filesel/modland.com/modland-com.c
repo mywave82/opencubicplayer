@@ -43,6 +43,10 @@
 #include "stuff/file.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#ifdef _WIN32
+# include <stuff/utf-16.h>
+#endif
+
 
 struct modland_com_fileentry_t
 {

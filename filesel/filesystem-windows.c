@@ -36,6 +36,7 @@
 #include "filesel/filesystem-windows.h"
 #include "filesel/pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/utf-16.h"
 
 struct windows_ocpdir_t
 {
@@ -101,7 +102,7 @@ struct windows_ocpdirhandle_t
 
 	int EndOfList;
 	HANDLE FindHandle;
-	WIN32_FIND_DATAA FindData;
+	WIN32_FIND_DATAW FindData;
 };
 
 static ocpdirhandle_pt windows_dir_readdir_start (struct ocpdir_t *_s,
@@ -111,30 +112,30 @@ static ocpdirhandle_pt windows_dir_readdir_start (struct ocpdir_t *_s,
 {
 	struct windows_ocpdir_t *s = (struct windows_ocpdir_t *)_s;
 	struct windows_ocpdirhandle_t *r;
-	char *path, *path2;
+	char *path;
+	uint16_t *wpath;
 
 	dirdbGetFullname_malloc (s->head.dirdb_ref, &path, DIRDB_FULLNAME_ENDSLASH | DIRDB_FULLNAME_BACKSLASH);
-
 	if (!path)
 	{
 		fprintf (stderr, "[filesystem windows readdir_start]: dirdbGetFullname_malloc () failed #1\n");
 		return 0;
 	}
-	path2 = malloc (strlen(path) + 2);
-	if (!path2)
+
+	wpath = utf8_to_utf16_LFN (path, 1);
+	if (!wpath)
 	{
-		fprintf (stderr, "[filesystem windows readdir_start] malloc() failed #1\n");
+		fprintf (stderr, "[filesystem windows readdir_start] malloc() failed #3\n");
 		free (path);
 		return 0;
 	}
-	sprintf (path2, "%s*", path);
-	free (path); path = 0;
 
 	r = calloc (sizeof (*r), 1);
 	if (!r)
 	{
 		fprintf (stderr, "[filesystem windows readdir_start] malloc() failed #2\n");
-		free (path2);
+		free (path);
+		free (wpath);
 		return 0;
 	}
 
@@ -142,8 +143,9 @@ static ocpdirhandle_pt windows_dir_readdir_start (struct ocpdir_t *_s,
 	r->callback_dir  = callback_dir;
 	r->token         = token;
 
-	r->FindHandle = FindFirstFile (path2, &r->FindData);
-
+	r->FindHandle = FindFirstFileW (wpath, &r->FindData);
+	free (wpath);
+	wpath = 0;
 	if (r->FindHandle == INVALID_HANDLE_VALUE)
 	{ /* no files found, invalid path */
 		char *lpMsgBuf = NULL;
@@ -152,24 +154,22 @@ static ocpdirhandle_pt windows_dir_readdir_start (struct ocpdir_t *_s,
 			FORMAT_MESSAGE_FROM_SYSTEM     |
 			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
 			NULL,                                      /* lpSource */
-			GetLastError(),                            /* dwMessageId */
+			GetLastError (),                           /* dwMessageId */
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
 			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
 			0,                                         /* nSize */
 			NULL                                       /* Arguments */
 		))
 		{
-
-			fprintf (stderr, "[filesystem] FindFirstFile(\"%s\"): %s\n", path2, lpMsgBuf);
+			fprintf (stderr, "[filesystem] FindFirstFileW(L\"%s\"): %s\n", path, lpMsgBuf);
 			LocalFree (lpMsgBuf);
 		}
-		free (path2);
+		free (path);
 		free (r);
 		return 0;
 	}
-
 	assert (r->FindHandle);
-	free (path2);
+	free (path);
 
 	r->owner = s;
 	s->head.ref (&s->head);
@@ -181,6 +181,7 @@ static int windows_dir_readdir_iterate (ocpdirhandle_pt h)
 {
 	struct windows_ocpdirhandle_t *r = (struct windows_ocpdirhandle_t *)h;
 	struct windows_ocpdir_t *s = r->owner;
+	char *cFileName;
 
 	if (!r->FindHandle)
 	{
@@ -190,20 +191,26 @@ static int windows_dir_readdir_iterate (ocpdirhandle_pt h)
 	{
 		return 0;
 	}
-	if (r->FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+	cFileName = utf16_to_utf8 (r->FindData.cFileName);
+	if (cFileName)
 	{
-		if (strcmp (r->FindData.cFileName, ".") && strcmp (r->FindData.cFileName, ".."))
+		if (r->FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
-			struct ocpdir_t *n = windows_dir_steal (&s->head, dirdbFindAndRef (s->head.dirdb_ref, r->FindData.cFileName, dirdb_use_dir));
-			r->callback_dir (r->token, n);
+			if (strcmp (cFileName, ".") && strcmp (cFileName, ".."))
+			{
+				struct ocpdir_t *n = windows_dir_steal (&s->head, dirdbFindAndRef (s->head.dirdb_ref, cFileName, dirdb_use_dir));
+				r->callback_dir (r->token, n);
+				n->unref (n);
+			}
+		} else {
+			struct ocpfile_t *n = windows_file_steal (&s->head, dirdbFindAndRef (s->head.dirdb_ref, cFileName, dirdb_use_file), ((uint64_t)(r->FindData.nFileSizeHigh) << 32) | r->FindData.nFileSizeLow);
+			r->callback_file (r->token, n);
 			n->unref (n);
 		}
-	} else {
-		struct ocpfile_t *n = windows_file_steal (&s->head, dirdbFindAndRef (s->head.dirdb_ref, r->FindData.cFileName, dirdb_use_file), ((uint64_t)(r->FindData.nFileSizeHigh) << 32) | r->FindData.nFileSizeLow);
-		r->callback_file (r->token, n);
-		n->unref (n);
+		free (cFileName);
+		cFileName = 0;
 	}
-	if (!FindNextFile (r->FindHandle, &r->FindData))
+	if (!FindNextFileW (r->FindHandle, &r->FindData))
 	{
 		r->EndOfList = 1;
 		return 0;
@@ -348,12 +355,20 @@ static struct ocpfilehandle_t *windows_file_open (struct ocpfile_t *_s)
 {
 	struct windows_ocpfile_t *s = (struct windows_ocpfile_t *)_s;
 	char *path;
+	uint16_t *wpath;
 	HANDLE fd;
 	struct windows_ocpfilehandle_t *r;
 
 	dirdbGetFullname_malloc (s->head.dirdb_ref, &path, DIRDB_FULLNAME_BACKSLASH);
+	if (!path) return 0;
+	wpath = utf8_to_utf16_LFN (path, 0);
+	if (!wpath)
+	{
+		free (path);
+		return 0;
+	}
 
-	fd = CreateFile (path,                   /* lpFileName */
+	fd = CreateFileW (wpath,                   /* lpFileName */
 	                 GENERIC_READ,          /* dwDesiredAccess */
 	                 FILE_SHARE_READ,       /* dwShareMode */
 	                 0,                     /* lpSecurityAttributes */
@@ -368,7 +383,7 @@ static struct ocpfilehandle_t *windows_file_open (struct ocpfile_t *_s)
 			FORMAT_MESSAGE_FROM_SYSTEM     |
 			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
 			NULL,                                      /* lpSource */
-			GetLastError(),                            /* dwMessageId */
+			GetLastError (),                           /* dwMessageId */
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
 			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
 			0,                                         /* nSize */
@@ -376,12 +391,14 @@ static struct ocpfilehandle_t *windows_file_open (struct ocpfile_t *_s)
 		))
 		{
 
-			fprintf (stderr, "[filesystem] CreateFile(\"%s\"): %s\n", path, lpMsgBuf);
+			fprintf (stderr, "[filesystem] CreateFileW(\"%s\"): %s\n", path, lpMsgBuf);
 			LocalFree (lpMsgBuf);
 		}
+		free (wpath);
 		free (path);
 		return 0;
 	}
+	free (wpath);
 	free (path);
 
 	r = calloc (1, sizeof (*r));
@@ -445,7 +462,6 @@ static void filesystem_windows_add_drive (const int index, const char DriveLette
 		dmDriveRoots[index] = windows_dir_steal (0, dirdb_node);
 	}
 
-#warning drive FIX-ME CWD, the active drive should not default to root
 	dmDriveLetters[index] = RegisterDrive (drivename, dmDriveRoots[index], dmDriveRoots[index]);
 }
 
@@ -487,7 +503,7 @@ static void filesystem_windows_remove_drive (const int index)
 void filesystem_windows_refresh_drives (void)
 {
 	char i;
-	DWORD DrivesMask = GetLogicalDrives();
+	DWORD DrivesMask = GetLogicalDrives ();
 	for (i='A'; i <= 'Z'; i++)
 	{
 		if (DrivesMask & (1 << (i - 'A')))
@@ -553,6 +569,7 @@ static struct ocpdir_t *windows_dir_steal (struct ocpdir_t *parent, const uint32
 		return 0;
 	}
 
+#warning Windows filesystem is case-insensitive, so we need to override the default readdir_dir and readdir_file...
 	ocpdir_t_fill (&r->head,
 	               windows_dir_ref,
 	               windows_dir_unref,
@@ -582,8 +599,67 @@ static struct ocpdir_t *filesystem_windows_resolve_dir (const char *path)
 	uint32_t dirdb_ref;
 	struct dmDrive *drive = 0;
 	struct ocpdir_t *dir = 0;
+	uint16_t *wpath;
+	uint16_t *wlongpath;
+	DWORD len;
+	char *longpath;
 
-	dirdb_ref = dirdbResolvePathWithBaseAndRef (DIRDB_CLEAR, path, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_dir);
+	if (!(wpath = utf8_to_utf16_LFN (path, 0)))
+	{
+		fprintf (stderr, "filesystem_windows_resolve_dir(): malloc failed #1\n");
+		return 0;
+	}
+
+	len = GetLongPathNameW (wpath, 0, 0);
+	if (!(wlongpath = malloc (len * sizeof (uint16_t))))
+	{
+		fprintf (stderr, "filesystem_windows_resolve_dir(): malloc failed #2\n");
+		free (wpath);
+		return 0;
+	}
+
+	if (GetLongPathNameW (wpath, wlongpath, len) != (len - 1))
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError (),                           /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+
+			fprintf (stderr, "[filesystem] GetLongPathNameW(L\"%s\"): %s\n", path, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+
+		free (wpath);
+		free (wlongpath);
+		return 0;
+	}
+
+	longpath = utf16_to_utf8 (wlongpath);
+
+	free (wpath);
+	wpath = 0;
+	free (wlongpath);
+	wlongpath = 0;
+
+	if (strncmp (longpath, "\\\\?\\", 4))
+	{
+		dirdb_ref = dirdbResolvePathWithBaseAndRef (DIRDB_CLEAR, longpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_dir);
+	} else {
+		dirdb_ref = dirdbResolvePathWithBaseAndRef (DIRDB_CLEAR, longpath + 4, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_dir);
+	}
+
+	free (longpath);
+	longpath = 0;
+
 	if (!filesystem_resolve_dirdb_dir (dirdb_ref, &drive, &dir))
 	{
 		if (drive->drivename[1] != ':')
@@ -598,7 +674,8 @@ static struct ocpdir_t *filesystem_windows_resolve_dir (const char *path)
 
 struct dmDrive *filesystem_windows_init (void)
 {
-	char path[4096];
+	char *path;
+	uint16_t *wpath;
 	DWORD length;
 	uint32_t newcurrentpath;
 	int driveindex;
@@ -609,32 +686,56 @@ struct dmDrive *filesystem_windows_init (void)
 
 	filesystem_windows_refresh_drives();
 
-	length = GetCurrentDirectory (sizeof (path), path);
-	if (length >= sizeof (path)) /* buffer was not big enough */
+	if (!(length = GetCurrentDirectoryW (0, NULL)))
 	{
 		goto failed;
 	}
+
+	if (!(wpath = calloc (length, sizeof (uint16_t))))
+	{
+		goto failed;
+	}
+
+	if (GetCurrentDirectoryW (length, wpath) != (length - 1))
+	{
+		free (wpath);
+		goto failed;
+	}
+
+	path = utf16_to_utf8 (wpath);
+	free (wpath);
+	wpath = 0;
+	if (!path)
+	{
+		goto failed;
+	}
+
 	if ((path[0] == '\\' || path[1] == '\\')) // network share
 	{
+		free (path);
 		goto failed;
 	}
 	if (path[1] != ':') // not a drive????
 	{
+		free (path);
 		goto failed;
 	}
 	driveindex = toupper (path[0]) - 'A';
 	if (!dmDriveLetters[driveindex])
 	{
+		free (path);
 		goto failed;
 	}
 
-	if (!(configAPI.HomeDir       = filesystem_windows_resolve_dir    (configAPI.HomePath       ))) { fprintf (stderr, "Unable to resolve cfHome=%s\n",       configAPI.HomePath);       goto failed; }
-	if (!(configAPI.ConfigHomeDir = filesystem_windows_resolve_dir    (configAPI.ConfigHomePath ))) { fprintf (stderr, "Unable to resolve cfConfigHome=%s\n", configAPI.ConfigHomePath); goto failed; }
-	if (!(configAPI.DataHomeDir   = filesystem_windows_resolve_dir    (configAPI.DataHomePath   ))) { fprintf (stderr, "Unable to resolve cfDataHome=%s\n",   configAPI.DataHomePath);   goto failed; }
-	if (!(configAPI.DataDir       = filesystem_windows_resolve_dir    (configAPI.DataPath       ))) { fprintf (stderr, "Unable to resolve cfData=%s\n",       configAPI.DataPath);       goto failed; }
-	if (!(configAPI.TempDir       = filesystem_windows_resolve_dir    (configAPI.TempPath       ))) { fprintf (stderr, "Unable to resolve cfTemp=%s\n",       configAPI.TempPath);       goto failed; }
+	if (!(configAPI.HomeDir       = filesystem_windows_resolve_dir    (configAPI.HomePath       ))) { fprintf (stderr, "Unable to resolve cfHome=\"%s\"\n",       configAPI.HomePath);       goto failed; }
+	if (!(configAPI.ConfigHomeDir = filesystem_windows_resolve_dir    (configAPI.ConfigHomePath ))) { fprintf (stderr, "Unable to resolve cfConfigHome=\"%s\"\n", configAPI.ConfigHomePath); goto failed; }
+	if (!(configAPI.DataHomeDir   = filesystem_windows_resolve_dir    (configAPI.DataHomePath   ))) { fprintf (stderr, "Unable to resolve cfDataHome=\"%s\"\n",   configAPI.DataHomePath);   goto failed; }
+	if (!(configAPI.DataDir       = filesystem_windows_resolve_dir    (configAPI.DataPath       ))) { fprintf (stderr, "Unable to resolve cfData=\"%s\"\n",       configAPI.DataPath);       goto failed; }
+	if (!(configAPI.TempDir       = filesystem_windows_resolve_dir    (configAPI.TempPath       ))) { fprintf (stderr, "Unable to resolve cfTemp=\"%s\"\n",       configAPI.TempPath);       goto failed; }
 
 	newcurrentpath = dirdbResolvePathWithBaseAndRef (dmDriveRoots[driveindex]->dirdb_ref, path, DIRDB_RESOLVE_WINDOWS_SLASH | DIRDB_RESOLVE_DRIVE, dirdb_use_dir);
+	free (path);
+	path = 0;
 	if (newcurrentpath == DIRDB_CLEAR)
 	{
 		goto failed;

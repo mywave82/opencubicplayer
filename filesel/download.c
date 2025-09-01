@@ -40,6 +40,9 @@
 #include "filesel/filesystem-drive.h"
 #include "filesel/filesystem-textfile.h"
 #include "stuff/piperun.h"
+#ifdef _WIN32
+# include "stuff/utf-16.h"
+#endif
 
 static struct ocpfilehandle_t *download_request_resolve (struct download_request_t *req, const char *filename);
 
@@ -477,8 +480,21 @@ int download_request_iterate (struct download_request_t *req)
 static void download_request_real_free (struct download_request_t *req)
 {
 #ifdef _WIN32
-	DeleteFile (req->tempheader_filepath);
-	DeleteFile (req->tempdata_filepath);
+	uint16_t *wtemp;
+
+	wtemp = utf8_to_utf16_LFN (req->tempheader_filepath, 0);
+	if (wtemp)
+	{
+		DeleteFileW (wtemp);
+		free (wtemp);
+	}
+
+	wtemp = utf8_to_utf16_LFN (req->tempdata_filepath, 0);
+	if (wtemp)
+	{
+		DeleteFileW (wtemp);
+		free (wtemp);
+	}
 #else
 	unlink (req->tempheader_filepath);
 	unlink (req->tempdata_filepath);
