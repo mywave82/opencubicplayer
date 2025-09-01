@@ -287,7 +287,10 @@ utf-8.o: utf-8.c \
 	../cpiface/cpiface.h \
 	poutput.h \
 	framelock.h \
-	utf-8.h
+	utf-8.h \
+	CaseFoldingTable-1.c \
+	CaseFoldingTable-2.c \
+	CaseFoldingTable-3.c
 	$(CC) $< -o $@ -c
 
 utf-16.o: utf-16.c \
@@ -305,3 +308,15 @@ utf-16-test$(EXE_SUFFIX): utf-16-test.c \
 	utf-16.c \
 	utf-8.o
 	$(CC) utf-8.o $< -o $@
+
+CaseFolding.txt:
+	curl https://www.unicode.org/Public/16.0.0/ucd/CaseFolding.txt -o $@
+
+CaseFoldingTable-1.c: CaseFolding.txt
+	cat CaseFolding.txt |grep "^[0-9A-F]*; C; [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); C; \([0-9A-Z]*\)*;.*/{0x\1, 0x\2},/' > $@
+
+CaseFoldingTable-2.c: CaseFolding.txt
+	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); F; \([0-9A-Z]*\)* \([0-9A-Z]*\)*;.*/{0x\1, 0x\2, 0x\3},/' > $@
+
+CaseFoldingTable-3.c: CaseFolding.txt
+	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]* [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); F; \([0-9A-Z]*\)* \([0-9A-Z]*\)* \([0-9A-Z]*\)*;.*/{0x\1, 0x\2, 0x\3, 0x\4},/' > $@

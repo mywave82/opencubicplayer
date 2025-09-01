@@ -720,6 +720,136 @@ int EditStringASCII(unsigned int y, unsigned int x, unsigned int w, char **s)
 	return _EditStringUTF8 (y, x, w, s, 1);
 }
 
+struct Table_Single_t
+{
+	uint32_t Src;
+	uint32_t Dst1;
+};
+struct Table_Double_t
+{
+	uint32_t Src;
+	uint32_t Dst1, Dst2;
+};
+struct Table_Triple_t
+{
+	uint32_t Src;
+	uint32_t Dst1, Dst2, Dst3;
+};
+
+static const struct Table_Single_t Table_Single[] = {
+#include "CaseFoldingTable-1.c"
+};
+static const struct Table_Double_t Table_Double[] = {
+#include "CaseFoldingTable-2.c"
+};
+static const struct Table_Triple_t Table_Triple[] = {
+#include "CaseFoldingTable-3.c"
+};
+
+char *utf8_casefold (const char *src)
+{
+	int len = strlen (src);
+	const char *iter;
+	int remaining;
+
+	char *retval, *retvalnext;
+
+	int newlen = 0;
+
+	iter = src;
+	remaining = len;
+	while (remaining)
+	{
+		int i;
+		int inc;
+		uint32_t codepoint = utf8_decode(iter, remaining, &inc);
+
+		for (i = 0; i < (sizeof (Table_Single) / sizeof (Table_Single[0])); i++)
+		{
+			if (Table_Single[i].Src == codepoint)
+			{
+				newlen += utf8_encoded_length (Table_Single[i].Dst1);
+				goto prescan_next;
+			}
+		}
+		for (i = 0; i < (sizeof (Table_Double) / sizeof (Table_Double[0])); i++)
+		{
+			if (Table_Double[i].Src == codepoint)
+			{
+				newlen += utf8_encoded_length (Table_Double[i].Dst1) +
+				          utf8_encoded_length (Table_Double[i].Dst2);
+				goto prescan_next;
+			}
+		}
+		for (i = 0; i < (sizeof (Table_Triple) / sizeof (Table_Triple[0])); i++)
+		{
+			if (Table_Triple[i].Src == codepoint)
+			{
+				newlen += utf8_encoded_length (Table_Triple[i].Dst1) +
+				          utf8_encoded_length (Table_Triple[i].Dst2) +
+				          utf8_encoded_length (Table_Triple[i].Dst3);
+				goto prescan_next;
+			}
+		}
+		newlen += inc;
+prescan_next:
+
+		remaining -= inc;
+		iter += inc;
+	}
+
+	retvalnext = retval = malloc (newlen + 1);
+	if (!retval)
+	{
+		return 0;
+	}
+
+	iter = src;
+	remaining = len;
+	while (remaining)
+	{
+		int i;
+		int inc;
+		uint32_t codepoint = utf8_decode(iter, remaining, &inc);
+
+		for (i = 0; i < (sizeof (Table_Single) / sizeof (Table_Single[0])); i++)
+		{
+			if (Table_Single[i].Src == codepoint)
+			{
+				retvalnext += utf8_encode (retvalnext, Table_Single[i].Dst1);
+				goto rebuild_next;
+			}
+		}
+		for (i = 0; i < (sizeof (Table_Double) / sizeof (Table_Double[0])); i++)
+		{
+			if (Table_Double[i].Src == codepoint)
+			{
+				retvalnext += utf8_encode (retvalnext, Table_Double[i].Dst1);
+				retvalnext += utf8_encode (retvalnext, Table_Double[i].Dst2);
+				goto rebuild_next;
+			}
+		}
+		for (i = 0; i < (sizeof (Table_Triple) / sizeof (Table_Triple[0])); i++)
+		{
+			if (Table_Triple[i].Src == codepoint)
+			{
+				retvalnext += utf8_encode (retvalnext, Table_Triple[i].Dst1);
+				retvalnext += utf8_encode (retvalnext, Table_Triple[i].Dst2);
+				retvalnext += utf8_encode (retvalnext, Table_Triple[i].Dst3);
+				goto rebuild_next;
+			}
+		}
+		memcpy (retvalnext, iter, inc);
+		retvalnext += inc;
+rebuild_next:
+		remaining -= inc;
+		iter += inc;
+	}
+
+	*retvalnext = 0;
+	return retval;
+}
+
 #endif
 
 #if 0
@@ -848,4 +978,47 @@ int main (int argc, char *argv[])
 	encode (0x010348);
 }
 
+#endif
+
+#if 0
+int globalerror = 0;
+
+void framelock(void)
+{
+	printf ("(Sporadic call to framelock())");
+	globalerror++;
+}
+
+void cpiKeyHelp(uint16_t key, const char *shorthelp)
+{
+	printf ("(Sporadic call to cpiKeyHelp()");
+	globalerror++;
+}
+
+int cpiKeyHelpDisplay(void)
+{
+	printf ("(Sporadic call to cpiKeyHelpDisplay()");
+	globalerror++;
+	return 0;
+}
+
+void cpiKeyHelpClear(void)
+{
+	printf ("(Sporadic call to cpiKeyHelpClear()");
+	globalerror++;
+}
+
+struct console_t Console;
+
+int main (int argc, char *argv[])
+{
+	char *a;
+	fprintf (stderr, "a B c Æ ø Å\n%s\n\n", a  = utf8_casefold ("a B c Æ ø Å")); free (a);
+
+	fprintf (stderr, "ss ß sS\n%s\n\n", a  = utf8_casefold ("ss ß sS")); free (a);
+
+	fprintf (stderr, "ffi ﬃ FFI\n%s\n\n", a  = utf8_casefold ("ffi ﬃ FFI")); free (a);
+
+	return 0;
+}
 #endif
