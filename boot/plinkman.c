@@ -42,6 +42,7 @@
 #include <dirent.h>
 #ifdef _WIN32
 # include <errhandlingapi.h>
+# include <fileapi.h>
 # include <libloaderapi.h>
 # include <windows.h>
 #else
@@ -59,6 +60,8 @@
 #include "plinkman.h"
 
 #include "stuff/compat.h"
+#include "stuff/utf-16.h"
+
 
 static int handlecounter;
 static struct dll_handle loadlist[MAXDLLLIST];
@@ -152,26 +155,39 @@ static int _lnkDoLoad(char *file)
 	}
 
 #ifdef _WIN32
-	if (!(handle=LoadLibrary(file)))
 	{
-		char *lpMsgBuf = NULL;
-		if (FormatMessage (
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM     |
-			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
-			NULL,                                      /* lpSource */
-			GetLastError(),                            /* dwMessageId */
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
-			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
-			0,                                         /* nSize */
-			NULL                                       /* Arguments */
-		))
+		uint16_t *wfile;
+		wfile = utf8_to_utf16_LFN (file, 0);
+		if (!wfile)
 		{
-			fprintf(stderr, "Failed to load library %s: %s\n", file, lpMsgBuf);
-			LocalFree (lpMsgBuf);
+			fprintf (stderr, "_lnkDoLoad: utf8_to_utf16_LFN(%s) failed\n", file);
+			free (file);
+			return -1;
 		}
-		free (file);
-		return -1;
+
+		if (!(handle=LoadLibraryW(wfile)))
+		{
+			char *lpMsgBuf = NULL;
+			if (FormatMessage (
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM     |
+				FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+				NULL,                                      /* lpSource */
+				GetLastError(),                            /* dwMessageId */
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+				(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+				0,                                         /* nSize */
+				NULL                                       /* Arguments */
+			))
+			{
+				fprintf(stderr, "Failed to load library %s: %s\n", file, lpMsgBuf);
+				LocalFree (lpMsgBuf);
+			}
+			free (wfile);
+			free (file);
+			return -1;
+		}
+		free (wfile);
 	}
 
 	if (!(info=(const struct linkinfostruct *)GetProcAddress(handle, "dllextinfo")))
@@ -189,7 +205,7 @@ static int _lnkDoLoad(char *file)
 			NULL                                       /* Arguments */
 		))
 		{
-			fprintf(stderr, "Failed to locate dllextinfo in library %s: %s\n", file, lpMsgBuf);
+			fprintf(stderr, "Failed to locate `dllextinfo` in library %s: %s\n", file, lpMsgBuf);
 			LocalFree (lpMsgBuf);
 		}
 		free (file);
@@ -274,13 +290,16 @@ static void bsort(char **files, int n)
 }
 #endif
 
-static int _lnkLinkDir(const char *dir)
+int lnkLinkDir(const char *dir)
 {
-	DIR *d;
-	struct dirent *de;
-	char *filenames[1024];
+#define MAX_LINKDIR_FILES 1024
+	char *filenames[MAX_LINKDIR_FILES];
 	int files=0;
 	int n;
+
+#ifndef _WIN32
+	DIR *d;
+	struct dirent *de;
 
 	if (!(d=opendir(dir)))
 	{
@@ -289,26 +308,90 @@ static int _lnkLinkDir(const char *dir)
 	}
 	while ((de=readdir(d)))
 	{
-		size_t len=strlen(de->d_name);
-		if (len<strlen(LIB_SUFFIX))
+		size_t len = strlen (de->d_name);
+		if (len < strlen (LIB_SUFFIX))
 			continue;
-		if (strcmp(de->d_name+len-strlen(LIB_SUFFIX), LIB_SUFFIX))
+		if (strcmp (de->d_name + len - strlen (LIB_SUFFIX), LIB_SUFFIX))
 			continue;
-		if (files>=1024)
+		if (files >= MAX_LINKDIR_FILES)
 		{
 			fprintf(stderr, "lnkLinkDir: Too many libraries in directory %s\n", dir);
 			closedir(d);
 			return -1;
 		}
-#ifdef _WIN32
-		filenames[files] = strdup (de->d_name);
-#else
 		filenames[files] = malloc (strlen(dir) + strlen(de->d_name) + 1);
 		sprintf (filenames[files], "%s%s", dir, de->d_name);
-#endif
 		files++;
 	}
 	closedir(d);
+#else
+	uint16_t *wpath;
+	WIN32_FIND_DATAW FindData;
+	HANDLE FindHandle;
+	size_t dirlen = strlen (dir);
+
+	wpath = utf8_to_utf16_LFN (dir, 1);
+	FindHandle = FindFirstFileW (wpath, &FindData);
+	free (wpath);
+	wpath = 0;
+
+	if (FindHandle == INVALID_HANDLE_VALUE)
+	{ /* no files found, invalid path */
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError (),                           /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf (stderr, "lnkLinkDir(): FindFirstFileW(L\"%s\"): %s\n", dir, lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+		return -1;
+	}
+	do
+	{
+		if (!(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+		{
+			char *d_name = utf16_to_utf8 (FindData.cFileName);
+			if (d_name)
+			{
+				size_t filelen = strlen(d_name);
+
+				if ((filelen > strlen (LIB_SUFFIX)) &&
+				    (!strcasecmp (d_name + filelen - strlen (LIB_SUFFIX), LIB_SUFFIX)))
+				{
+					if (files >= MAX_LINKDIR_FILES)
+					{
+						fprintf(stderr, "lnkLinkDir: Too many libraries in directory \"%s\"\n", dir);
+						free (d_name);
+						FindClose (FindHandle);
+						return -1;
+					}
+					filenames[files] = malloc (dirlen + filelen + 1);
+					if (!filenames[files])
+					{
+						fprintf (stderr, "_lnkLinkDir(): malloc failed #2\n");
+						free (d_name);
+						FindClose (FindHandle);
+						return -1;
+					}
+					sprintf (filenames[files], "%s%s", dir, d_name);
+					files++;
+				} else {
+					free (d_name);
+				}
+			}
+		}
+	} while (FindNextFileW (FindHandle, &FindData));
+	FindClose (FindHandle);
+#endif
 	if (!files)
 		return 0;
 #ifdef HAVE_QSORT
@@ -328,19 +411,6 @@ static int _lnkLinkDir(const char *dir)
 		}
 	}
 	return 0; /* all okey */
-}
-
-int lnkLinkDir(const char *dir)
-{
-	int retval;
-#ifdef _WIN32
-	SetDllDirectory (dir);
-#endif
-	retval = _lnkLinkDir (dir);
-#ifdef _WIN32
-	SetDllDirectory ("");
-#endif
-	return retval;
 }
 
 int lnkLink(const char *files)

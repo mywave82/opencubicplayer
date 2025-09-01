@@ -2,7 +2,11 @@ TOPDIR=../
 include $(TOPDIR)Rules.make
 include Makefile-static
 
-all: $(boot_libocp_start_so) $(boot_libocp_so) $(boot_libocp_end_so) kickload.o
+ifeq ($(WINDOWS),1)
+UTF_O=utf-8.o utf-16.o
+endif
+
+all: $(boot_libocp_start_so) $(boot_libocp_so) $(boot_libocp_end_so) kickload.o $(UTF_O)
 
 clean:
 	rm -f *.o *.a *$(LIB_SUFFIX)
@@ -27,14 +31,16 @@ pmain.o: pmain.c pmain.h \
 
 psetting.o: psetting.c psetting.h \
 	../config.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/utf-16.h
 	$(CC) psetting.c -o $@ -c
 
 plinkman.o: plinkman.c plinkman.h \
 	../config.h \
 	../types.h \
 	psetting.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/utf-16.h
 	$(CC) plinkman.c -o $@ -c
 
 plinkman_end.o: plinkman_end.c plinkman.h \
@@ -54,6 +60,7 @@ kickload.o: $(KICKLOAD_C) \
 	../boot/pmain.h \
 	../boot/console.h \
 	../stuff/poutput.h \
+	../stuff/utf-16.h \
 	../Rules.make
 	$(CC) $< -o $@ -c
 
@@ -68,3 +75,15 @@ console.o: console.c console.h \
 	../stuff/poutput-keyboard.h \
 	../stuff/utf-8.h
 	$(CC) console.c -o $@ -c
+
+utf-8.o: ../stuff/utf-8.c \
+	../config.h \
+	../types.h \
+	../stuff/utf-8.h
+	$(CC) $< -DBOOT -o $@ -c
+
+utf-16.o: ../stuff/utf-16.c \
+	../config.h \
+	../types.h \
+	../stuff/utf-16.h
+	$(CC) $< -DBOOT -o $@ -c

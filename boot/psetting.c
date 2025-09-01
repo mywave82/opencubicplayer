@@ -34,6 +34,10 @@
  */
 
 #include "config.h"
+#ifdef _WIN32
+# include <windows.h>
+# include <processenv.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -45,6 +49,10 @@
 #include "types.h"
 #include "psetting.h"
 #include "stuff/compat.h"
+#ifdef _WIN32
+# include "stuff/utf-16.h"
+#endif
+
 
 char *cfProgramPath;
 char *cfProgramPathAutoload;
@@ -699,6 +707,8 @@ int cfGetConfig(int argc, char *argv[])
 	}
 
 	t=_cfGetProfileString("general", "tempdir", 0);
+
+#ifndef _WIN32
 	if (!t || !strlen (t))
 	{
 		t=getenv("TEMP");
@@ -709,20 +719,27 @@ int cfGetConfig(int argc, char *argv[])
 	}
 	if (!t || !strlen (t))
 	{
-#ifdef _WIN32
-		t = "c:\\TEMP\\";
-#else
 		t = "/tmp/";
-#endif
 	}
 	cfTempPath = malloc (strlen (t) + 2);
-#ifdef _WIN32
-# define c "\\"
+	sprintf (cfTempPath, "%s%s", t, (t[strlen(t) - 1] != '/') ? "/" : "");
 #else
-# define c "/"
+	if (!t || !strlen (t))
+	{
+		uint16_t wt[32767+1];
+		DWORD r = GetEnvironmentVariableW (L"TEMP", wt, 32767 + 1);
+		if ((r >= 1) && (r <= 32767))
+		{
+			t = utf16_to_utf8 (wt);
+		}
+	}
+	if (!t || !strlen (t))
+	{
+		t = "c:\\TEMP\\";
+	}
+	cfTempPath = malloc (strlen (t) + 2);
+	sprintf (cfTempPath, "%s%s", t, (t[strlen(t) - 1] != '\\') ? "\\" : "");
 #endif
-	sprintf (cfTempPath, "%s%s", t, (t[strlen(t) - 1] != c[0]) ? c : "");
-#undef c
 
 #ifdef PSETTING_DEBUG
 	{

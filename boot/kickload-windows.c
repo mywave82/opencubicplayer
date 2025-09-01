@@ -54,6 +54,7 @@
 #include "boot/pmain.h"
 #include "boot/console.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-16.h"
 
 static char *_cfConfigHomePath;
 static char *_cfDataHomePath;
@@ -64,10 +65,19 @@ static char *_cfProgramPath;
 static const char *verify_file (const char *base)
 {
 	DWORD st;
+	uint16_t *wbase;
 
-	st = GetFileAttributes (base);
+	wbase = utf8_to_utf16_LFN (base, 0);
+	if (!wbase)
+	{
+		fprintf (stderr, "verify_file: utf8_to_utf16_LFN(\"%s\") failed\n", base);
+		return 0;
+	}
+
+	st = GetFileAttributesW (wbase);
+	free (wbase);
 #ifdef KICKSTART_DEBUG
-	fprintf (stderr, "verify_file(%s) = %u\n", base, (unsigned)st);
+	fprintf (stderr, "verify_file(L\"%s\") = %u\n", base, (unsigned)st);
 #endif
 	if (st == INVALID_FILE_ATTRIBUTES)
 	{
@@ -141,17 +151,34 @@ static char *locate_ocp_hlp_try(const char *base, const char *suffix)
 static char *locate_ocp_hlp(void)
 {
 	char *retval;
-	const char *temp;
+	char *temp = 0;
+	uint16_t wt[32767+1];
+	DWORD r;
 
-	if ((temp=getenv("OCPDIR")))
-		if ((retval=locate_ocp_hlp_try(temp, "")))
-			return retval;
+	r = GetEnvironmentVariableW (L"OCPDIR", wt, 32767 + 1);
+	if ((r >= 1) && (r >= 32767))
+	{
+		temp = utf16_to_utf8 (wt);
+		if (temp)
+		{
+			retval=locate_ocp_hlp_try(temp, "");
+			free (temp);
+			if (retval)
+			{
+				return retval;
+			}
+		}
+	}
 
 	if ((retval=locate_ocp_hlp_try(_cfProgramPath, "")))
+	{
 		return retval;
+	}
 
 	if ((retval=locate_ocp_hlp_try(_cfProgramPath, "data\\")))
+	{
 		return retval;
+	}
 
 	return NULL;
 }
@@ -180,11 +207,27 @@ static int cp(const char *src, const char *dst)
 	HANDLE srcfd, dstfd;
 	char buffer[65536];
 
+	uint16_t *wsrc = utf8_to_utf16_LFN (src, 0);
+	uint16_t *wdst = utf8_to_utf16_LFN (dst, 0);
+
+	if (!wsrc)
+	{
+		fprintf (stderr, "cp: utf8_to_utf16_LFN(\"%s\") failed\n", src);
+		free (wdst);
+		return -1;
+	}
+	if (!wdst)
+	{
+		fprintf (stderr, "cp: utf8_to_utf16_LFN(\"%s\") failed\n", dst);
+		free (wsrc);
+		return -1;
+	}
+
 #ifdef KICKSTART_DEBUG
 	fprintf (stderr, "cp %s %s\n", src, dst);
 #endif
 
-	srcfd = CreateFile (src,                   /* lpFileName */
+	srcfd = CreateFileW (wsrc,                 /* lpFileName */
 	                    GENERIC_READ,          /* dwDesiredAccess */
 	                    FILE_SHARE_READ,       /* dwShareMode */
 	                    0,                     /* lpSecurityAttributes */
@@ -193,10 +236,15 @@ static int cp(const char *src, const char *dst)
 	                    0);                    /* hTemplateFile */
 	if (srcfd == INVALID_HANDLE_VALUE)
 	{
+		free (wsrc);
+		free (wdst);
 		return -1;
 	}
 
-	dstfd = CreateFile (dst,                   /* lpFileName */
+	free (wsrc);
+	wsrc = 0;
+
+	dstfd = CreateFileW (wdst,                 /* lpFileName */
 	                    GENERIC_WRITE,         /* dwDesiredAccess */
 	                    FILE_SHARE_READ,       /* dwShareMode */
 	                    0,                     /* lpSecurityAttributes */
@@ -205,11 +253,16 @@ static int cp(const char *src, const char *dst)
 	                    0);                    /* hTemplateFile */
 	if (dstfd == INVALID_HANDLE_VALUE)
 	{
+		free (wdst);
 		storeError=GetLastError();
 		CloseHandle (srcfd);
 		SetLastError(storeError);
 		return -1;
 	}
+
+	free (wdst);
+	wdst = 0;
+
 	while (1)
 	{
 		DWORD bytesread = 0;
@@ -250,31 +303,80 @@ static int mkdir_r (char *path)
 	next = strchr (path + 1, '\\');
 	while (1)
 	{
+		uint16_t *wpath;
+		char safe;
 		DWORD st;
 		if (next)
 		{
-			*next = 0;
+			safe = next[1];
+			next[1] = 0;
 		}
 
-		st = GetFileAttributes (path);
+		wpath = utf8_to_utf16_LFN (path, 0);
+		if (!wpath)
+		{
+			fprintf (stderr, "mkdir_r: uint8_to_uint16_LFN(\"%s\") failed\n", path);
+			goto failout;
+		}
+
+		st = GetFileAttributesW (wpath);
 		if (st == INVALID_FILE_ATTRIBUTES)
 		{
 #ifdef KICKSTART_DEBUG
-			fprintf (stderr, "CreateDirectory %s\n", path);
-#endif
-			if (!CreateDirectory (path, 0))
 			{
-				fprintf (stderr, "Failed to create %s\n", path);
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf(stderr, "GetFileAttributesW(L\"%s\"): %s\n", path, lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
+			}
+			fprintf (stderr, "CreateDirectoryW(L\"%s\")\n", path);
+#endif
+			if (!CreateDirectoryW (wpath, 0))
+			{
+				char *lpMsgBuf = NULL;
+				if (FormatMessage (
+					FORMAT_MESSAGE_ALLOCATE_BUFFER |
+					FORMAT_MESSAGE_FROM_SYSTEM     |
+					FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+					NULL,                                      /* lpSource */
+					GetLastError(),                            /* dwMessageId */
+					MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+					(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+					0,                                         /* nSize */
+					NULL                                       /* Arguments */
+				))
+				{
+					fprintf(stderr, "CreateDirectoryW(L\"%s\"): %s\n", path, lpMsgBuf);
+					LocalFree (lpMsgBuf);
+				}
+				free (wpath);
+				wpath = 0;
 				goto failout;
 			}
-		} if (!(st & FILE_ATTRIBUTE_DIRECTORY))
+		} else if (!(st & FILE_ATTRIBUTE_DIRECTORY))
 		{
+			free (wpath);
+			wpath = 0;
 			fprintf (stderr, "%s is not a directory\n", path);
 			goto failout;
 		}
+		free (wpath);
+		wpath = 0;
 		if (next)
 		{
-			*next = '\\';
+			next[1] = safe;
 			next = strchr (next + 1, '\\');
 		} else {
 			break;
@@ -293,6 +395,7 @@ int validate_home(void)
 {
 	/* validate ocp.ini */
 	char *temp = malloc (strlen (_cfConfigHomePath) + 7 + 1);
+	uint16_t *wtemp;
 	DWORD st;
 
 	if (!temp)
@@ -302,7 +405,10 @@ int validate_home(void)
 	}
 	sprintf (temp, "%socp.ini", _cfConfigHomePath);
 
-	st = GetFileAttributes (temp);
+	wtemp = utf8_to_utf16_LFN (temp, 0);
+	st = GetFileAttributesW (wtemp);
+	free (wtemp);
+	wtemp = 0;
 	if (st == INVALID_FILE_ATTRIBUTES)
 	{ /* failed to stat ocp.ini */
 		char *temp2;
@@ -354,7 +460,7 @@ static int runocp (int argc, char *argv[])
 	HMODULE handle;
 	struct bootupstruct *bootup;
 
-	handle = LoadLibrary ("libocp" LIB_SUFFIX);
+	handle = LoadLibraryW (L"libocp" LIB_SUFFIX);
 	if (!handle)
 	{
 		char *lpMsgBuf = NULL;
@@ -408,25 +514,49 @@ static int runocp (int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-	char *a, *b;
 	int retval;
-	char path[MAX_PATH+1024] = {0};
+	char *path;
+	uint16_t wt[32767+1]; /* SHGetFolderPathW requires MAX_PATH, GetEnvironmentVariableW can require 32767+1 */
+	DWORD r;
 
 #ifdef HAVE_DUMA
 	DUMA_newFrame();
 #endif
+
+	if (!SetConsoleOutputCP(CP_UTF8))
+	{
+		char *lpMsgBuf = NULL;
+		if (FormatMessage (
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			FORMAT_MESSAGE_FROM_SYSTEM     |
+			FORMAT_MESSAGE_IGNORE_INSERTS,             /* dwFlags */
+			NULL,                                      /* lpSource */
+			GetLastError(),                            /* dwMessageId */
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* dwLanguageId */
+			(LPSTR) &lpMsgBuf,                         /* lpBuffer */
+			0,                                         /* nSize */
+			NULL                                       /* Arguments */
+		))
+		{
+			fprintf(stderr, "SetConsoleOutputCP(CP_UTF8): %s\n", lpMsgBuf);
+			LocalFree (lpMsgBuf);
+		}
+	}
 
 	signal(SIGSEGV, sigsegv);
 	signal(SIGFPE, sigsegv);
 	signal(SIGILL, sigsegv);
 	signal(SIGINT, sigsegv);
 
-	if (SHGetFolderPath (NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK)
+	/* SHGetKnownFolderPath is better, but requires Windows Vista */
+	wt[0] = 0;
+	if (SHGetFolderPathW (NULL, CSIDL_APPDATA, NULL, 0, wt) != S_OK)
 	{
 		fprintf (stderr, "Failed to retrieve %%APPDATA%%\n");
 		return -1;
 	}
-	assert (path[0]);
+	assert (wt[0]);
+	path = utf16_to_utf8 (wt);
 	_cfConfigHomePath = malloc (strlen (path) + 1 +  strlen("OpenCubicPlayer\\Config\\") + 1);
 	_cfDataHomePath = malloc (strlen (path) + 1 + strlen("OpenCubicPlayer\\Data\\") + 1);
 	sprintf (
@@ -443,6 +573,8 @@ int main(int argc, char *argv[])
 		path[strlen(path)-1] != '\\' ? "\\" : "",
 		"OpenCubicPlayer\\Data\\"
 	);
+	free (path);
+	path = 0;
 
 #ifdef KICKSTART_DEBUG
 	fprintf (stderr, "cfConfigHomePath set to %s\n", _cfConfigHomePath);
@@ -455,22 +587,33 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	a = getenv("HOME");
-	if (a && a[0])
+	r = GetEnvironmentVariableW (L"HOME", wt, 32767 + 1);
+	if ((r >= 1) && (r >= 32767))
 	{
+		_cfHomePath = utf16_to_utf8 (wt);
 #ifdef KICKSTART_DEBUG
-		if (a) fprintf (stderr, "$HOME = %s\n", a);
+		if (_cfHomePath) fprintf (stderr, "$HOME = \"%s\"\n", a);
 #endif
-		_cfHomePath = strdup (a);
 	}
+
 	if (!_cfHomePath)
 	{
-		a = getenv("HOMEPATH");
-		b = getenv("HOMEDRIVE");
+		char *a = 0, *b = 0;
+
+		r = GetEnvironmentVariableW (L"HOMEDRIVE", wt, 32767 + 1);
+		if ((r >= 1) && (r >= 32767))
+		{
+			a = utf16_to_utf8 (wt);
+		}
+		r = GetEnvironmentVariableW (L"HOMEPATH", wt, 32767 + 1);
+		if ((r >= 1) && (r >= 32767))
+		{
+			b = utf16_to_utf8 (wt);
+		}
 		if (a && a[0] && b && b[0])
 		{
 #ifdef KICKSTART_DEBUG
-			if (a) fprintf (stderr, "$HOMEDRIVE = %s  $HOMEPATH = %s\n", b, a);
+			if (a) fprintf (stderr, "$HOMEDRIVE=\"%s\"  $HOMEPATH=\"%s\"\n", b, a);
 #endif
 			_cfHomePath = malloc (strlen (a) + strlen (b) + 1);
 			if (_cfHomePath)
@@ -478,18 +621,13 @@ int main(int argc, char *argv[])
 				sprintf (_cfHomePath, "%s%s", b, a);
 			}
 		}
+		free (a);
+		free (b);
 	}
+
 	if (!_cfHomePath)
 	{
-		a = getenv("home");
-#ifdef KICKSTART_DEBUG
-		if (a) fprintf (stderr, "$home = %s\n", a);
-#endif
-		_cfHomePath = strdup (a);
-	}
-	if (!_cfHomePath)
-	{
-		if (SHGetFolderPath (NULL, CSIDL_APPDATA, NULL, 0, path) != S_OK)
+		if (SHGetFolderPathW (NULL, CSIDL_APPDATA, NULL, 0, wt) != S_OK)
 		{
 			fprintf (stderr, "Failed to retrieve %%PROFILE%%\n");
 			return -1;
@@ -497,7 +635,7 @@ int main(int argc, char *argv[])
 #ifdef KICKSTART_DEBUG
 		if (a) fprintf (stderr, "%%PROFILE%% = %s\n", a);
 #endif
-		_cfHomePath = strdup (path);
+		_cfHomePath = utf16_to_utf8 (wt);
 	}
 	/* ensure that _cfHomePath ends with \\ */
 	if (_cfHomePath && _cfHomePath[strlen(_cfHomePath)-1] != '\\')
@@ -522,16 +660,18 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (!GetModuleFileName (NULL, path, sizeof (path)))
+	if (!GetModuleFileNameW (NULL, wt, sizeof (wt) / sizeof (wt[0])))
 	{
 		fprintf (stderr, "Failed to retrieve path of OCP.EXE\n");
 		return -1;
 	}
-	_cfProgramPath = strdup (path);
-	a = strrchr (_cfProgramPath, '\\'); /* remove ocp.exe from string */
-	if (a)
+	_cfProgramPath = utf16_to_utf8 (wt);
 	{
-		a[1] = 0;
+		char *a = strrchr (_cfProgramPath, '\\'); /* remove ocp.exe from string */
+		if (a)
+		{
+			a[1] = 0;
+		}
 	}
 
 #ifdef KICKSTART_DEBUG
