@@ -25,7 +25,7 @@
 #include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
-# warning WIN32 currently uses non widechar API, since paths are within ASCII-range, and TiMidity project uses this too.
+# warning WIN32 currently uses non widechar API, since paths requested by the TiMidity project are within ASCII-range.
 # include <handleapi.h>
 # include <fileapi.h>
 # include <sysinfoapi.h>
@@ -58,14 +58,192 @@
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
-static char *user_timidity_path = 0;
-static int   have_user_timidity = 0;
-static int   have_default_timidity = 0;
+static char *user_timidity_path;
+static int   have_user_timidity;
+static int   have_default_timidity;
 static char default_timidity_path[BUFSIZ];
-static int    global_timidity_count = 0;
-static char **global_timidity_path = 0;
-static int    sf2_files_count = 0;
-static char **sf2_files_path = 0;
+static int    global_timidity_count;
+static int    global_timidity_count_or_none;
+static char **global_timidity_path;
+static int    sf2_files_count;
+static int    sf2_files_count_or_none;
+static char **sf2_files_path;
+
+static char            *sf2_manual;
+static uint32_t         sf2_manual_dirdb_ref = DIRDB_CLEAR;
+static struct ocpdir_t *sf2_manual_dir;
+
+struct path_attempt
+{
+        char *path;
+        int displaywidth;
+        int found;
+};
+static struct path_attempt *config_attempt = 0;
+static int                  config_attempt_n = 0;
+static struct path_attempt *global_configs_attempt = 0;
+static int                  global_configs_attempt_n = 0;
+static struct path_attempt *global_sf2_attempt = 0;
+static int                  global_sf2_attempt_n = 0;
+
+struct BrowseSF2_t
+{
+	int isparent;
+#ifdef _WIN32
+	char drive;
+#endif
+	struct ocpfile_t *file;
+	struct ocpdir_t *dir;
+};
+
+static struct BrowseSF2_t *BrowseSF2_entries_data;
+static int                 BrowseSF2_entries_count;
+static int                 BrowseSF2_entries_size;
+
+static void path_attempt_append (const struct DevInterfaceAPI_t *API, const char *path, int found, struct path_attempt **e, int *n)
+{
+	struct path_attempt *e2 = realloc (*e, sizeof (struct path_attempt) * ((*n) + 1));
+	if (!e2)
+	{
+		fprintf (stderr, "path_attempt_append: realloc failed\n");
+		return;
+	}
+	(*e) = e2;
+	(*e)[*n].path = strdup (path);
+	if (!(*e)[*n].path)
+	{
+		fprintf (stderr, "path_attempt_append: strdup() failed\n");
+		return;
+	}
+	(*e)[*n].displaywidth = API->console->Driver->MeasureStr_utf8 (path, strlen (path));
+	(*e)[*n].found = found;
+	(*n) = (*n) + 1;
+}
+
+static void path_attempt_clear (struct path_attempt **e, int *n)
+{
+	int i;
+	for (i = 0; i < *n; i++)
+	{
+		free ( (*e)[i].path );
+	}
+	free (*e);
+	*e = 0;
+	*n = 0;
+}
+
+static int path_attempt_get_height (const char *string_prefix, const struct path_attempt *s, int n, const int w)
+{
+	int RetVal = 1;
+	int CurrentOffset = strlen (string_prefix) + 1;
+	int CurrentWidth = w - CurrentOffset;
+
+	while (n)
+	{
+		/* If next item can not fit, and we already have some text, add a new line.
+		 * Also include space for a comma if we alreadu have some text.
+		 */
+		if ((CurrentWidth <= 0) || (((s->displaywidth + ((CurrentOffset && (n>2))?1:0)) >= CurrentWidth) && (CurrentOffset != 0)))
+		{
+			CurrentOffset = 0;
+			CurrentWidth = w;
+			RetVal++;
+		}
+
+		CurrentOffset += s->displaywidth;
+		CurrentWidth -= s->displaywidth;
+		n--;s++;
+
+		if (n > 1) // add comma and a space
+		{
+			if (CurrentOffset)
+			{
+				CurrentWidth-=2;
+				CurrentOffset+=2;
+				/* new-line will be handled by start of the while loop */
+			}
+		} else if (n == 1) // add and, with possible spaces
+		{
+			if (CurrentWidth < 4) /* no room, add a new-line already now */
+			{
+				CurrentOffset = 0;
+				CurrentWidth = w;
+				RetVal++;
+
+				CurrentOffset += 4; // "and "
+				CurrentWidth -= 4;
+			} else {
+				CurrentOffset += 5; //" and "
+				CurrentWidth -= 5;
+			}
+		}
+	}
+	return RetVal;
+}
+
+static void path_attempt_print (const struct DevInterfaceAPI_t *API, const char *string_prefix, const struct path_attempt *s, int n, const int Left, const int Width, int Top, int Height)
+{
+	int CurrentOffset = strlen (string_prefix) + 1;
+	int CurrentWidth = Width - CurrentOffset;
+
+	API->console->DisplayPrintf (Top, Left, 0x07, Width, "%s ", string_prefix);
+
+	while (n && Height)
+	{
+		/* If next item can not fit, and we already have some text, add a new line.
+		 * Also include space for a comma if we alreadu have some text.
+		 */
+		if ((CurrentWidth <= 0) || (((s->displaywidth + ((CurrentOffset && (n>2))?1:0)) >= CurrentWidth) && (CurrentOffset != 0)))
+		{
+			CurrentOffset = 0;
+			CurrentWidth = Width;
+			Top++;
+			if (!(Height--))
+			{
+				return; // should not be reachable
+			}
+		}
+
+		API->console->DisplayPrintf (Top, Left + CurrentOffset, s->found ? 0x0a : 0x0c, CurrentWidth, "%S", s->path);
+
+		CurrentOffset += s->displaywidth;
+		CurrentWidth -= s->displaywidth;
+		n--;s++;
+
+		if (n > 1) // add comma and a space
+		{
+			if (CurrentOffset)
+			{
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, ", ");
+
+				CurrentWidth-=2;
+				CurrentOffset+=2;
+				/* new-line will be handled by start of the while loop */
+			}
+		} else if (n == 1) // add and, with possible spaces
+		{
+			if (CurrentWidth < 4) /* no room, add a new-line already now */
+			{
+				CurrentOffset = 0;
+				CurrentWidth = Width;
+				Top++;
+				if (!(Height--))
+				{
+					return; // should not be reachable
+				}
+
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, "and ");
+				CurrentOffset += 4; // "and "
+				CurrentWidth -= 4;
+			} else {
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, " and ");
+				CurrentOffset += 5; //" and "
+				CurrentWidth -= 5;
+			}
+		}
+	}
+
+}
 
 static void append_global (const char *path)
 {
@@ -86,7 +264,7 @@ static void append_sf2 (const char *path)
 	if (sf2_files_path[sf2_files_count]) sf2_files_count++;
 }
 
-static void reset_configfiles (void)
+static void reset_configfiles (const struct DevInterfaceAPI_t *API)
 {
 	int i;
 	for (i=0; i < global_timidity_count; i++)
@@ -108,6 +286,26 @@ static void reset_configfiles (void)
 	user_timidity_path = 0;
 	have_default_timidity = 0;
 	default_timidity_path[0] = 0;
+
+	global_timidity_count_or_none = 1;
+	sf2_files_count_or_none = 1;
+
+	path_attempt_clear (&config_attempt,         &config_attempt_n);
+	path_attempt_clear (&global_configs_attempt, &global_configs_attempt_n);
+	path_attempt_clear (&global_sf2_attempt,     &global_sf2_attempt_n);
+
+	free (sf2_manual);
+	sf2_manual = 0;
+	if (sf2_manual_dir)
+	{
+		sf2_manual_dir->unref (sf2_manual_dir);
+		sf2_manual_dir = 0;
+	}
+	if (sf2_manual_dirdb_ref != DIRDB_CLEAR)
+	{
+		API->dirdb->Unref (sf2_manual_dirdb_ref, dirdb_use_file);
+		sf2_manual_dirdb_ref = DIRDB_CLEAR;
+	}
 }
 
 static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
@@ -115,6 +313,16 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 	struct ocpfile_t *f;
 
 	f = ocpdir_readdir_file (API->configAPI->HomeDir, filename, API->dirdb);
+	{
+		int len = strlen (API->configAPI->HomePath) + strlen (filename) + 1;
+		char *temp = malloc (len);
+		if (temp)
+		{
+			snprintf (temp, len, "%s%s", API->configAPI->HomePath, filename);
+			path_attempt_append (API, temp, !!f, &config_attempt, &config_attempt_n);
+			free (temp);
+		}
+	}
 	if (!f)
 	{
 		PRINT ("Unable to use user config via cfHOME %s\n", filename);
@@ -131,7 +339,7 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 	f->unref (f);
 }
 
-static void try_global (const char *path)
+static void try_global (const struct DevInterfaceAPI_t *API, const char *path)
 {
 #ifdef _WIN32
 	DWORD st;
@@ -140,10 +348,12 @@ static void try_global (const char *path)
 
 	if (st == INVALID_FILE_ATTRIBUTES)
 	{
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 	if (st & FILE_ATTRIBUTE_DIRECTORY)
 	{
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 #else
@@ -151,6 +361,7 @@ static void try_global (const char *path)
 	if (lstat (path, &st))
 	{
 		PRINT ("Unable to lstat() global config %s\n", path);
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 	if ((st.st_mode & S_IFMT) == S_IFLNK)
@@ -158,16 +369,19 @@ static void try_global (const char *path)
 		if (stat (path, &st))
 		{
 			PRINT ("Unable to stat() user global config %s, broken symlink\n", path);
+			path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 			return;
 		}
 	}
 	if ((st.st_mode & S_IFMT) != S_IFREG)
 	{
 		PRINT ("Unable to use global config %s, not a regular file\n", path);
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 #endif
 	PRINT ("Found global config %s%s", path, have_user_timidity?", with possible user overrides":" (no user overrides found earlier)\n");
+	path_attempt_append (API, path, 1, &config_attempt, &config_attempt_n);
 	if (!have_default_timidity)
 	{
 		snprintf (default_timidity_path, sizeof (default_timidity_path), "%s", path);
@@ -175,14 +389,24 @@ static void try_global (const char *path)
 	}
 }
 
-static void scan_config_directory (const char *dpath)
+static void scan_config_directory (const struct DevInterfaceAPI_t *API, const char *dpath)
 {
 #ifdef _WIN32
 	HANDLE FindHandle;
 	WIN32_FIND_DATAA FindData;
 	char path[BUFSIZ];
 
-	FindHandle = FindFirstFile (dpath, &FindData);
+	char *dpath_star = malloc (strlen (dpath) + 2);
+
+	if (!dpath_star)
+	{
+		return;
+	}
+	sprintf (dpath_star, "%s*", dpath);
+	FindHandle = FindFirstFile (dpath_star, &FindData);
+	free (dpath_star);
+	dpath_star = 0;
+	path_attempt_append (API, dpath, FindHandle != INVALID_HANDLE_VALUE, &global_configs_attempt, &global_configs_attempt_n);
 	if (FindHandle == INVALID_HANDLE_VALUE)
 	{
 		PRINT ("Unable to scan directory %s for global configuration files\n", dpath);
@@ -191,7 +415,7 @@ static void scan_config_directory (const char *dpath)
 
 	do
 	{
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+		snprintf (path, sizeof (path), "%s%s", dpath, FindData.cFileName);
 
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -215,6 +439,16 @@ static void scan_config_directory (const char *dpath)
 #else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
+
+	char *dpath_slash = malloc (strlen (dpath) + 2);
+
+	if (dpath_slash)
+	{
+		sprintf (dpath_slash, "%s/", dpath);
+		path_attempt_append (API, dpath_slash, !!d, &global_configs_attempt, &global_configs_attempt_n);
+		free (dpath_slash);
+	}
+
 	if (!d)
 	{
 		PRINT ("Unable to scan directory %s for global configuration files\n", dpath);
@@ -261,14 +495,25 @@ static void scan_config_directory (const char *dpath)
 #endif
 }
 
-static void scan_sf2_directory (const char *dpath)
+static void scan_sf2_directory (const struct DevInterfaceAPI_t *API, const char *dpath)
 {
 #ifdef _WIN32
 	HANDLE FindHandle;
 	WIN32_FIND_DATAA FindData;
 	char path[BUFSIZ];
 
-	FindHandle = FindFirstFile (dpath, &FindData);
+	char *dpath_star = malloc (strlen (dpath) + 2);
+
+	if (!dpath_star)
+	{
+		return;
+	}
+	sprintf (dpath_star, "%s*", dpath);
+	FindHandle = FindFirstFile (dpath_star, &FindData);
+	free (dpath_star);
+	dpath_star = 0;
+	path_attempt_append (API, dpath, FindHandle != INVALID_HANDLE_VALUE, &global_sf2_attempt, &global_sf2_attempt_n);
+
 	if (FindHandle == INVALID_HANDLE_VALUE)
 	{
 		PRINT ("Unable to scan directory %s for global sf2 fonts\n", dpath);
@@ -277,7 +522,7 @@ static void scan_sf2_directory (const char *dpath)
 
 	do
 	{
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+		snprintf (path, sizeof (path), "%s%s", dpath, FindData.cFileName);
 
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -301,6 +546,16 @@ static void scan_sf2_directory (const char *dpath)
 #else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
+
+	char *dpath_slash = malloc (strlen (dpath) + 2);
+
+	if (dpath_slash)
+	{
+		sprintf (dpath_slash, "%s/", dpath);
+		path_attempt_append (API, dpath_slash, !!d, &global_sf2_attempt, &global_sf2_attempt_n);
+		free (dpath_slash);
+	}
+
 	if (!d)
 	{
 		PRINT ("Unable to scan directory %s for global sf2 fonts\n", dpath);
@@ -315,7 +570,7 @@ static void scan_sf2_directory (const char *dpath)
 		if (!strcmp (de->d_name, ".")) continue;
 		if (!strcmp (de->d_name, "..")) continue;
 
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, de->d_name);
+		snprintf (path, sizeof (path), "%s/%s", dpath, de->d_name);
 		if ((strlen (de->d_name) < 5) || (strcasecmp (de->d_name + strlen(de->d_name) - 4, ".sf2")))
 		{
 			PRINT ("Ignoring %s, since it does not end with .sf2\n", de->d_name);
@@ -352,50 +607,88 @@ static int mystrcmp(const void *a, const void *b)
 	return strcmp (*(char **)a, *(char **)b);
 }
 
+static void refresh_sf2manual (const struct DevInterfaceAPI_t *API)
+{
+	const char *temp = API->configAPI->GetProfileString ("timidity", "sf2manual", 0); // We will strdup, if this returns a value
+	if (temp)
+	{
+		sf2_manual = strdup (temp);
+	}
+	if (sf2_manual)
+	{
+
+#ifdef _WIN32
+		sf2_manual_dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (DIRDB_NOPARENT, sf2_manual, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+#else
+		sf2_manual_dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (DIRDB_NOPARENT, sf2_manual, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+#endif
+
+		if (sf2_manual_dirdb_ref != DIRDB_CLEAR)
+		{
+			struct ocpfile_t *sf2_manual_file = 0;
+
+			API->filesystem_resolve_dirdb_file (sf2_manual_dirdb_ref, 0, &sf2_manual_file);
+
+			if (sf2_manual_file)
+			{
+				sf2_manual_dir = sf2_manual_file->parent;
+				sf2_manual_dir->ref (sf2_manual_dir);
+				sf2_manual_file->unref (sf2_manual_file);
+			}
+		}
+	}
+}
+
 static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 {
-	reset_configfiles ();
+	reset_configfiles (API);
 
-	try_user (API, "timidity.cfg");
-#ifdef _WIN32
-	try_user (API, "_timidity.cfg");
-#endif
+	try_user (API, "timidity.cfg"); /* Vanilla TiMidity only scans this on WIN32 */
+	try_user (API, "_timidity.cfg"); /* Vanilla TiMidity only scan this on WIN32 */
+	try_user (API, ".timidity.cfg");
 
 #ifdef _WIN32
 	{
 		char local[1024];
-		GetWindowsDirectory (local, 1023 - 13);
+		local[0] = 0;
+		GetWindowsDirectoryA (local, 1023 - 13);
 		strcat (local, "\\TIMIDITY.CFG");
-		try_global (local); // "C:\\WINDOWS\\timidity.cfg"
+		try_global (API, local); // "C:\\WINDOWS\\timidity.cfg"
 	}
-	try_global ("C:\\timidity\\timidity.cfg");
-	try_global ("C:\\TiMidity++\\timidity.cfg");
-	scan_config_directory ("C:\\timidity\\*");
-	scan_config_directory ("C:\\TiMidity++\\*");
-	scan_config_directory ("C:\\timidity\\soundfonts\\*");
-	scan_config_directory ("C:\\TiMidity++\\soundfonts\\*");
-	scan_config_directory ("C:\\timidity\\musix\\*");
-	scan_config_directory ("C:\\TiMidity++\\musix\\*");
-	scan_sf2_directory ("C:\\timidity\\soundfonts\\*");
-	scan_sf2_directory ("C:\\TiMidity++\\soundfonts\\*");
-	scan_sf2_directory ("C:\\timidity\\musix\\*");
-	scan_sf2_directory ("C:\\TiMidity++\\musix\\*");
+	try_global (API, "C:\\timidity\\timidity.cfg");
+	try_global (API, "C:\\TiMidity++\\timidity.cfg");
+
+	scan_config_directory (API, "C:\\timidity\\");
+	scan_config_directory (API, "C:\\TiMidity++\\");
+	scan_config_directory (API, "C:\\timidity\\soundfonts\\");
+	scan_config_directory (API, "C:\\TiMidity++\\soundfonts\\");
+	scan_config_directory (API, "C:\\timidity\\musix\\");
+	scan_config_directory (API, "C:\\TiMidity++\\musix\\");
+
+	scan_sf2_directory (API, "C:\\timidity\\soundfonts\\");
+	scan_sf2_directory (API, "C:\\TiMidity++\\soundfonts\\");
+	scan_sf2_directory (API, "C:\\timidity\\musix\\");
+	scan_sf2_directory (API, "C:\\TiMidity++\\musix\\");
+	scan_sf2_directory (API, API->configAPI->DataPath);
 #else
 	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg"))
-		try_global (CONFIG_FILE);
-	try_global ("/etc/timidity/timidity.cfg");
-	try_global ("/etc/timidity.cfg");
-	try_global ("/usr/local/share/timidity/timidity.cfg");
-	try_global ("/usr/share/timidity/timidity.cfg");
+	{
+		try_global (API, CONFIG_FILE);
+	}
+	try_global (API, "/etc/timidity/timidity.cfg");
+	try_global (API, "/etc/timidity.cfg");
+	try_global (API, "/usr/local/share/timidity/timidity.cfg");
+	try_global (API, "/usr/share/timidity/timidity.cfg");
 
-	scan_config_directory ("/etc/timidity");
-	scan_config_directory ("/usr/local/share/timidity");
-	scan_config_directory ("/usr/share/timidity");
-	scan_sf2_directory ("/usr/local/share/sounds/sf2");
-	scan_sf2_directory ("/usr/share/sounds/sf2");
+	scan_config_directory (API, "/etc/timidity");
+	scan_config_directory (API, "/usr/local/share/timidity");
+	scan_config_directory (API, "/usr/share/timidity");
+
+	scan_sf2_directory (API, "/usr/local/share/sounds/sf2");
+	scan_sf2_directory (API, "/usr/share/sounds/sf2");
 #endif
 
 	if (global_timidity_count >= 2)
@@ -406,7 +699,79 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 	{
 		qsort (sf2_files_path, sf2_files_count, sizeof (sf2_files_path[0]), mystrcmp);
 	}
+
+	global_timidity_count_or_none = global_timidity_count ?  global_timidity_count : 1;
+	sf2_files_count_or_none = sf2_files_count ? sf2_files_count : 1;
+
+	refresh_sf2manual (API);
 }
+
+static void timidityBrowseSF2Draw (int contentsel, const char *path, const struct DevInterfaceAPI_t *API)
+{
+	int mlWidth = MAX(75, API->console->TextWidth * 3 / 4);
+	int mlHeight = (API->console->TextHeight >= 35) ? 33 : 23;
+	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
+	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
+	int skip;
+	int dot;
+	int maxcontentheight = BrowseSF2_entries_count;
+	const int LINES_NOT_AVAILABLE = 4;
+	int contentheight = mlHeight - LINES_NOT_AVAILABLE;
+	int half = (contentheight) / 2;
+	int masterindex;
+
+	if (maxcontentheight <= contentheight)
+	{ /* all entries can fit */
+		skip = 0;
+		dot = 3;
+	} else if (contentsel < half)
+	{ /* we are in the top part */
+		skip = 0;
+		dot = 4;
+	} else if (contentsel >= (maxcontentheight - half))
+	{ /* we are at the bottom part */
+		skip = maxcontentheight - contentheight;
+		dot = mlHeight - 2;
+	} else {
+		skip = contentsel - half;
+		dot = skip * contentheight / (maxcontentheight - contentheight) + 4;
+	}
+
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Browse SF2 file for TiMidity++", dot, 2, 0);
+	mlWidth -= 2;
+	mlHeight -= 2;
+	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "%S", path);
+	//API->console->DisplayPrintf (mlTop++, mlLeft, 0x0f, mlWidth, " <ENTER>%0.7o when done, or %0.15o<ESC>%0.7o to cancel.");
+
+	mlTop++; // 2: horizontal bar
+	mlHeight-=2;
+
+	for (masterindex = skip; mlHeight; mlTop++, masterindex++, mlHeight--)
+	{
+		if (masterindex < BrowseSF2_entries_count)
+		{
+			if (BrowseSF2_entries_data[masterindex].isparent)
+			{
+				API->console->DisplayPrintf (mlTop, mlLeft, (contentsel==masterindex)?0x61:0x01, mlWidth, "..");
+#ifdef _WIN32
+			} else if (BrowseSF2_entries_data[masterindex].drive)
+			{
+				API->console->DisplayPrintf (mlTop, mlLeft, (contentsel==masterindex)?0x61:0x01, mlWidth, "%c:", BrowseSF2_entries_data[masterindex].drive);
+#endif
+			} else if (BrowseSF2_entries_data[masterindex].dir)
+			{
+				const char *p = 0;
+				API->dirdb->GetName_internalstr (BrowseSF2_entries_data[masterindex].dir->dirdb_ref, &p);
+				API->console->DisplayPrintf (mlTop, mlLeft, (contentsel==masterindex)?0x61:0x01, mlWidth, "%S", p);
+			} else {
+				const char *p = 0;
+				API->dirdb->GetName_internalstr (BrowseSF2_entries_data[masterindex].file->dirdb_ref, &p);
+				API->console->DisplayPrintf (mlTop, mlLeft, (contentsel==masterindex)?0x60:0x07, mlWidth, "%S", p);
+			}
+		}
+	}
+}
+
 
 static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI_t *API)
 {
@@ -419,22 +784,29 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	int skip;
 	int dot;
 	int contentsel;
-	int contentheight = 6 + global_timidity_count + sf2_files_count + (!global_timidity_count) + (!sf2_files_count);
-#define LINES_NOT_AVAILABLE 5
+	int maxcontentheight = 6 + global_timidity_count_or_none + sf2_files_count_or_none + 3;
+	const int LINES_NOT_AVAILABLE = 6;
+	int config_attempt_height         = path_attempt_get_height ("Checked for", config_attempt,         config_attempt_n,         mlWidth - 2);
+	int global_configs_attempt_height = path_attempt_get_height ("Scanned",     global_configs_attempt, global_configs_attempt_n, mlWidth - 2);
+	int global_sf2_attempt_height     = path_attempt_get_height ("Scanned",     global_sf2_attempt,     global_sf2_attempt_n,     mlWidth - 2);
 
-	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
+	int attempts_height_max = MAX (config_attempt_height, MAX (global_configs_attempt_height, global_sf2_attempt_height ) );
+
+	int contentheight = mlHeight - LINES_NOT_AVAILABLE - attempts_height_max;
+
+	half = (mlHeight - LINES_NOT_AVAILABLE - attempts_height_max) / 2;
 
 	if (dsel == 0)
 	{
 		contentsel = 1;
-	} else if (dsel <= (global_timidity_count))
+	} else if ((dsel <= global_timidity_count_or_none))
 	{
-		contentsel = dsel + 4;
+		contentsel = dsel - 1 + 4;
 	} else {
-		contentsel = dsel + 6 + global_timidity_count + (!global_timidity_count);
+		contentsel = dsel - 2 + 6 + global_timidity_count_or_none;
 	}
 
-	if (contentheight <= (mlHeight - LINES_NOT_AVAILABLE))
+	if (maxcontentheight <= contentheight)
 	{ /* all entries can fit */
 		skip = 0;
 		dot = 0;
@@ -442,16 +814,16 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	{ /* we are in the top part */
 		skip = 0;
 		dot = 4;
-	} else if (contentsel >= (contentheight - half))
+	} else if (contentsel >= (maxcontentheight - half))
 	{ /* we are at the bottom part */
-		skip = contentheight - (mlHeight - LINES_NOT_AVAILABLE);
-		dot = mlHeight - LINES_NOT_AVAILABLE - 1 + 4;
+		skip = maxcontentheight - contentheight;
+		dot = mlHeight - attempts_height_max - 3;
 	} else {
 		skip = contentsel - half;
-		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE)) + 4;
+		dot = skip * contentheight / (maxcontentheight - contentheight) + 4;
 	}
 
-	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Select TiMidity++ configuration file", dot, 3, 0);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Select TiMidity++ configuration file", dot, 3, mlHeight - attempts_height_max - 2);
 	mlWidth -= 2;
 	mlHeight -= 2;
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Please select a new configuration file using the arrow keys and press");
@@ -459,7 +831,7 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 
 	mlTop++; // 2: horizontal bar
 
-	for (mlLine = 4; (mlLine - 1) < mlHeight; mlLine++)
+	for (mlLine = 4; (mlLine - 1) < (mlHeight - attempts_height_max - 1); mlLine++)
 	{
 		int masterindex = mlLine - 4 + skip;
 
@@ -479,9 +851,13 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8a:0x0a, mlWidth, " %S %.7o(with no user overrides)", default_timidity_path);
 				}
 			} else {
-				API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found");
+				if (have_user_timidity)
+				{
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found, but user override present");
+				} else {
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found");
+				}
 			}
-			mlTop++;
 			continue;
 		}
 		if (masterindex == 3)
@@ -491,7 +867,7 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 		}
 		if ((masterindex == 4) && (!global_timidity_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No configuration files found", mlWidth);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == 1) ? 0x8c : 0x0c, " No configuration files found", mlWidth);
 			continue;
 		}
 		if ((masterindex >= 4) && (masterindex < (global_timidity_count + 4)))
@@ -499,22 +875,52 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, global_timidity_path[masterindex - 4]);
 			continue;
 		}
-		if (masterindex == (global_timidity_count + 5))
+		if (masterindex == (global_timidity_count_or_none + 5))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, " Global SF2 files:", mlWidth);
+#ifdef _WIN32
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "SF2 files:", mlWidth);
+#else
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "Global SF2 files:", mlWidth);
+#endif
 			continue;
 		}
-		if ((masterindex == (global_timidity_count + 6)) && (!sf2_files_count))
+		if ((masterindex == (global_timidity_count_or_none + 6)) && (!sf2_files_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No soundfonts found", mlWidth);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == (masterindex - global_timidity_count_or_none - 6 + 2)) ? 0x8c : 0x0c, " No soundfonts found", mlWidth);
 			continue;
 		}
-		if ((masterindex >= (global_timidity_count + 6)) && (masterindex < (global_timidity_count + sf2_files_count + 6)))
+		if ((masterindex >= (global_timidity_count_or_none + 6)) && (masterindex < (global_timidity_count_or_none + sf2_files_count + 6)))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count - 6]);
+			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count_or_none - 6]);
 			continue;
 		}
+
+		if (masterindex == (6 + global_timidity_count_or_none + sf2_files_count_or_none + 1))
+		{
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "Browse SF2 file:", mlWidth);
+			continue;
+		}
+
+		if (masterindex == (6 + global_timidity_count_or_none + sf2_files_count_or_none + 2))
+		{
+			API->console->DisplayPrintf  (mlTop++, mlLeft, (dsel==(masterindex - 8 + 1)) ? 0x8f : 0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_manual ? sf2_manual : " - ");
+			continue;
+		}
+
 		mlTop++;
+	}
+
+	mlTop++; // horizontal bar
+
+	if (dsel == 0)
+	{
+		path_attempt_print (API, "Checked for", config_attempt, config_attempt_n, mlLeft, mlWidth, mlTop, config_attempt_height);
+	} else if (dsel < (global_timidity_count_or_none + 1))
+	{
+		path_attempt_print (API, "Scanned", global_configs_attempt, global_configs_attempt_n, mlLeft, mlWidth, mlTop, global_configs_attempt_height);
+	} else if (dsel < (global_timidity_count_or_none + sf2_files_count_or_none + 1))
+	{
+		path_attempt_print (API, "Scanned", global_sf2_attempt, global_sf2_attempt_n, mlLeft, mlWidth, mlTop, global_sf2_attempt_height);
 	}
 }
 
@@ -634,7 +1040,7 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 		API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Global default)");
 		API->console->DisplayPrintf (mlTop++, mlLeft, (EditPos==0)?0x87:0x07, mlWidth, "    Select another file");
 	} else {
-		if ((strlen(configfile) > 4) && !strcmp (configfile + strlen (configfile) - 4, ".sf2"))
+		if ((strlen(configfile) > 4) && !strcasecmp (configfile + strlen (configfile) - 4, ".sf2"))
 		{
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (SF2 sound font)");
 		} else {
@@ -708,6 +1114,407 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, disable_enable, 2, DefaultChorus, EditPos==8, API);
 
 	if (large) mlTop++;
+}
+
+static int BrowseSF2_entries_append (void)
+{
+	void *temp;
+	if (BrowseSF2_entries_count < BrowseSF2_entries_size)
+	{
+		return 0;
+	}
+	temp = realloc (BrowseSF2_entries_data, sizeof (BrowseSF2_entries_data[0]) * (BrowseSF2_entries_size + 16));
+	if (!temp)
+	{
+		return -1;
+	}
+	BrowseSF2_entries_data = temp;
+	BrowseSF2_entries_size += 16;
+	return 0;
+}
+
+static void BrowseSF2_entries_clear (void)
+{
+	int i;
+	for (i=0; i < BrowseSF2_entries_count; i++)
+	{
+		if (BrowseSF2_entries_data[i].file)
+		{
+			BrowseSF2_entries_data[i].file->unref (BrowseSF2_entries_data[i].file);
+		}
+		if (BrowseSF2_entries_data[i].dir)
+		{
+			BrowseSF2_entries_data[i].dir->unref (BrowseSF2_entries_data[i].dir);
+		}
+	}
+	free (BrowseSF2_entries_data);
+	BrowseSF2_entries_count = 0;
+	BrowseSF2_entries_size = 0;
+	BrowseSF2_entries_data = 0;
+}
+
+static void BrowseSF2_entries_append_parent (struct ocpdir_t *dir, const struct DevInterfaceAPI_t *API)
+{
+	if (BrowseSF2_entries_append())
+	{
+		return;
+	}
+	BrowseSF2_entries_data[BrowseSF2_entries_count].isparent = 1;
+#ifdef _WIN32
+	BrowseSF2_entries_data[BrowseSF2_entries_count].drive = 0;
+#endif
+	BrowseSF2_entries_data[BrowseSF2_entries_count].dir = dir;
+	dir->ref (dir);
+	BrowseSF2_entries_data[BrowseSF2_entries_count].file = 0;
+	BrowseSF2_entries_count++;
+}
+
+static void BrowseSF2_entries_append_dir (struct ocpdir_t *dir, const struct DevInterfaceAPI_t *API)
+{
+	if (BrowseSF2_entries_append())
+	{
+		return;
+	}
+	BrowseSF2_entries_data[BrowseSF2_entries_count].isparent = 0;
+#ifdef _WIN32
+	BrowseSF2_entries_data[BrowseSF2_entries_count].drive = 0;
+#endif
+	BrowseSF2_entries_data[BrowseSF2_entries_count].dir = dir;
+	dir->ref (dir);
+	BrowseSF2_entries_data[BrowseSF2_entries_count].file = 0;
+	BrowseSF2_entries_count++;
+}
+
+static void BrowseSF2_entries_append_file (struct ocpfile_t *file, const struct DevInterfaceAPI_t *API)
+{
+	if (BrowseSF2_entries_append())
+	{
+		return;
+	}
+	BrowseSF2_entries_data[BrowseSF2_entries_count].isparent = 0;
+#ifdef _WIN32
+	BrowseSF2_entries_data[BrowseSF2_entries_count].drive = 0;
+#endif
+	BrowseSF2_entries_data[BrowseSF2_entries_count].dir = 0;
+	BrowseSF2_entries_data[BrowseSF2_entries_count].file = file;
+	file->ref (file);
+	BrowseSF2_entries_count++;
+}
+
+#ifdef _WIN32
+static void BrowseSF2_entries_append_drive (const struct DevInterfaceAPI_t *API, char drive)
+{
+/*
+	if (ref == DIRDB_CLEAR)
+	{
+		return;
+	}
+*/
+	if (BrowseSF2_entries_append())
+	{
+		return;
+	}
+	BrowseSF2_entries_data[BrowseSF2_entries_count].isparent = 0;
+	BrowseSF2_entries_data[BrowseSF2_entries_count].drive = drive;
+	BrowseSF2_entries_data[BrowseSF2_entries_count].dir = 0;
+	BrowseSF2_entries_data[BrowseSF2_entries_count].file = 0;
+	BrowseSF2_entries_count++;
+}
+#endif
+
+static const struct DevInterfaceAPI_t *cmp_API;
+static int cmp(const void *a, const void *b)
+{
+	struct BrowseSF2_t *p1 = (struct BrowseSF2_t *)a;
+	struct BrowseSF2_t *p2 = (struct BrowseSF2_t *)b;
+
+	const char *n1;
+	const char *n2;
+
+	if (p1->isparent)
+	{
+		return -1;
+	}
+	if (p2->isparent)
+	{
+		return 1;
+	}
+	if (p1->dir && (!p2->dir))
+	{
+		return -1;
+	}
+	if (p2->dir && (!p1->dir))
+	{
+		return 1;
+	}
+#ifdef _WIN32
+	if ((p1->drive) && (!p2->drive))
+	{
+		return -1;
+	}
+	if (p2->drive && (!p1->drive))
+	{
+		return 1;
+	}
+	if (p1->drive)
+	{
+		return p1->drive - p2->drive;
+	}
+#endif
+
+	cmp_API->dirdb->GetName_internalstr (p1->file ? p1->file->dirdb_ref : p1->dir->dirdb_ref, &n1);
+	cmp_API->dirdb->GetName_internalstr (p2->file ? p2->file->dirdb_ref : p2->dir->dirdb_ref, &n2);
+	return strcmp (n1, n2);
+}
+
+static void BrowseSF2_entries_sort (const struct DevInterfaceAPI_t *API)
+{
+	cmp_API = API;
+	qsort (BrowseSF2_entries_data, BrowseSF2_entries_count, sizeof (BrowseSF2_entries_data[0]), cmp);
+	cmp_API = 0;
+}
+
+static void BrowseSF2_refresh_dir_add_dir (void *token, struct ocpdir_t *dir)
+{
+	const struct DevInterfaceAPI_t *API = token;
+	const char *dirname = 0;
+	API->dirdb->GetName_internalstr (dir->dirdb_ref, &dirname);
+	if (!dirname)
+	{
+		return;
+	}
+	if ((strcmp (dirname, ".")) &&
+	    (strcmp (dirname, "..")))
+	{
+		BrowseSF2_entries_append_dir (dir, API);
+	}
+}
+
+static void BrowseSF2_refresh_dir_add_file (void *token, struct ocpfile_t *file)
+{
+	const struct DevInterfaceAPI_t *API = token;
+	const char *filename = 0;
+	size_t len;
+	API->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
+	if (!filename)
+	{
+		return;
+	}
+	len = strlen (filename);
+	if (len <= 4)
+	{
+		return;
+	}
+	if (!strcasecmp (filename + len - 4, ".sf2"))
+	{
+		BrowseSF2_entries_append_file (file, API);
+	}
+}
+
+static void BrowseSF2_refresh_dir (struct ocpdir_t *dir, uint32_t old, int *fsel, const struct DevInterfaceAPI_t *API)
+{
+	int i;
+
+	BrowseSF2_entries_clear ();
+
+	ocpdirhandle_pt iter;
+	if (dir->parent)
+	{
+		BrowseSF2_entries_append_parent (dir->parent, API);
+	}
+	iter = dir->readdir_start (dir, BrowseSF2_refresh_dir_add_file, BrowseSF2_refresh_dir_add_dir, (void *)API);
+	while (dir->readdir_iterate (iter))
+	{
+	}
+	dir->readdir_cancel (iter);
+
+#ifdef _WIN32
+	for (i=0; i < 26; i++)
+	{
+		if (API->dmDriveLetters[i])
+		{
+			BrowseSF2_entries_append_drive (API, i + 'A');
+		}
+	}
+#endif
+	BrowseSF2_entries_sort (API);
+	for (i=0; i < BrowseSF2_entries_count; i++)
+	{
+		if (BrowseSF2_entries_data[i].file && (BrowseSF2_entries_data[i].file->dirdb_ref == old))
+		{
+			*fsel = i;
+			return;
+		}
+		if (BrowseSF2_entries_data[i].dir && (BrowseSF2_entries_data[i].dir->dirdb_ref == old))
+		{
+			*fsel = i;
+			return;
+		}
+	}
+}
+
+static int timidityConfigRunBrowseSF2 (const struct DevInterfaceAPI_t *API)
+{
+	int fsel = 0;
+	struct ocpdir_t *currentdir;
+	char *currentpath = 0;
+	if (sf2_manual_dir)
+	{
+		currentdir = sf2_manual_dir;
+	} else {
+		currentdir = API->configAPI->DataHomeDir;
+	}
+	if (!currentdir)
+	{
+		return 0;
+	}
+	currentdir->ref(currentdir);
+#ifdef _WIN32
+	API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#else
+	API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#endif
+
+	BrowseSF2_refresh_dir (currentdir, sf2_manual_dirdb_ref, &fsel, API);
+
+	API->console->FrameLock ();
+
+	while (1)
+	{
+		API->fsDraw();
+		timidityBrowseSF2Draw (fsel, currentpath, API);
+
+		while (API->console->KeyboardHit())
+		{
+			int key = API->console->KeyboardGetChar();
+			switch (key)
+			{
+				case KEY_DOWN:
+					if ((fsel + 1) < (BrowseSF2_entries_count))
+					{
+						fsel++;
+					}
+					break;
+				case KEY_UP:
+					if (fsel)
+					{
+						fsel--;
+					}
+					break;
+				case _KEY_ENTER:
+					if (!BrowseSF2_entries_count)
+					{
+						break;
+					}
+#ifdef _WIN32
+					if (BrowseSF2_entries_data[fsel].drive)
+					{
+						if (API->dmDriveLetters[BrowseSF2_entries_data[fsel].drive-'A'])
+						{
+							currentdir->unref (currentdir);
+							currentdir = 0;
+
+							currentdir = API->dmDriveLetters[BrowseSF2_entries_data[fsel].drive-'A']->cwd;
+							currentdir->ref (currentdir);
+							BrowseSF2_refresh_dir (currentdir, sf2_manual_dirdb_ref, &fsel, API);
+
+							free (currentpath);
+							currentpath = 0;
+#ifdef _WIN32
+							API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#else
+							API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#endif
+
+						}
+						break;
+					}
+#endif
+					if (BrowseSF2_entries_data[fsel].dir)
+					{
+						uint32_t dirdb_ref = currentdir->dirdb_ref;
+						API->dirdb->Ref(dirdb_ref, dirdb_use_file);
+
+						currentdir->unref (currentdir);
+						currentdir = 0;
+
+						currentdir = BrowseSF2_entries_data[fsel].dir;
+						currentdir->ref (currentdir);
+
+						BrowseSF2_refresh_dir (currentdir, dirdb_ref, &fsel, API);
+
+						API->dirdb->Unref(dirdb_ref, dirdb_use_file);
+						dirdb_ref = DIRDB_CLEAR;
+
+						free (currentpath);
+						currentpath = 0;
+
+#ifdef _WIN32
+						API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#else
+						API->dirdb->GetFullname_malloc (currentdir->dirdb_ref, &currentpath, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_WINDOWS_SLASH);
+#endif
+						break;
+					}
+
+					if (BrowseSF2_entries_data[fsel].file)
+					{
+						free (sf2_manual);
+						sf2_manual = 0;
+
+						if (sf2_manual_dir)
+						{
+							sf2_manual_dir->unref (sf2_manual_dir);
+							sf2_manual_dir = 0;
+						}
+
+						if (sf2_manual_dirdb_ref != DIRDB_CLEAR)
+						{
+							API->dirdb->Unref(sf2_manual_dirdb_ref, dirdb_use_file);
+							sf2_manual_dirdb_ref = DIRDB_CLEAR;
+						}
+
+						sf2_manual_dir = BrowseSF2_entries_data[fsel].file->parent;
+						sf2_manual_dir->ref (sf2_manual_dir);
+
+						sf2_manual_dirdb_ref = BrowseSF2_entries_data[fsel].file->dirdb_ref;
+						API->dirdb->Ref(sf2_manual_dirdb_ref, dirdb_use_file);
+
+#ifdef _WIN32
+						API->dirdb->GetFullname_malloc(sf2_manual_dirdb_ref, &sf2_manual, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
+#else
+						API->dirdb->GetFullname_malloc(sf2_manual_dirdb_ref, &sf2_manual, 0);
+#endif
+
+						API->configAPI->SetProfileString("timidity", "sf2manual", sf2_manual);
+						API->configAPI->SetProfileString("timidity", "configfile", sf2_manual);
+
+						currentdir->unref (currentdir);
+						currentdir = 0;
+
+						free (currentpath);
+						currentpath = 0;
+
+						BrowseSF2_entries_clear ();
+						return 1;
+					}
+					break;
+
+					/* pass-through, for file-entries only!!!??!!?? */
+				case KEY_EXIT:
+				case KEY_ESC:
+					currentdir->unref (currentdir);
+					currentdir = 0;
+
+					free (currentpath);
+					currentpath = 0;
+
+					BrowseSF2_entries_clear ();
+					return 0;
+			}
+		}
+		API->console->FrameLock ();
+	}
 }
 
 static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API)
@@ -794,7 +1601,21 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 									{
 										if (!strcmp (configfile, sf2_files_path[i]))
 										{
-											dsel = i + 1 + global_timidity_count;
+											dsel = i + 1 + global_timidity_count_or_none;
+										}
+									}
+								}
+								if (!dsel)
+								{
+									if (sf2_manual)
+									{
+#ifdef _WIN32
+										if (!strcasecmp(configfile, sf2_manual))
+#else
+										if (!strcmp(configfile, sf2_manual))
+#endif
+										{
+											dsel = 1 + global_timidity_count_or_none + sf2_files_count_or_none;
 										}
 									}
 								}
@@ -811,7 +1632,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 								switch (key)
 								{
 									case KEY_DOWN:
-										if ((dsel + 1) < (1 + global_timidity_count + sf2_files_count))
+										if ((dsel + 1) < (1 + global_timidity_count_or_none + sf2_files_count_or_none + 1))
 										{
 											dsel++;
 										}
@@ -830,13 +1651,48 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 										if (!dsel)
 										{
 											API->configAPI->SetProfileString ("timidity", "configfile", "");
-										} else if (dsel < (global_timidity_count + 1))
+											inner = 0;
+										} else if (dsel < (global_timidity_count_or_none + 1))
 										{
-											API->configAPI->SetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
-										} else {
-											API->configAPI->SetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
+											if (global_timidity_count)
+											{
+												API->configAPI->SetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
+												inner = 0;
+											}
+										} else if (dsel < (global_timidity_count_or_none + sf2_files_count_or_none + 1))
+										{
+											if (sf2_files_count)
+											{
+												API->configAPI->SetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count_or_none]);
+												inner = 0;
+											}
+										} else if (dsel == global_timidity_count_or_none + sf2_files_count_or_none + 1)
+										{
+											if (timidityConfigRunBrowseSF2 (API))
+											{
+												inner = 0;
+											}
 										}
-										inner = 0;
+										break;
+									case KEY_DELETE:
+										if (dsel == global_timidity_count_or_none + sf2_files_count_or_none + 1)
+										{
+											if (sf2_manual)
+											{
+												free (sf2_manual);
+												sf2_manual = 0;
+											}
+											if (sf2_manual_dirdb_ref != DIRDB_CLEAR)
+											{
+												API->dirdb->Unref (sf2_manual_dirdb_ref, dirdb_use_file);
+												sf2_manual_dirdb_ref = DIRDB_CLEAR;
+											}
+											if (sf2_manual_dir)
+											{
+												sf2_manual_dir->unref (sf2_manual_dir);
+												sf2_manual_dir = 0;
+											}
+										}
 										break;
 								}
 							}
@@ -1002,7 +1858,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 	}
 
 superexit:
-	reset_configfiles ();
+	reset_configfiles (API);
 
 	API->configAPI->SetProfileInt ("timidity", "reverbmode",     DefaultReverbMode,     10);
 	API->configAPI->SetProfileInt ("timidity", "reverblevel",    DefaultReverbLevel,    10);
