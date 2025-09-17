@@ -25,7 +25,7 @@
 #include <string.h>
 #include <sys/types.h>
 #ifdef _WIN32
-# warning WIN32 currently uses non widechar API, since paths are within ASCII-range, and TiMidity project uses this too.
+# warning WIN32 currently uses non widechar API, since paths requested by the TiMidity project are within ASCII-range.
 # include <handleapi.h>
 # include <fileapi.h>
 # include <sysinfoapi.h>
@@ -58,14 +58,174 @@
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
-static char *user_timidity_path = 0;
-static int   have_user_timidity = 0;
-static int   have_default_timidity = 0;
+static char *user_timidity_path;
+static int   have_user_timidity;
+static int   have_default_timidity;
 static char default_timidity_path[BUFSIZ];
-static int    global_timidity_count = 0;
-static char **global_timidity_path = 0;
-static int    sf2_files_count = 0;
-static char **sf2_files_path = 0;
+static int    global_timidity_count;
+static int    global_timidity_count_or_none;
+static char **global_timidity_path;
+static int    sf2_files_count;
+static int    sf2_files_count_or_none;
+static char **sf2_files_path;
+
+struct path_attempt
+{
+        char *path;
+        int displaywidth;
+        int found;
+};
+static struct path_attempt *config_attempt = 0;
+static int                  config_attempt_n = 0;
+static struct path_attempt *global_configs_attempt = 0;
+static int                  global_configs_attempt_n = 0;
+static struct path_attempt *global_sf2_attempt = 0;
+static int                  global_sf2_attempt_n = 0;
+
+static void path_attempt_append (const struct DevInterfaceAPI_t *API, const char *path, int found, struct path_attempt **e, int *n)
+{
+	struct path_attempt *e2 = realloc (*e, sizeof (struct path_attempt) * ((*n) + 1));
+	if (!e2)
+	{
+		fprintf (stderr, "path_attempt_append: realloc failed\n");
+		return;
+	}
+	(*e) = e2;
+	(*e)[*n].path = strdup (path);
+	if (!(*e)[*n].path)
+	{
+		fprintf (stderr, "path_attempt_append: strdup() failed\n");
+		return;
+	}
+	(*e)[*n].displaywidth = API->console->Driver->MeasureStr_utf8 (path, strlen (path));
+	(*e)[*n].found = found;
+	(*n) = (*n) + 1;
+}
+
+static void path_attempt_clear (struct path_attempt **e, int *n)
+{
+	int i;
+	for (i = 0; i < *n; i++)
+	{
+		free ( (*e)[i].path );
+	}
+	free (*e);
+	*e = 0;
+	*n = 0;
+}
+
+static int path_attempt_get_height (const char *string_prefix, const struct path_attempt *s, int n, const int w)
+{
+	int RetVal = 1;
+	int CurrentOffset = strlen (string_prefix) + 1;
+	int CurrentWidth = w - CurrentOffset;
+
+	while (n)
+	{
+		/* If next item can not fit, and we already have some text, add a new line.
+		 * Also include space for a comma if we alreadu have some text.
+		 */
+		if ((CurrentWidth <= 0) || (((s->displaywidth + ((CurrentOffset && (n>2))?1:0)) >= CurrentWidth) && (CurrentOffset != 0)))
+		{
+			CurrentOffset = 0;
+			CurrentWidth = w;
+			RetVal++;
+		}
+
+		CurrentOffset += s->displaywidth;
+		CurrentWidth -= s->displaywidth;
+		n--;s++;
+
+		if (n > 1) // add comma and a space
+		{
+			if (CurrentOffset)
+			{
+				CurrentWidth-=2;
+				CurrentOffset+=2;
+				/* new-line will be handled by start of the while loop */
+			}
+		} else if (n == 1) // add and, with possible spaces
+		{
+			if (CurrentWidth < 4) /* no room, add a new-line already now */
+			{
+				CurrentOffset = 0;
+				CurrentWidth = w;
+				RetVal++;
+
+				CurrentOffset += 4; // "and "
+				CurrentWidth -= 4;
+			} else {
+				CurrentOffset += 5; //" and "
+				CurrentWidth -= 5;
+			}
+		}
+	}
+	return RetVal;
+}
+
+static void path_attempt_print (const struct DevInterfaceAPI_t *API, const char *string_prefix, const struct path_attempt *s, int n, const int Left, const int Width, int Top, int Height)
+{
+	int CurrentOffset = strlen (string_prefix) + 1;
+	int CurrentWidth = Width - CurrentOffset;
+
+	API->console->DisplayPrintf (Top, Left, 0x07, Width, "%s ", string_prefix);
+
+	while (n && Height)
+	{
+		/* If next item can not fit, and we already have some text, add a new line.
+		 * Also include space for a comma if we alreadu have some text.
+		 */
+		if ((CurrentWidth <= 0) || (((s->displaywidth + ((CurrentOffset && (n>2))?1:0)) >= CurrentWidth) && (CurrentOffset != 0)))
+		{
+			CurrentOffset = 0;
+			CurrentWidth = Width;
+			Top++;
+			if (!(Height--))
+			{
+				return; // should not be reachable
+			}
+		}
+
+		API->console->DisplayPrintf (Top, Left + CurrentOffset, s->found ? 0x0a : 0x0c, CurrentWidth, "%S", s->path);
+
+		CurrentOffset += s->displaywidth;
+		CurrentWidth -= s->displaywidth;
+		n--;s++;
+
+		if (n > 1) // add comma and a space
+		{
+			if (CurrentOffset)
+			{
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, ", ");
+
+				CurrentWidth-=2;
+				CurrentOffset+=2;
+				/* new-line will be handled by start of the while loop */
+			}
+		} else if (n == 1) // add and, with possible spaces
+		{
+			if (CurrentWidth < 4) /* no room, add a new-line already now */
+			{
+				CurrentOffset = 0;
+				CurrentWidth = Width;
+				Top++;
+				if (!(Height--))
+				{
+					return; // should not be reachable
+				}
+
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, "and ");
+				CurrentOffset += 4; // "and "
+				CurrentWidth -= 4;
+			} else {
+				API->console->DisplayPrintf (Top, Left + CurrentOffset, 0x07, CurrentWidth, " and ");
+				CurrentOffset += 5; //" and "
+				CurrentWidth -= 5;
+			}
+		}
+	}
+
+}
 
 static void append_global (const char *path)
 {
@@ -108,6 +268,13 @@ static void reset_configfiles (void)
 	user_timidity_path = 0;
 	have_default_timidity = 0;
 	default_timidity_path[0] = 0;
+
+	global_timidity_count_or_none = 1;
+	sf2_files_count_or_none = 1;
+
+	path_attempt_clear (&config_attempt,         &config_attempt_n);
+	path_attempt_clear (&global_configs_attempt, &global_configs_attempt_n);
+	path_attempt_clear (&global_sf2_attempt,     &global_sf2_attempt_n);
 }
 
 static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
@@ -115,6 +282,16 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 	struct ocpfile_t *f;
 
 	f = ocpdir_readdir_file (API->configAPI->HomeDir, filename, API->dirdb);
+	{
+		int len = strlen (API->configAPI->HomePath) + strlen (filename) + 1;
+		char *temp = malloc (len);
+		if (temp)
+		{
+			snprintf (temp, len, "%s%s", API->configAPI->HomePath, filename);
+			path_attempt_append (API, temp, !!f, &config_attempt, &config_attempt_n);
+			free (temp);
+		}
+	}
 	if (!f)
 	{
 		PRINT ("Unable to use user config via cfHOME %s\n", filename);
@@ -131,7 +308,7 @@ static void try_user (const struct DevInterfaceAPI_t *API, const char *filename)
 	f->unref (f);
 }
 
-static void try_global (const char *path)
+static void try_global (const struct DevInterfaceAPI_t *API, const char *path)
 {
 #ifdef _WIN32
 	DWORD st;
@@ -140,10 +317,12 @@ static void try_global (const char *path)
 
 	if (st == INVALID_FILE_ATTRIBUTES)
 	{
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 	if (st & FILE_ATTRIBUTE_DIRECTORY)
 	{
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 #else
@@ -151,6 +330,7 @@ static void try_global (const char *path)
 	if (lstat (path, &st))
 	{
 		PRINT ("Unable to lstat() global config %s\n", path);
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 	if ((st.st_mode & S_IFMT) == S_IFLNK)
@@ -158,16 +338,19 @@ static void try_global (const char *path)
 		if (stat (path, &st))
 		{
 			PRINT ("Unable to stat() user global config %s, broken symlink\n", path);
+			path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 			return;
 		}
 	}
 	if ((st.st_mode & S_IFMT) != S_IFREG)
 	{
 		PRINT ("Unable to use global config %s, not a regular file\n", path);
+		path_attempt_append (API, path, 0, &config_attempt, &config_attempt_n);
 		return;
 	}
 #endif
 	PRINT ("Found global config %s%s", path, have_user_timidity?", with possible user overrides":" (no user overrides found earlier)\n");
+	path_attempt_append (API, path, 1, &config_attempt, &config_attempt_n);
 	if (!have_default_timidity)
 	{
 		snprintf (default_timidity_path, sizeof (default_timidity_path), "%s", path);
@@ -175,14 +358,24 @@ static void try_global (const char *path)
 	}
 }
 
-static void scan_config_directory (const char *dpath)
+static void scan_config_directory (const struct DevInterfaceAPI_t *API, const char *dpath)
 {
 #ifdef _WIN32
 	HANDLE FindHandle;
 	WIN32_FIND_DATAA FindData;
 	char path[BUFSIZ];
 
-	FindHandle = FindFirstFile (dpath, &FindData);
+	char *dpath_star = malloc (strlen (dpath) + 2);
+
+	if (!dpath_star)
+	{
+		return;
+	}
+	sprintf (dpath_star, "%s*", dpath);
+	FindHandle = FindFirstFile (dpath_star, &FindData);
+	free (dpath_star);
+	dpath_star = 0;
+	path_attempt_append (API, dpath, FindHandle != INVALID_HANDLE_VALUE, &global_configs_attempt, &global_configs_attempt_n);
 	if (FindHandle == INVALID_HANDLE_VALUE)
 	{
 		PRINT ("Unable to scan directory %s for global configuration files\n", dpath);
@@ -191,7 +384,7 @@ static void scan_config_directory (const char *dpath)
 
 	do
 	{
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+		snprintf (path, sizeof (path), "%s%s", dpath, FindData.cFileName);
 
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -215,6 +408,16 @@ static void scan_config_directory (const char *dpath)
 #else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
+
+	char *dpath_slash = malloc (strlen (dpath) + 2);
+
+	if (dpath_slash)
+	{
+		sprintf (dpath_slash, "%s/", dpath);
+		path_attempt_append (API, dpath_slash, !!d, &global_configs_attempt, &global_configs_attempt_n);
+		free (dpath_slash);
+	}
+
 	if (!d)
 	{
 		PRINT ("Unable to scan directory %s for global configuration files\n", dpath);
@@ -261,14 +464,25 @@ static void scan_config_directory (const char *dpath)
 #endif
 }
 
-static void scan_sf2_directory (const char *dpath)
+static void scan_sf2_directory (const struct DevInterfaceAPI_t *API, const char *dpath)
 {
 #ifdef _WIN32
 	HANDLE FindHandle;
 	WIN32_FIND_DATAA FindData;
 	char path[BUFSIZ];
 
-	FindHandle = FindFirstFile (dpath, &FindData);
+	char *dpath_star = malloc (strlen (dpath) + 2);
+
+	if (!dpath_star)
+	{
+		return;
+	}
+	sprintf (dpath_star, "%s*", dpath);
+	FindHandle = FindFirstFile (dpath_star, &FindData);
+	free (dpath_star);
+	dpath_star = 0;
+	path_attempt_append (API, dpath, FindHandle != INVALID_HANDLE_VALUE, &global_sf2_attempt, &global_sf2_attempt_n);
+
 	if (FindHandle == INVALID_HANDLE_VALUE)
 	{
 		PRINT ("Unable to scan directory %s for global sf2 fonts\n", dpath);
@@ -277,7 +491,7 @@ static void scan_sf2_directory (const char *dpath)
 
 	do
 	{
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, FindData.cFileName);
+		snprintf (path, sizeof (path), "%s%s", dpath, FindData.cFileName);
 
 		if (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 		{
@@ -301,6 +515,16 @@ static void scan_sf2_directory (const char *dpath)
 #else
 	DIR *d = opendir (dpath);
 	struct dirent *de;
+
+	char *dpath_slash = malloc (strlen (dpath) + 2);
+
+	if (dpath_slash)
+	{
+		sprintf (dpath_slash, "%s/", dpath);
+		path_attempt_append (API, dpath_slash, !!d, &global_sf2_attempt, &global_sf2_attempt_n);
+		free (dpath_slash);
+	}
+
 	if (!d)
 	{
 		PRINT ("Unable to scan directory %s for global sf2 fonts\n", dpath);
@@ -315,7 +539,7 @@ static void scan_sf2_directory (const char *dpath)
 		if (!strcmp (de->d_name, ".")) continue;
 		if (!strcmp (de->d_name, "..")) continue;
 
-		snprintf (path, sizeof (path), "%s%s%s", dpath, PATH_STRING, de->d_name);
+		snprintf (path, sizeof (path), "%s/%s", dpath, de->d_name);
 		if ((strlen (de->d_name) < 5) || (strcasecmp (de->d_name + strlen(de->d_name) - 4, ".sf2")))
 		{
 			PRINT ("Ignoring %s, since it does not end with .sf2\n", de->d_name);
@@ -356,46 +580,52 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 {
 	reset_configfiles ();
 
-	try_user (API, "timidity.cfg");
-#ifdef _WIN32
-	try_user (API, "_timidity.cfg");
-#endif
+	try_user (API, "timidity.cfg"); /* Vanilla TiMidity only scans this on WIN32 */
+	try_user (API, "_timidity.cfg"); /* Vanilla TiMidity only scan this on WIN32 */
+	try_user (API, ".timidity.cfg");
 
 #ifdef _WIN32
 	{
 		char local[1024];
-		GetWindowsDirectory (local, 1023 - 13);
+		local[0] = 0;
+		GetWindowsDirectoryA (local, 1023 - 13);
 		strcat (local, "\\TIMIDITY.CFG");
-		try_global (local); // "C:\\WINDOWS\\timidity.cfg"
+		try_global (API, local); // "C:\\WINDOWS\\timidity.cfg"
 	}
-	try_global ("C:\\timidity\\timidity.cfg");
-	try_global ("C:\\TiMidity++\\timidity.cfg");
-	scan_config_directory ("C:\\timidity\\*");
-	scan_config_directory ("C:\\TiMidity++\\*");
-	scan_config_directory ("C:\\timidity\\soundfonts\\*");
-	scan_config_directory ("C:\\TiMidity++\\soundfonts\\*");
-	scan_config_directory ("C:\\timidity\\musix\\*");
-	scan_config_directory ("C:\\TiMidity++\\musix\\*");
-	scan_sf2_directory ("C:\\timidity\\soundfonts\\*");
-	scan_sf2_directory ("C:\\TiMidity++\\soundfonts\\*");
-	scan_sf2_directory ("C:\\timidity\\musix\\*");
-	scan_sf2_directory ("C:\\TiMidity++\\musix\\*");
+	try_global (API, "C:\\timidity\\timidity.cfg");
+	try_global (API, "C:\\TiMidity++\\timidity.cfg");
+
+	scan_config_directory (API, "C:\\timidity\\");
+	scan_config_directory (API, "C:\\TiMidity++\\");
+	scan_config_directory (API, "C:\\timidity\\soundfonts\\");
+	scan_config_directory (API, "C:\\TiMidity++\\soundfonts\\");
+	scan_config_directory (API, "C:\\timidity\\musix\\");
+	scan_config_directory (API, "C:\\TiMidity++\\musix\\");
+
+	scan_sf2_directory (API, "C:\\timidity\\soundfonts\\");
+	scan_sf2_directory (API, "C:\\TiMidity++\\soundfonts\\");
+	scan_sf2_directory (API, "C:\\timidity\\musix\\");
+	scan_sf2_directory (API, "C:\\TiMidity++\\musix\\");
+	scan_sf2_directory (API, API->configAPI->DataPath);
 #else
 	if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/usr/local/share/timidity/timidity.cfg") &&
 	    strcmp(CONFIG_FILE, "/usr/share/timidity/timidity.cfg"))
-		try_global (CONFIG_FILE);
-	try_global ("/etc/timidity/timidity.cfg");
-	try_global ("/etc/timidity.cfg");
-	try_global ("/usr/local/share/timidity/timidity.cfg");
-	try_global ("/usr/share/timidity/timidity.cfg");
+	{
+		try_global (API, CONFIG_FILE);
+	}
+	try_global (API, "/etc/timidity/timidity.cfg");
+	try_global (API, "/etc/timidity.cfg");
+	try_global (API, "/usr/local/share/timidity/timidity.cfg");
+	try_global (API, "/usr/share/timidity/timidity.cfg");
 
-	scan_config_directory ("/etc/timidity");
-	scan_config_directory ("/usr/local/share/timidity");
-	scan_config_directory ("/usr/share/timidity");
-	scan_sf2_directory ("/usr/local/share/sounds/sf2");
-	scan_sf2_directory ("/usr/share/sounds/sf2");
+	scan_config_directory (API, "/etc/timidity");
+	scan_config_directory (API, "/usr/local/share/timidity");
+	scan_config_directory (API, "/usr/share/timidity");
+
+	scan_sf2_directory (API, "/usr/local/share/sounds/sf2");
+	scan_sf2_directory (API, "/usr/share/sounds/sf2");
 #endif
 
 	if (global_timidity_count >= 2)
@@ -406,6 +636,9 @@ static void refresh_configfiles (const struct DevInterfaceAPI_t *API)
 	{
 		qsort (sf2_files_path, sf2_files_count, sizeof (sf2_files_path[0]), mystrcmp);
 	}
+
+	global_timidity_count_or_none = global_timidity_count ?  global_timidity_count : 1;
+	sf2_files_count_or_none = sf2_files_count ? sf2_files_count : 1;
 }
 
 static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI_t *API)
@@ -419,22 +652,30 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	int skip;
 	int dot;
 	int contentsel;
-	int contentheight = 6 + global_timidity_count + sf2_files_count + (!global_timidity_count) + (!sf2_files_count);
-#define LINES_NOT_AVAILABLE 5
+	int maxcontentheight = 6 + global_timidity_count_or_none + sf2_files_count_or_none;
+#define LINES_NOT_AVAILABLE 6
 
-	half = (mlHeight - LINES_NOT_AVAILABLE) / 2;
+	int config_attempt_height         = path_attempt_get_height ("Checked for", config_attempt,         config_attempt_n,         mlWidth - 2);
+	int global_configs_attempt_height = path_attempt_get_height ("Scanned",     global_configs_attempt, global_configs_attempt_n, mlWidth - 2);
+	int global_sf2_attempt_height     = path_attempt_get_height ("Scanned",     global_sf2_attempt,     global_sf2_attempt_n,     mlWidth - 2);
+
+	int attempts_height_max = MAX (config_attempt_height, MAX (global_configs_attempt_height, global_sf2_attempt_height ) );
+
+	int contentheight = mlHeight - LINES_NOT_AVAILABLE - attempts_height_max;
+
+	half = (mlHeight - LINES_NOT_AVAILABLE - attempts_height_max) / 2;
 
 	if (dsel == 0)
 	{
 		contentsel = 1;
-	} else if (dsel <= (global_timidity_count))
+	} else if ((dsel <= global_timidity_count_or_none))
 	{
-		contentsel = dsel + 4;
+		contentsel = dsel - 1 + 4;
 	} else {
-		contentsel = dsel + 6 + global_timidity_count + (!global_timidity_count);
+		contentsel = dsel - 2 + 6 + global_timidity_count_or_none;
 	}
 
-	if (contentheight <= (mlHeight - LINES_NOT_AVAILABLE))
+	if (maxcontentheight <= contentheight)
 	{ /* all entries can fit */
 		skip = 0;
 		dot = 0;
@@ -442,16 +683,16 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	{ /* we are in the top part */
 		skip = 0;
 		dot = 4;
-	} else if (contentsel >= (contentheight - half))
+	} else if (contentsel >= (maxcontentheight - half - 1)) /* -1 is there, since half can be both odd and even, depending on attempts_height_max */
 	{ /* we are at the bottom part */
-		skip = contentheight - (mlHeight - LINES_NOT_AVAILABLE);
-		dot = mlHeight - LINES_NOT_AVAILABLE - 1 + 4;
+		skip = maxcontentheight - contentheight;
+		dot = mlHeight - attempts_height_max - 3;
 	} else {
 		skip = contentsel - half;
-		dot = skip * (mlHeight - LINES_NOT_AVAILABLE) / (contentheight - (mlHeight - LINES_NOT_AVAILABLE)) + 4;
+		dot = skip * contentheight / (maxcontentheight - contentheight) + 4;
 	}
 
-	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Select TiMidity++ configuration file", dot, 3, 0);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "Select TiMidity++ configuration file", dot, 3, mlHeight - attempts_height_max - 2);
 	mlWidth -= 2;
 	mlHeight -= 2;
 	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Please select a new configuration file using the arrow keys and press");
@@ -459,7 +700,7 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 
 	mlTop++; // 2: horizontal bar
 
-	for (mlLine = 4; (mlLine - 1) < mlHeight; mlLine++)
+	for (mlLine = 4; (mlLine - 1) < (mlHeight - attempts_height_max - 1); mlLine++)
 	{
 		int masterindex = mlLine - 4 + skip;
 
@@ -479,9 +720,13 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8a:0x0a, mlWidth, " %S %.7o(with no user overrides)", default_timidity_path);
 				}
 			} else {
-				API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found");
+				if (have_user_timidity)
+				{
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found, but user override present");
+				} else {
+					API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==0)?0x8c:0x0c, mlWidth, " No global configuration file found");
+				}
 			}
-			mlTop++;
 			continue;
 		}
 		if (masterindex == 3)
@@ -491,30 +736,46 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 		}
 		if ((masterindex == 4) && (!global_timidity_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No configuration files found", mlWidth);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == 1) ? 0x8c : 0x0c, " No configuration files found", mlWidth);
 			continue;
 		}
-		if ((masterindex >= 4) && (masterindex < (global_timidity_count + 4)))
+		if ((masterindex >= 4) && (masterindex < (global_timidity_count - 1 + 4)))
 		{
 			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 4 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, global_timidity_path[masterindex - 4]);
 			continue;
 		}
-		if (masterindex == (global_timidity_count + 5))
+		if (masterindex == (global_timidity_count_or_none+ 5))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, " Global SF2 files:", mlWidth);
+#ifdef _WIN32
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "SF2 files:", mlWidth);
+#else
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x03, "Global SF2 files:", mlWidth);
+#endif
 			continue;
 		}
-		if ((masterindex == (global_timidity_count + 6)) && (!sf2_files_count))
+		if ((masterindex == (global_timidity_count_or_none + 6)) && (!sf2_files_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, 0x0c, " No soundfonts found", mlWidth);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == (masterindex - global_timidity_count_or_none - 6 + 2)) ? 0x8c : 0x0c, " No soundfonts found", mlWidth);
 			continue;
 		}
-		if ((masterindex >= (global_timidity_count + 6)) && (masterindex < (global_timidity_count + sf2_files_count + 6)))
+		if ((masterindex >= (global_timidity_count_or_none + 6)) && (masterindex < (global_timidity_count_or_none+ sf2_files_count + 6)))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count - 6]);
+			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count_or_none - 6]);
 			continue;
 		}
 		mlTop++;
+	}
+
+	mlTop++; // horizontal bar
+
+	if (dsel == 0)
+	{
+		path_attempt_print (API, "Checked for", config_attempt, config_attempt_n, mlLeft, mlWidth, mlTop, config_attempt_height);
+	} else if (dsel < (global_timidity_count_or_none + 1))
+	{
+		path_attempt_print (API, "Scanned", global_configs_attempt, global_configs_attempt_n, mlLeft, mlWidth, mlTop, global_configs_attempt_height);
+	} else {
+		path_attempt_print (API, "Scanned", global_sf2_attempt, global_sf2_attempt_n, mlLeft, mlWidth, mlTop, global_sf2_attempt_height);
 	}
 }
 
@@ -794,7 +1055,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 									{
 										if (!strcmp (configfile, sf2_files_path[i]))
 										{
-											dsel = i + 1 + global_timidity_count;
+											dsel = i + 1 + global_timidity_count_or_none;
 										}
 									}
 								}
@@ -811,7 +1072,7 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 								switch (key)
 								{
 									case KEY_DOWN:
-										if ((dsel + 1) < (1 + global_timidity_count + sf2_files_count))
+										if ((dsel + 1) < (1 + global_timidity_count_or_none + sf2_files_count_or_none))
 										{
 											dsel++;
 										}
@@ -830,13 +1091,21 @@ static void timidityConfigRun (void **token, const struct DevInterfaceAPI_t *API
 										if (!dsel)
 										{
 											API->configAPI->SetProfileString ("timidity", "configfile", "");
-										} else if (dsel < (global_timidity_count + 1))
+											inner = 0;
+										} else if (dsel < (global_timidity_count_or_none + 1))
 										{
-											API->configAPI->SetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
+											if (global_timidity_count)
+											{
+												API->configAPI->SetProfileString ("timidity", "configfile", global_timidity_path[dsel - 1]);
+												inner = 0;
+											}
 										} else {
-											API->configAPI->SetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count]);
+											if (sf2_files_count)
+											{
+												API->configAPI->SetProfileString ("timidity", "configfile", sf2_files_path[dsel - 1 - global_timidity_count_or_none]);
+												inner = 0;
+											}
 										}
-										inner = 0;
 										break;
 								}
 							}

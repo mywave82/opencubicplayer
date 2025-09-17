@@ -30,6 +30,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "types.h"
+#ifdef _WIN32
+# warning WIN32 currently uses non widechar API, since paths requested by the TiMidity project are within ASCII-range.
+# include <sysinfoapi.h>
+#endif
 #include "boot/psetting.h"
 #include "cpikaraoke.h"
 #include "cpiface/cpiface.h"
@@ -459,17 +463,17 @@ static int read_user_config_file(struct cpifaceSessionAPI_t *cpifaceSession)
     int status;
 
 /* timidity.cfg or _timidity.cfg or .timidity.cfg*/
-    snprintf(path, sizeof (path), "%s" PATH_STRING "timidity.cfg", cpifaceSession->configAPI->HomePath);
+    snprintf(path, sizeof (path), "%s" "timidity.cfg", cpifaceSession->configAPI->HomePath); /* Vanilla TiMidity only scans this on WIN32 */
     status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /* READ_CONFIG_FILE_NOT_FOUND */ )
         return status;
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING "_timidity.cfg", cpifaceSession->configAPI->HomePath);
+    snprintf(path, sizeof (path), "%s" "_timidity.cfg", cpifaceSession->configAPI->HomePath); /* Vanilla TiMidity only scans this on WIN32 */
     status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /* READ_CONFIG_FILE_NOT_FOUND */)
         return status;
 
-    snprintf(path, sizeof (path), "%s" PATH_STRING ".timidity.cfg", cpifaceSession->configAPI->HomePath);
+    snprintf(path, sizeof (path), "%s" ".timidity.cfg", cpifaceSession->configAPI->HomePath);
     status = read_config_file(&tc, path, 0, 1);
     if (status != 3 /*READ_CONFIG_FILE_NOT_FOUND*/)
         return status;
@@ -966,6 +970,35 @@ static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSession
 	}*/
 	if (!c->got_a_configuration)
 	{
+#ifdef _WIN32
+		char local[1024];
+		local[0] = 0;
+		GetWindowsDirectoryA (local, 1023 - 13);
+		strcat (local, "\\TIMIDITY.CFG");
+
+		if (!read_config_file(&tc, local, 0, 0)) // C:\WINDOWS\timidity.cfg
+		{
+			c->got_a_configuration = 1;
+		}
+		if (!c->got_a_configuration)
+		{
+			if (!read_config_file (&tc, "C:\\timidity\\timidity.cfg", 0, 0))
+			{
+				c->got_a_configuration = 1;
+			}
+		}
+		if (!c->got_a_configuration)
+		{
+			if (!read_config_file (&tc, "C:\\TiMidity++\\timidity.cfg", 0, 0))
+			{
+				c->got_a_configuration = 1;
+			}
+		}
+		if (!c->got_a_configuration)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Warning: Unable to find global timidity.cfg file\n");
+		}
+#else
 		/* test CONFIG_FILE first if it is defined to be something else than one of our standard paths */
 		if (strcmp(CONFIG_FILE, "/etc/timidity/timidity.cfg") &&
 		    strcmp(CONFIG_FILE, "/etc/timidity.cfg") &&
@@ -984,11 +1017,11 @@ static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSession
 			c->got_a_configuration = 1;
 		} else if (!read_config_file(&tc, "/usr/share/timidity/timidity.cfg", 0, 0))
 		{
-		c->got_a_configuration = 1;
+			c->got_a_configuration = 1;
 		} else {
 			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Warning: Unable to find global timidity.cfg file\n");
 		}
-
+#endif
 		if (read_user_config_file(cpifaceSession))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++ MID] Error: Syntax error in ~/.timidity.cfg\n");
