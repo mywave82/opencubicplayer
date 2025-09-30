@@ -781,6 +781,7 @@ static char fsScanDir (int op)
 		{
 			dirdbUnref (dirdb_ref, dirdb_use_pfilesel);
 		}
+		modlist_sort(currentdir);
 		return 0;
 	}
 
