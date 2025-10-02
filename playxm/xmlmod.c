@@ -310,7 +310,7 @@ static int loadmod (struct cpifaceSessionAPI_t *cpifaceSession, struct xmodule *
 		sip->length=length;
 		sip->loopstart=loopstart;
 		sip->loopend=loopstart+looplength;
-		sip->samprate=8363;
+		sip->samprate=(opt & 4) ? 8363 : 8287; // FastTracker II uses 8363Hz as the base-sample frequency, while PAL Amiga uses 8287.13Hz
 		sip->type=looplength?mcpSampLoop:0;
 	}
 
