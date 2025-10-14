@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include "types.h"
 #ifdef _WIN32
-# warning WIN32 currently uses non widechar API, since paths requested by the TiMidity project are within ASCII-range.
 # include <sysinfoapi.h>
 #endif
 #include "boot/psetting.h"
@@ -971,15 +970,44 @@ static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSession
 	if (!c->got_a_configuration)
 	{
 #ifdef _WIN32
-		char local[1024];
-		local[0] = 0;
-		GetWindowsDirectoryA (local, 1023 - 13);
-		strcat (local, "\\TIMIDITY.CFG");
-
-		if (!read_config_file(&tc, local, 0, 0)) // C:\WINDOWS\timidity.cfg
+		DWORD length;
+		uint16_t *wpath;
+		char *path, *filepath;
+		if (!(length = GetWindowsDirectoryW (NULL, 0)))
+		{
+			goto other_global;
+		}
+		if (!(wpath = calloc (length, sizeof (uint16_t))))
+		{
+			goto other_global;
+		}
+		if (GetWindowsDirectoryW (wpath, length) != (length-1))
+		{
+			free (wpath);
+			goto other_global;
+		}
+		path = cpifaceSession->utf16_to_utf8 (wpath);
+		free (wpath); wpath = 0;
+		if (!path)
+		{
+			goto other_global;
+		}
+		length = strlen (path) + 13 + 1;
+		filepath = malloc (length);
+		if (!filepath)
+		{
+			free (path);
+			goto other_global;
+		}
+		snprintf (filepath, length, "%s\\TIMIDITY.CFG", path);
+		free (path);
+		if (!read_config_file(&tc, filepath, 0, 0)) // C:\WINDOWS\timidity.cfg
 		{
 			c->got_a_configuration = 1;
 		}
+		free (filepath);
+
+other_global:
 		if (!c->got_a_configuration)
 		{
 			if (!read_config_file (&tc, "C:\\timidity\\timidity.cfg", 0, 0))
@@ -1668,6 +1696,14 @@ play_reload: /* Come here to reload MIDI file */
 
 play_end:
 	free_all_midi_file_info (&tc);
+#if defined(TILD_SCHEME_ENABLE)
+        free (tc.url_expand_home_dir_path);
+	free (tc.url_unexpand_home_dir_path);
+        tc.url_expand_home_dir_path = 0;
+        tc.url_unexpand_home_dir_path = 0;
+#endif
+	free (tc.current_filename);
+	tc.current_filename = 0;
 
 	if(wrdt->opened)
 		wrdt->end();
@@ -2050,7 +2086,28 @@ static void doTimidityClosePlayer(struct cpifaceSessionAPI_t *cpifaceSession, in
 	}
 
 	free_all_midi_file_info (&tc);
+#if defined(TILD_SCHEME_ENABLE)
+        free (tc.url_expand_home_dir_path);
+        free (tc.url_unexpand_home_dir_path);
+        tc.url_expand_home_dir_path = 0;
+        tc.url_unexpand_home_dir_path = 0;
+#endif
+	free (tc.current_filename);
+	tc.current_filename = 0;
 }
+
+#ifdef _WIN32
+static uint16_t *timidity_utf8_to_utf16_LFN (struct timiditycontext_t *c, const char *src)
+{
+	return ((struct cpifaceSessionAPI_t *)(c->contextowner))->utf8_to_utf16_LFN (src, 0);
+}
+
+static char *timidity_utf16_to_utf8 (struct timiditycontext_t *c, const uint16_t *src)
+{
+	return ((struct cpifaceSessionAPI_t *)(c->contextowner))->utf16_to_utf8 (src);
+}
+
+#endif
 
 OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t bufferlen, struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)
 {
@@ -2164,6 +2221,10 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	tc.ctl_timestamp_last_secs = -1;
 	tc.ctl_timestamp_last_voices = -1;
 	tc.play_midi_file_last_rc = RC_NONE;
+#ifdef _WIN32
+	tc.utf8_to_utf16_LFN = timidity_utf8_to_utf16_LFN;
+	tc.utf16_to_utf8 = timidity_utf16_to_utf8;
+#endif
 
 	if (!cpifaceSession->plrDevAPI)
 	{

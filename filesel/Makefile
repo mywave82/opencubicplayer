@@ -536,7 +536,8 @@ pfilesel.o: pfilesel.c \
 	../stuff/imsrtns.h \
 	../stuff/piperun.h \
 	../stuff/poutput.h \
-	../stuff/utf-8.h
+	../stuff/utf-8.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 pfsmain.o: pfsmain.c \

@@ -320,6 +320,11 @@ struct cpifaceSessionAPI_t
 	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
 
 	void (*cpiDebug) (struct cpifaceSessionAPI_t *, const char *fmt, ...);
+
+#ifdef _WIN32
+	uint16_t *(*utf8_to_utf16_LFN) (const char *src, const int slashstar);
+	char *(*utf16_to_utf8) (const uint16_t *src);
+#endif
 };
 
 #endif

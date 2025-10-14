@@ -101,6 +101,7 @@
 #include "stuff/piperun.h"
 #include "stuff/poutput.h"
 #include "stuff/utf-8.h"
+#include "stuff/utf-16.h"
 
 #include "pfilesel-charset.c"
 
@@ -1132,7 +1133,10 @@ static struct DevInterfaceAPI_t DevInterfaceAPI =
 	fsDraw,
 	fsForceNextRescan,
 	filesystem_resolve_dirdb_dir,
-	filesystem_resolve_dirdb_file
+	filesystem_resolve_dirdb_file,
+#ifdef _WIN32
+	utf16_to_utf8,
+#endif
 };
 
 static int VirtualInterfaceInit (struct moduleinfostruct *info, struct ocpfilehandle_t *fi, const struct cpifaceplayerstruct *cp)

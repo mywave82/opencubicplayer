@@ -36,6 +36,10 @@ struct DevInterfaceAPI_t
 
 	int (*filesystem_resolve_dirdb_dir) (uint32_t ref, struct dmDrive **drive, struct ocpdir_t **dir);
 	int (*filesystem_resolve_dirdb_file) (uint32_t ref, struct dmDrive **drive, struct ocpfile_t **file);
+
+#ifdef _WIN32
+	char * (*utf16_to_utf8) (const uint16_t *src);
+#endif
 };
 
 struct IOCTL_DevInterface

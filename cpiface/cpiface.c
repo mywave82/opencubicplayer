@@ -79,6 +79,7 @@
 #include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/sets.h"
+#include "stuff/utf-16.h"
 #include <unistd.h>
 #include <time.h>
 
@@ -2386,6 +2387,10 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 	cpifaceSessionAPI.Public.cpiTextRecalc = cpiTextRecalc;
 	cpifaceSessionAPI.Public.latin1_f_to_utf8_z = latin1_f_to_utf8_z;
 	cpifaceSessionAPI.Public.cpiDebug = cpiDebug;
+#ifdef _WIN32
+	cpifaceSessionAPI.Public.utf8_to_utf16_LFN = utf8_to_utf16_LFN;
+	cpifaceSessionAPI.Public.utf16_to_utf8 = utf16_to_utf8;
+#endif
 
 	curplayer=cp;
 

@@ -276,7 +276,8 @@ cpiface.o: cpiface.c \
 	../stuff/piperun.h \
 	../stuff/poutput.h \
 	../stuff/poll.h \
-	../stuff/sets.h
+	../stuff/sets.h \
+	../stuff/utf-16.h
 	$(CC) cpiface.c -o $@ -c
 
 volctrl.o: volctrl.c \
