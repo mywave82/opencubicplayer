@@ -145,17 +145,35 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 
 	if (((magic & 0xffffff00U)==FourCC("BZh\0") && (magic & 0xffU) >= '1' && (magic & 0xffU) <= '9') ||
 	    ((magic >> 16) == 0x1f8b) ||
+	    (magic == FourCC("ACE!")) ||                   /* Amiga Disk Magazine Resident #1,      added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (magic == FourCC("FVL0")) ||                   /* ANC Cruncher,                         added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (magic == FourCC("GR20")) ||                   /* GR.A.C v2.0,                          added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (magic == FourCC("MD10")) ||                   /* Amiga Disk Magazine McDisk #1, #2,    added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (magic == FourCC("MD11")) ||                   /* Amiga Disk Magazine McDisk #3,        added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (footer== FourCC("data")) ||                   /* ByteKiller Pro,                       added in v2.3.0 src/ByteKillerDecompressor.cpp */
+	    (footer== FourCC("JEK1")) ||                   /* JEK / JAM v1,                         added in v2.3.0 src/ByteKillerDecompressor.cpp */
 	    (magic == FourCC("CrM!")) ||
 	    (magic == FourCC("CrM2")) ||
 	    (magic == FourCC("Crm!")) ||
 	    (magic == FourCC("Crm2")) ||
+	    (magic == 0x18051973)     ||                   /* Fears,                                added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("CD\xb3\xb9")) ||             /* BiFi 2,                               added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("DCS!")) ||                   /* Sonic Attack/DualCrew-Shining,        added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("Iron")) ||                   /* Sun / TRSI,                           added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("MSS!")) ||                   /* Infection / Mystic,                   added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("mss!")) ||                   /*                                       added in v2.2.0 src/CRMDecompressor.cpp */
+	    (magic == FourCC("LSD!")) ||                   /*                                       added in v2.3.0 src/JAMPackerDecompressor.cpp */
+	    (magic == FourCC("LZH!")) ||                   /*                                       added in v2.3.0 src/JAMPackerDecompressor.cpp */
+	    (magic == FourCC("LZW!")) ||                   /*                                       added in v2.3.0 src/JAMPackerDecompressor.cpp */
 	    (magic == FourCC("DMS!")) ||
 	    (magic == FourCC("\001LOB")) ||
 	    (magic == FourCC("\002LOB")) ||
 	    (magic == FourCC("ziRC")) ||
-	    (magic == FourCC("PP11")) ||
-	    (magic == FourCC("PP20")) ||
-	    (magic == FourCC("PX20")) ||
+	    (magic == FourCC("PP11")) ||                   /*                                                       src/PPDecompressor.cpp */
+	    (magic == FourCC("PP20")) ||                   /*                                                       src/PPDecompressor.cpp */
+	    (magic == FourCC("PX20")) ||                   /*                                                       src/PPDecompressor.cpp */
+	    (magic == FourCC("SFHC")) ||                   /*                                       added in v2.3.0 src/PMCDecompressor.cpp */
+	    (magic == FourCC("SFCD")) ||                   /*                                       added in v2.3.0 src/PMCDecompressor.cpp */
 	    (magic == FourCC("RNC\001")) ||
 	    (magic == FourCC("RNC\002")) ||
 	    (magic >= 0x08090a08U && magic <=0x08090a0eU && magic != 0x08090a09U) ||
@@ -167,45 +185,49 @@ struct ocpfilehandle_t *ancient_filehandle (char *compressionmethod, int compres
 	    (magic == FourCC("S404")) ||
 	    (magic == FourCC("TPWM")) ||
 	    (magic == FourCC("XPKF")) ||
-	    ((magic >> 16) == 0x1fff) ||    /* Compact,     added in v2.1.0 src/CompactDecompressor.cpp */
-	    ((magic >> 16) == 0x1f9d) ||    /* Compress,    added in v2.1.0 src/CompressDecompressor.cpp */
-	    ((magic >> 16) == 0x1f9e) ||    /* Freeze,      added in v2.1.0 src/FreezeDecompressor.cpp */
-	    ((magic >> 16) == 0x1f9f) ||    /* Freeze,      added in v2.1.0 src/FreezeDecompressor.cpp */
-	    (magic == FourCC("\001LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
-	    (magic == FourCC("\002LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
-	    (magic == FourCC("\003LOB")) || /* LOB,         added in v2.1.0 src/LOBDecompressor.cpp */
-	    (magic == FourCC("PX20")) ||    /* PP varient,  added in v2.1.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("PPMQ")) ||    /* PPMQ,        added in v2.1.0 src/PPMQDecompressor.cpp */
-	    ((magic >> 16) == 0x1f1e) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
-	    ((magic >> 16) == 0x1f1f) ||    /* Pack,        added in v2.1.0 src/PackDecompressor.cpp */
-	    ((magic >> 16) == 0x1fa0) ||    /* SCOCompress, added in v2.1.0 src/SCOCompressDecompressor.cpp */
-	    (magic == FourCC("SHR3")) ||                   /*                                   will be added in v2.2.0 src/SHR3Decompressor.cpp */
-	    (magic == FourCC("SHRI")) ||                   /*                                   will be added in v2.2.0 src/src/SHRXDecompressor.cpp */
-	    ((magic & 0xffffff00) == FourCC("1AM\000")) || /* Reunion,                          will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
-	    ((magic & 0xffffff00) == FourCC("2AM\000")) || /* Reunion,                          will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
-	    (magic == FourCC("Z&G!")) ||                   /* Switchback / Rebels,              will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
-	    (magic == FourCC("ZULU")) ||                   /* Whammer Slammer / Rebels,         will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
-	    (magic == FourCC("AYS!")) ||                   /* High Anxiety / Abyss,             will be added in v2.2.0 src/StoneCrackerDecompressor.cpp */
-	    (magic == 0x18051973) ||                       /* Fears,                            will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("CD\xb3\xb9")) ||             /* BiFi 2,                           will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("DCS!")) ||                   /* Sonic Attack/DualCrew-Shining,    will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("Iron")) ||                   /* Sun / TRSI,                       will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("MSS!")) ||                   /* Infection / Mystic,               will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("mss!")) ||                   /*                                   will be added in v2.2.0 src/CRMDecompressor.cpp */
-	    (magic == FourCC("CHFC")) ||                   /* Sky High Stuntman,                will be added in v2.2.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("DEN!")) ||                   /* Jewels - Crossroads,              will be added in v2.2.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("DXS9")) ||                   /* Hopp oder Top, Punkt Punkt Punkt, will be added in v2.2.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("H.D.")) ||                   /* F1 Challenge,                     will be added in v2.2.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("RVV!")) ||                   /* Hoi AGA Remix,                    will be added in v2.2.0 src/PPDecompressor.cpp */
-	    (magic == FourCC("...\001")) ||                /* Total Carnage,                    will be added in v2.2.0 src/RNCDecompressor.cpp */
-	    (magic == FourCC("Vice")) ||                   /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
-	    (magic == FourCC("Vic2")) ||                   /*                                   will be added in v2.2.0 src/VicXDecompressor.cpp */
-	    (footer== FourCC("Ice!")) ||                   /* ICE version 0                         will be added in v2.3.0 src/IceXDecompressor.cpp */
-	    (magic == FourCC("Ice!")) ||                   /* ICE version 1                         will be added in v2.3.0 src/IceXDecompressor.cpp */
-	    (magic == FourCC("TMM!")) ||                   /* ICE version 1, Demo Numb/Movement,    will be added in v2.3.0 src/IceXDecompressor.cpp */
-	    (magic == FourCC("TSM!")) ||                   /* ICE version 1, Lots of Amiga games,   will be added in v2.3.0 src/IceXDecompressor.cpp */
-	    (magic == FourCC("SHE!")) ||                   /* ICE version 1, Demo Overload2/JetSet, will be added in v2.3.0 src/IceXDecompressor.cpp */
-	    (magic == FourCC("ICE!"))                      /* ICE version 2                         will be added in v2.3.0 src/IceXDecompressor.cpp */
+	    ((magic >> 16) == 0x1fff) ||                   /* Compact,                              added in v2.1.0 src/CompactDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9d) ||                   /* Compress,                             added in v2.1.0 src/CompressDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9e) ||                   /* Freeze,                               added in v2.1.0 src/FreezeDecompressor.cpp */
+	    ((magic >> 16) == 0x1f9f) ||                   /* Freeze,                               added in v2.1.0 src/FreezeDecompressor.cpp */
+            (magic == FourCC("ATN!")) ||                   /* Team 17 games,                                        src/IMPDecompressor.cpp */
+            (magic == FourCC("EDAM")) ||                   /* Indy Heat                                             src/IMPDecompressor.cpp */
+            (magic == FourCC("IMP!")) ||                   /*                                                       src/IMPDecompressor.cpp */
+            (magic == FourCC("M.H.")) ||                   /* Georg Glaxo                                           src/IMPDecompressor.cpp */
+            (magic == FourCC("BDPI")) ||                   /* Dizzy's excellent adventures                          src/IMPDecompressor.cpp */
+            (magic == FourCC("CHFI")) ||                   /* Dizzy's excellent adventures, Bubble and Squeak,      src/IMPDecompressor.cpp */
+            (magic == FourCC("RDC9")) ||                   /* Telekommando 2                                        src/IMPDecompressor.cpp */
+            (magic == FourCC("Dupa")) ||                   /*                                                       src/IMPDecompressor.cpp */
+            (magic == FourCC("FLT!")) ||                   /*                                                       src/IMPDecompressor.cpp */
+            (magic == FourCC("PARA")) ||                   /*                                                       src/IMPDecompressor.cpp */
+	    (magic == FourCC("\001LOB")) ||                /* LOB,                                  added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("\002LOB")) ||                /* LOB,                                  added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("\003LOB")) ||                /* LOB,                                  added in v2.1.0 src/LOBDecompressor.cpp */
+	    (magic == FourCC("PX20")) ||                   /* PP varient,                           added in v2.1.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("PPMQ")) ||                   /* PPMQ,                                 added in v2.1.0 src/PPMQDecompressor.cpp */
+	    ((magic >> 16) == 0x1f1e) ||                   /* Pack,                                 added in v2.1.0 src/PackDecompressor.cpp */
+	    ((magic >> 16) == 0x1f1f) ||                   /* Pack,                                 added in v2.1.0 src/PackDecompressor.cpp */
+	    ((magic >> 16) == 0x1fa0) ||                   /* SCOCompress,                          added in v2.1.0 src/SCOCompressDecompressor.cpp */
+	    (magic == FourCC("SHR3")) ||                   /*                                       added in v2.2.0 src/SHR3Decompressor.cpp */
+	    (magic == FourCC("SHRI")) ||                   /*                                       added in v2.2.0 src/SHRXDecompressor.cpp */
+	    ((magic & 0xffffff00) == FourCC("1AM\000")) || /* Reunion,                              added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    ((magic & 0xffffff00) == FourCC("2AM\000")) || /* Reunion,                              added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("Z&G!")) ||                   /* Switchback / Rebels,                  added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("ZULU")) ||                   /* Whammer Slammer / Rebels,             added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("AYS!")) ||                   /* High Anxiety / Abyss,                 added in v2.2.0 src/StoneCrackerDecompressor.cpp */
+	    (magic == FourCC("CHFC")) ||                   /* Sky High Stuntman,                    added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("DEN!")) ||                   /* Jewels - Crossroads,                  added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("DXS9")) ||                   /* Hopp oder Top, Punkt Punkt Punkt,     added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("H.D.")) ||                   /* F1 Challenge,                         added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("RVV!")) ||                   /* Hoi AGA Remix,                        added in v2.2.0 src/PPDecompressor.cpp */
+	    (magic == FourCC("...\001")) ||                /* Total Carnage,                        added in v2.2.0 src/RNCDecompressor.cpp */
+	    (magic == FourCC("Vice")) ||                   /*                                       added in v2.2.0 src/VicXDecompressor.cpp */
+	    (magic == FourCC("Vic2")) ||                   /*                                       added in v2.2.0 src/VicXDecompressor.cpp */
+	    (footer== FourCC("Ice!")) ||                   /* ICE version 0                         added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("Ice!")) ||                   /* ICE version 1                         added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("TMM!")) ||                   /* ICE version 1, Demo Numb/Movement,    added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("TSM!")) ||                   /* ICE version 1, Lots of Amiga games,   added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("SHE!")) ||                   /* ICE version 1, Demo Overload2/JetSet, added in v2.3.0 src/IceXDecompressor.cpp */
+	    (magic == FourCC("ICE!"))                      /* ICE version 2                         added in v2.3.0 src/IceXDecompressor.cpp */
 	   )
 	{
 isancient:
