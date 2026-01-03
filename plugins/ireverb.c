@@ -1,6 +1,6 @@
 // OpenCP Module Player
 // copyright (c) 1994-'98 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
-// copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+// copyright (c) 2022-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
 
 // this shall somewhen become a cool reverb/compressor/EQ audio plug-in
 // but i didnt have any time for it yet ;)
@@ -424,7 +424,7 @@ static void iReverbPluginClose (struct PluginCloseAPI_t *API)
 	API->mcpUnregisterPostProcInteger (&iReverb);
 }
 
-DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "ireverb", .desc = "OpenCP integer reverb (c) 1994-'25 Fabian Giesen, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = iReverbPluginInit, .PluginClose = iReverbPluginClose};
+DLLEXTINFO_DRIVER_PREFIX struct linkinfostruct dllextinfo = {.name = "ireverb", .desc = "OpenCP integer reverb (c) 1994-'26 Fabian Giesen, Tammo Hinrichs, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 99, .PluginInit = iReverbPluginInit, .PluginClose = iReverbPluginClose};
 
 /*
   notizen dazu (von ryg):

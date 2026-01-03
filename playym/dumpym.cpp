@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Dumping tool for YM files, used for debugging
  *

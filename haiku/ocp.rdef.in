@@ -12,7 +12,7 @@ resource app_version {
        internal = 0,
 
        short_info = "Open Cubic Player",
-       long_info = "Open Cubic Player ©1994-'23 Niklas Beisert, Stian Skjelstad and others."
+       long_info = "Open Cubic Player ©1994-'26 Niklas Beisert, Stian Skjelstad and others."
 };
 
 resource app_flags B_MULTIPLE_LAUNCH | B_ARGV_ONLY;

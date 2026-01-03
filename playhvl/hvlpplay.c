@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVLPlay interface routines
  *
@@ -197,4 +197,4 @@ static void hvlPluginClose (struct PluginCloseAPI_t *API)
 }
 
 OCP_INTERNAL const struct cpifaceplayerstruct hvlPlayer = {"[HivelyTracker plugin]", hvlOpenFile, hvlCloseFile};
-DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'25 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = hvlPluginInit, .PluginClose = hvlPluginClose};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playhvl", .desc = "OpenCP HVL Player (c) 2019-'26 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = hvlPluginInit, .PluginClose = hvlPluginClose};

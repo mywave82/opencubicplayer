@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2024-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2024-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Support for accessing https://modland.com from the filebrowser
  *  - Accessing files from the cachedir

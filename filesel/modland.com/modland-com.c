@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2024-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2024-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Support for accessing https://modland.com from the filebrowser
  *
@@ -726,4 +726,4 @@ static void modland_com_done (struct PluginCloseAPI_t *API)
 	modland_com.mirrorcustom = 0;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024-'25 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .PluginInit = modland_com_init, .PluginClose = modland_com_done};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "modland-com", .desc = "OpenCP virtual modland.com filebrowser (c) 2024-'26 Stian Skjelstad", .ver = DLLVERSION, .sortindex = 60, .PluginInit = modland_com_init, .PluginClose = modland_com_done};

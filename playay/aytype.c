@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * .ay file type detection routines for the file selector
  *

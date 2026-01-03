@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * C version of dwmixa assembler routines
  *

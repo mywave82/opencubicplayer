@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2009-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2009-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * SDL graphic driver
  *

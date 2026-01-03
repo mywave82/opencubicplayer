@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2019-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2019-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * HVLPlay note dots routines
  *

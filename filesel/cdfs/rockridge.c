@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Parsing of ISO9660 SUSP RRIP blocks
  * Rock Ridge Interchange Protocol

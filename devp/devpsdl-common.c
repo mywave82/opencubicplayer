@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2011-'25 François Revol <revol@free.fr>
+ * copyright (c) 2011-'26 François Revol <revol@free.fr>
  *
  * Common code for SDL Player device 1.x and 2.x
  *

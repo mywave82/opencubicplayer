@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Player devices system
  *
@@ -657,7 +657,7 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo =
 {
 	.name = "plrbase",
-	.desc = "OpenCP Player Devices System (c) 1994-'25 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
+	.desc = "OpenCP Player Devices System (c) 1994-'26 Niklas Beisert, Tammo Hinrichs, Stian Skjelstad",
 	.ver = DLLVERSION,
 	.PreInit = deviplayPreInit,
 	.LateInit = deviplayLateInit,

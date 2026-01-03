@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2024-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2024-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * unit test for filesystem-testfile-test.c
  *

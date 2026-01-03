@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Sound settings module
  *
@@ -73,4 +73,4 @@ static int ssInit (const struct configAPI_t *configAPI)
   return errOk;
 }
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "sets", .desc = "OpenCP Sound Settings Auxiliary Routines (c) 1994-'25 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10, .Init = ssInit};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "sets", .desc = "OpenCP Sound Settings Auxiliary Routines (c) 1994-'26 Niklas Beisert, Tammo Hinrichs", .ver = DLLVERSION, .sortindex = 10, .Init = ssInit};

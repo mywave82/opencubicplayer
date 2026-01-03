@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * pagesize() call used from several plugins. Different unix variants provides
  * pagesize info in different ways.. sysconf, header-file, not mentioned

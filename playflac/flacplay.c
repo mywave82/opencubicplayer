@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2008-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2008-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * FLACPlay - Player for FLAC
  *

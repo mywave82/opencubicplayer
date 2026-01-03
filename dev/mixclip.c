@@ -1,6 +1,6 @@
 /* OpenCP Module Player
  * copyright (c) 1994-'10 Niklas Beisert <nbeisert@physik.tu-muenchen.de>
- * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * assembler routines for amplifying/clipping
  *
@@ -114,4 +114,4 @@ void mixClipAlt2(uint16_t *dst, const uint16_t *src, uint32_t len, const uint16_
 }
 #endif
 
-DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mixclip", .desc = "OpenCP common clipper for various streams (c) 1994-'25 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 10};
+DLLEXTINFO_CORE_PREFIX struct linkinfostruct dllextinfo = {.name = "mixclip", .desc = "OpenCP common clipper for various streams (c) 1994-'26 Niklas Beisert, Stian Skjelstad", .ver = DLLVERSION, .sortindex = 10};

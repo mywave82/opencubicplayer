@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2023-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2023-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Access host operating system files via a unified API
  *

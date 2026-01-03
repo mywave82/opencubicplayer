@@ -10,7 +10,7 @@ BEGIN
       VALUE "FileDescription", "Audio Media Player"
       VALUE "FileVersion", "@PACKAGE_VERSION@"
       VALUE "InternalName", "ocp"
-      VALUE "LegalCopyright", "© 2023 Stian Skjelstad"
+      VALUE "LegalCopyright", "© 2023-'26 Stian Skjelstad"
       VALUE "OriginalFilename", "ocp.exe"
       VALUE "ProductName", "Open Cubic Player"
       VALUE "ProductVersion", "@PACKAGE_VERSION@"

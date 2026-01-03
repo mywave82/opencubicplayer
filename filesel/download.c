@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2004-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2004-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Wrapper around curl, downloading files via HTTP/HTTPS
  *

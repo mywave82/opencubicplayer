@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2005-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2005-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * OPLPlay interface routines
  *
@@ -218,7 +218,7 @@ extern "C"
 	DLLEXTINFO_PLAYBACK_PREFIX_CPP struct linkinfostruct dllextinfo =
 	{ /* c++ historically does not support named initializers, and size needs to be writable... */
 		/* .name = */ "playopl",
-		/* .desc = */ "OpenCP Adplug (OPL) Detection and Player (c) 2005-'25 Stian Skjelstad",
+		/* .desc = */ "OpenCP Adplug (OPL) Detection and Player (c) 2005-'26 Stian Skjelstad",
 		/* .ver  = */ DLLVERSION,
 		/* .sortindex = */ 95,
 		/* .PreInit = */ 0,

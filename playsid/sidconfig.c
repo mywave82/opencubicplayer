@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2022-'25 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2022-'26 Stian Sebastian Skjelstad <stian.skjelstad@gmail.com>
  *
  * libsidplay setup config dialog
  *

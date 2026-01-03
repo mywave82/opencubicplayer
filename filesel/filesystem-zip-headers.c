@@ -1,5 +1,5 @@
 /* OpenCP Module Player
- * copyright (c) 2020-'25 Stian Skjelstad <stian.skjelstad@gmail.com>
+ * copyright (c) 2020-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
  *
  * Parsers for the different ZIP internal headers
  *
