@@ -66,12 +66,13 @@ extern "C"
 #include "sidplay.h"
 #include "libsidplayfp-api.h"
 
-#define MAXIMUM_SLOW_DOWN 32
-#define ROW_BUFFERS 30 /* half a second */
+#define TARGET_ROW_BUFFERS 30 /* half a second, (if going 60 Herz), or 25 would be enough */
+#define MAX_ROW_BUFFERS (TARGET_ROW_BUFFERS * 8) /* If pitch<->speed == 800%, we need up to 8x the amount of data */
 
 static libsidplayfp::ConsolePlayer *mySidPlayer;
 static SidTuneInfo const *mySidTuneInfo;
-static int sid_samples_per_row;
+static uint32_t sid_clocks_per_row;
+static uint32_t sid_samples_per_row /* row = virtual screen frame, set to 50 Hz, but it is not synced to the c64 virtual machine. Also happens to match the SID emulators max buffer-size, being 20ms */ ;
 
 typedef struct
 {
@@ -83,8 +84,9 @@ typedef struct
 
 static SidStatBuffer_t last; /* current register values, 3 SID chips */
 
-static SidStatBuffer_t SidStatBuffers[ROW_BUFFERS] = {{0}}; // half a second
+static SidStatBuffer_t SidStatBuffers[MAX_ROW_BUFFERS] = {{0}}; // half a second
 static int SidStatBuffers_available = 0;
+static int SidStatBuffers_target = 0;
 
 static int16_t *sid_buf_stereo; /* stereo interleaved */
 static int16_t *sid_buf_4x3[3]; /* 4-chan interleaved, 3 SID chips */
@@ -98,7 +100,6 @@ static struct ringbuffer_t *sid_buf_pos;
 
 static uint32_t sidbuffpos;
 static uint32_t sidbufrate;
-static signed int sidbufrate_compensate;
 static uint32_t sidRate; /* devp rate */
 
 static uint64_t samples_committed;
@@ -111,7 +112,7 @@ static int srnd;
 
 static int SidCount;
 
-static volatile int clipbusy=0;
+static int clipbusy=0;
 
 static uint8_t sidMuted[3*3];
 
@@ -156,14 +157,15 @@ static void SidStatBuffers_callback_from_sidbuf (void *arg, int samples_ago)
 
 OCP_INTERNAL void sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	while (SidStatBuffers_available) /* we only prepare more data if SidStatBuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
+	while (SidStatBuffers_available > 0) /* we only prepare more data if SidStatBuffers_available is non-zero. This gives about 0.5 seconds worth of sample-data */
 	{
 		int i, j;
 
 		int pos1, pos2;
 		int length1, length2;
+		int fill1 = 0, fill2 = 0;
 
-		for (i=0; i < ROW_BUFFERS; i++)
+		for (i=0; i < MAX_ROW_BUFFERS; i++)
 		{
 			if (SidStatBuffers[i].in_use)
 			{
@@ -171,30 +173,31 @@ OCP_INTERNAL void sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 			}
 			break;
 		}
-		assert (i != ROW_BUFFERS);
+		assert (i != MAX_ROW_BUFFERS);
 
 		cpifaceSession->ringbufferAPI->get_head_samples (sid_buf_pos, &pos1, &length1, &pos2, &length2);
 
 		/* We can fit length1+length2 samples into out devp-mirrored buffer */
 
-		assert ((length1 + length2) >= sid_samples_per_row);
-
-		if (length1 >= sid_samples_per_row)
+		if ((length1 + length2) < sid_samples_per_row)
 		{
-			std::vector<int16_t *> raw {sid_buf_4x3[0] + (pos1<<2),
-			                            sid_buf_4x3[1] + (pos1<<2),
-			                            sid_buf_4x3[2] + (pos1<<2)};
-			mySidPlayer->iterateaudio (sid_buf_stereo + (pos1<<1), sid_samples_per_row, &raw);
-		} else {
-			std::vector<int16_t *> raw1 {sid_buf_4x3[0] + (pos1<<2),
-			                             sid_buf_4x3[1] + (pos1<<2),
-			                             sid_buf_4x3[2] + (pos1<<2)};
-			mySidPlayer->iterateaudio (sid_buf_stereo + (pos1<<1), length1, &raw1);
+			break; /* can only happen if speed is over 800% ... */
+		}
 
-			std::vector<int16_t *> raw2 {sid_buf_4x3[0] + (pos2<<2),
-			                             sid_buf_4x3[1] + (pos2<<2),
-			                             sid_buf_4x3[2] + (pos2<<2)};
-			mySidPlayer->iterateaudio (sid_buf_stereo + (pos2<<1), sid_samples_per_row - length1, &raw2);
+		std::vector<int16_t *> raw1 {sid_buf_4x3[0] + (pos1<<2),
+		                             sid_buf_4x3[1] + (pos1<<2),
+		                             sid_buf_4x3[2] + (pos1<<2)};
+
+		/* ringbuffer can physically fit one sid_samples_per_row overflow, so we can manually wrap it back when iterateaudio() writes more data than length1 could fit */
+		fill1 = mySidPlayer->iterateaudio (sid_buf_stereo + (pos1 << 1), sid_samples_per_row, sid_clocks_per_row, &raw1) >> 1;
+		if (fill1 > length1)
+		{
+			fill2 = fill1 - length1;
+			fill1 = length1;
+			memcpy (sid_buf_stereo + (pos2 << 1), sid_buf_stereo + ((pos1 + fill1) << 1), fill2 * 2 * sizeof (int16_t));
+			memcpy (sid_buf_4x3[0] + (pos2 << 2), sid_buf_4x3[0] + ((pos1 + fill1) << 2), fill2 * 4 * sizeof (int16_t));
+			memcpy (sid_buf_4x3[1] + (pos2 << 2), sid_buf_4x3[1] + ((pos1 + fill1) << 2), fill2 * 4 * sizeof (int16_t));
+			memcpy (sid_buf_4x3[2] + (pos2 << 2), sid_buf_4x3[2] + ((pos1 + fill1) << 2), fill2 * 4 * sizeof (int16_t));
 		}
 		for (j=0; j < SidCount; j++)
 		{
@@ -212,7 +215,7 @@ OCP_INTERNAL void sidIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 
 		/* Adding sid_samples_per_row to our devp-mirrored buffer */
 
-		cpifaceSession->ringbufferAPI->head_add_samples (sid_buf_pos, sid_samples_per_row);
+		cpifaceSession->ringbufferAPI->head_add_samples (sid_buf_pos, fill1 + fill2);
 
 		SidStatBuffers_available--;
 	}
@@ -401,52 +404,22 @@ OCP_INTERNAL void sidIdle(struct cpifaceSessionAPI_t *cpifaceSession)
 			/* We are using processing instead of tail here */
 			cpifaceSession->ringbufferAPI->processing_consume_samples (sid_buf_pos, accumulated_source);
 			cpifaceSession->plrDevAPI->CommitBuffer (accumulated_target);
-			samples_committed += accumulated_target;
-			sidbufrate_compensate += accumulated_target - accumulated_source;
+			samples_committed += accumulated_source;
 		} /* if (targetlength) */
-	}
 
-	{
-		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
-		uint64_t new_ui = samples_committed - delay;
-		if (new_ui > samples_lastui)
 		{
-			int delta = new_ui - samples_lastui;
-
-#warning use the new API instead of this wierd hack ???
-			if (sidbufrate_compensate > 0) /* we have been slowing down */
+			uint64_t delay = cpifaceSession->plrDevAPI->Idle();
+			uint64_t new_ui = samples_committed - delay;
+			if (new_ui > samples_lastui)
 			{
-				if (delta >= sidbufrate_compensate)
-				{
-					delta -= sidbufrate_compensate;
-					sidbufrate_compensate = 0;
-				} else {
-					sidbufrate_compensate -= delta;
-					delta = 0;
-				}
-			} else if ((sidbufrate_compensate < 0) && delta) /* we have been speeding up... */
-			{
-				delta -= sidbufrate_compensate; /* double negative, makes delta grow */
-				sidbufrate_compensate = 0;
+				cpifaceSession->ringbufferAPI->tail_consume_samples (sid_buf_pos, new_ui - samples_lastui);
+				samples_lastui = new_ui;
 			}
-
-			cpifaceSession->ringbufferAPI->tail_consume_samples (sid_buf_pos, delta);
-			samples_lastui = new_ui;
 		}
 	}
 
 	clipbusy--;
 }
-
-#if 0
-static void updateconf()
-{
-	clipbusy++;
-	myEmuEngine->setConfig(*myEmuConfig);
-	clipbusy--;
-}
-#endif
-
 
 OCP_INTERNAL int sidNumberOfChips (void)
 {
@@ -533,6 +506,23 @@ static void sidSetPitch (uint32_t sp)
 	if (sp > 0x00080000) sp = 0x00080000;
 	if (!sp) sp = 0x1;
 	sidbufrate = sp;
+
+	int SidStatBuffers_newtarget = sidbufrate * TARGET_ROW_BUFFERS / 0x10000;
+	if (SidStatBuffers_newtarget < 2)
+	{
+		SidStatBuffers_newtarget = 2;
+	}
+	if (SidStatBuffers_newtarget > MAX_ROW_BUFFERS)
+	{
+		SidStatBuffers_newtarget = MAX_ROW_BUFFERS;
+	}
+
+	fprintf (stderr, "sidSetPitch: sp=0x%08x   old_avail=%d old_target=%d    ", sp, SidStatBuffers_available, SidStatBuffers_target);
+
+	SidStatBuffers_available += (SidStatBuffers_newtarget - SidStatBuffers_target);
+	SidStatBuffers_target = SidStatBuffers_newtarget;
+
+	fprintf (stderr, "new_avail=%d new_target=%d\n", SidStatBuffers_available, SidStatBuffers_target);
 }
 
 static void sidSetVolume (void)
@@ -631,19 +621,6 @@ OCP_INTERNAL char sidGetVideo (void)
 			return 0; /* NTSC */
 	}
 }
-
-#if 0
-OCP_INTERNAL char sidGetFilter (void)
-{
-	return myEmuConfig->emulateFilter;
-}
-
-OCP_INTERNAL void sidToggleFilter (void)
-{
-	myEmuConfig->emulateFilter^=1;
-	updateconf();
-}
-#endif
 
 OCP_INTERNAL void sidMute (struct cpifaceSessionAPI_t *cpifaceSession, int i, int m)
 {
@@ -744,6 +721,14 @@ OCP_INTERNAL void sidGetChanInfo (int i, sidChanInfo &ci)
 	ci.rightvol=rightvol>>8;
 }
 
+static inline int16_t scale (int16_t src1)
+{
+	int32_t src2 = (((int32_t)src1) * 2) + 8285;
+	if (src2 > INT16_MAX) return INT16_MAX;
+	if (src2 < INT16_MIN) return INT16_MIN;
+	return (int16_t)src2;
+}
+
 OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int i, int16_t *s, unsigned int len, uint32_t rate, int opt)
 {
 	int sid = i / 3;
@@ -764,10 +749,10 @@ OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 	{
 		if (stereo)
 		{
-			*(s++) = *src;
-			*(s++) = *src;
+			*(s++) = scale(*src);
+			*(s++) = scale(*src);
 		} else {
-			*(s++) = *src;
+			*(s++) = scale(*src);
 		}
 		len--;
 
@@ -793,6 +778,7 @@ OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 			}
 		}
 	}
+
 	return !!sidMuted[ch];
 }
 
@@ -814,13 +800,25 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 
 	while (len)
 	{
-		if (stereo)
+		if (ch)
 		{
-			*(s++) = *src;
-			*(s++) = *src;
+			if (stereo)
+			{
+				*(s++) = scale(*src);
+				*(s++) = scale(*src);
+			} else {
+				*(s++) = scale(*src);
+			}
 		} else {
-			*(s++) = *src;
+			if (stereo)
+			{
+				*(s++) = *src;
+				*(s++) = *src;
+			} else {
+				*(s++) = *src;
+			}
 		}
+
 		len--;
 
 		posf += step;
@@ -855,15 +853,6 @@ OCP_INTERNAL void sidSetFilter(bool enable)
 		return;
 	}
 	mySidPlayer->SetFilter (enable);
-}
-
-OCP_INTERNAL void sidSetBias(double bias)
-{
-	if (!mySidPlayer)
-	{
-		return;
-	}
-	mySidPlayer->SetBias (bias);
 }
 
 OCP_INTERNAL void sidSetFilterCurve6581 (double v)
@@ -968,20 +957,28 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 
 	memset(sidMuted, 0, sizeof (sidMuted));
 
-#warning FIX ME, rate is fixed to 50 at this line!!!
-	sid_samples_per_row = sidRate / 50;
+	sid_clocks_per_row = mySidPlayer->GetVICIICyclesPerFrame();
+	sid_samples_per_row = (unsigned long long) sidRate * mySidPlayer->GetVICIICyclesPerFrame() / mySidPlayer->getMainCpuSpeed();
+	/* libsidplayfp will perform less samples than sid_samples_per_row when doing sid_clocks_per_row clock cycles..... go figure. If it was larger we would need to compensate */
 
-	sid_buf_stereo = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 2 * sid_samples_per_row];
-	sid_buf_4x3[0] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	sid_buf_4x3[1] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
-	sid_buf_4x3[2] = new int16_t [ROW_BUFFERS * MAXIMUM_SLOW_DOWN * 4 * sid_samples_per_row];
+#if 0
+	fprintf (stderr, "GetVICIICyclesPerFrame()=%u\n", (unsigned int) mySidPlayer->GetVICIICyclesPerFrame());
+	fprintf (stderr, "mySidPlayer->getMainCpuSpeed()=%u\n", (unsigned int) mySidPlayer->getMainCpuSpeed());
+	fprintf (stderr, "sidRate=%u\n", (unsigned int)sidRate);
+	fprintf (stderr, "sid_samples_per_row=%u\n", (unsigned int)sid_samples_per_row);
+#endif
+
+	sid_buf_stereo = new int16_t [(MAX_ROW_BUFFERS + 1 /* the +1, is due to iterateaudio always mixes a full buffer page per iteration, so we memmove on wrap by hand */) * 2 * sid_samples_per_row](); /* 2 for stereo, ()=initialize the array to zero, ensure valgrind is happy */
+	sid_buf_4x3[0] = new int16_t [(MAX_ROW_BUFFERS + 1 /* the +1, is due to iterateaudio always mixes a full buffer page per iteration, so we memmove on wrap by hand */) * 4 * sid_samples_per_row](); /* 4 for 1 output and 3 internal channels, First SID IC */
+	sid_buf_4x3[1] = new int16_t [(MAX_ROW_BUFFERS + 1 /* the +1, is due to iterateaudio always mixes a full buffer page per iteration, so we memmove on wrap by hand */) * 4 * sid_samples_per_row](); /*                                         Second SID IC */
+	sid_buf_4x3[2] = new int16_t [(MAX_ROW_BUFFERS + 1 /* the +1, is due to iterateaudio always mixes a full buffer page per iteration, so we memmove on wrap by hand */) * 4 * sid_samples_per_row](); /*                                         Third SID IC */
 	if ((!sid_buf_4x3[0]) || (!sid_buf_4x3[1]) || (!sid_buf_4x3[2]))
 	{
 		retval = errAllocMem;
 		goto error_out_sid_buffers;
 	}
 
-	sid_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, ROW_BUFFERS * MAXIMUM_SLOW_DOWN * sid_samples_per_row);
+	sid_buf_pos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED | RINGBUFFER_FLAGS_PROCESS, MAX_ROW_BUFFERS * sid_samples_per_row);
 	if (!sid_buf_pos)
 	{
 		retval = errAllocMem;
@@ -989,10 +986,10 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 	}
 
 	memset (SidStatBuffers, 0, sizeof (SidStatBuffers));
-	SidStatBuffers_available = ROW_BUFFERS;
+	SidStatBuffers_target = TARGET_ROW_BUFFERS;
+	SidStatBuffers_available = SidStatBuffers_target;
 
 	sidbuffpos = 0x00000000;
-	sidbufrate_compensate = 0;
 	sidbufrate = 0x00010000;
 
 	// construct song message

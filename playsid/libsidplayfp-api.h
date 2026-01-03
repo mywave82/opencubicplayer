@@ -52,20 +52,21 @@ namespace libsidplayfp
 			index 1: SID chip 2, master, chan1, chan2, chan3 (interleaved, if chip 2 present)
 			index 2: SID chip 3, master, chan1, chan2, chan3 (interleaved, if chip 3 present)
 		*/
-		bool iterateaudio (int16_t *targetBuffer, uint_least32_t count, std::vector<int16_t *> *rawSamples);
+		uint_least32_t iterateaudio (int16_t *targetBuffer, uint_least32_t count, uint_least32_t cycles, std::vector<int16_t *> *rawSamples);
 		bool getSidStatus(unsigned int sidNum, uint8_t registers[32], uint8_t &volume_a, uint8_t &volume_b, uint8_t &volume_c) { return sidplayer.getSidStatus (sidNum, registers, volume_a, volume_b, volume_c); }
 
-		int getSidCount (void) { return sidplayer.getSidCount(); }
+		int getSidCount (void) { return sidplayer.installedSIDs(); /*getSidCount();*/ }
 
 		const char *kernalDesc(void);
 		const char *basicDesc(void);
 		const char *chargenDesc(void);
 
 		const float getMainCpuSpeed(void) { return sidplayer.getMainCpuSpeed(); }
+		const uint32_t GetVICIICyclesPerFrame(void);
 		const MOS656X::model_t getVICIImodel(void);
 		const char *getCIAmodel(void);
-		const SidConfig::sid_model_t getSIDmodel(int i) { return sidplayer.getSidModel(i); }
-		const uint16_t getSIDaddr(int i) { return sidplayer.getSidAddress(i); }
+		const SidConfig::sid_model_t getSIDmodel(int i) { return (sidplayer.info().sidModel(i) == SidTuneInfo::model_t::SIDMODEL_6581) ? SidConfig::MOS6581 : SidConfig::MOS8580; }
+		const uint16_t getSIDaddr(int i) { return sidplayer.info().sidAddress(i); }
 		const char *getTuneStatusString(void) { return m_tune.statusString(); }
 		const SidTuneInfo::clock_t getTuneInfoClockSpeed(void);
 		void close (void);
@@ -73,7 +74,6 @@ namespace libsidplayfp
 		void mute(int chan, bool mute);
 
 		void SetFilter(bool enable);
-		void SetBias(double bias);
 		void SetFilterCurve6581 (double v);
 		void SetFilterRange6581 (double v);
 		void SetFilterCurve8580 (double v);
@@ -81,6 +81,7 @@ namespace libsidplayfp
 
 	private:
 		SidConfig          m_engCfg;
+		int                m_residfp; // 1 = ReSIDfpIIBuilder, 2 = ReSIDfpBuilder
 		SidTune            m_tune;
 		player_state_t     m_state;
 		uint_least16_t selected_track;

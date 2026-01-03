@@ -165,8 +165,8 @@ distclean: clean
 		doc/opencp.dox \
 		doc/texi/faq.texi \
 		doc/texi/ocp.texi \
-		playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h \
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h \
+		playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fp.h \
 		mingw/ocp.rc
 
 libocp$(LIB_SUFFIX): subdirs

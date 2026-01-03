@@ -859,8 +859,7 @@ dnl Adplug+libbinio complete
 
 dnl SIDPLAY specifics
 AC_MSG_CHECKING([GIT submodules are checked out])
-AS_IF([test -f playsid/libsidplayfp-git/src/sidemu.cpp], [ AS_IF([test -f playsid/libsidplayfp-git/src/builders/resid-builder/resid/sid.h], [],
-                                                                 [AC_MSG_ERROR([playsid/libsidplayfp-git/src/builders/resid-builder/resid is missing - please execute 'git submodule update --init --recursive'])] )],
+AS_IF([test -f playsid/libsidplayfp-git/src/sidemu.cpp], [],
       [AC_MSG_ERROR([playsid/libsidplayfp-git is missing - please execute 'git submodule update --init --recursive'])]
 )
 AC_MSG_RESULT([ok])
@@ -871,15 +870,21 @@ HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H=1
 HAVE_SIDPLAYFP_BUILDERS_RESID_H=1
 RESID_INLINING=1
 RESID_INLINE=inline
-AX_CXX_COMPILE_STDCXX_17([noext], [optional])
-AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 == "yes"],
-    [AC_DEFINE([HAVE_CXX17])],
-    [AX_CXX_COMPILE_STDCXX_14([noext], [optional])
-    AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 == "yes"],
-        [AC_DEFINE([HAVE_CXX14])],
-        [AX_CXX_COMPILE_STDCXX_11([noext], [optional])
-        AS_IF([test $ax_cv_cxx_compile_cxx11__std_cpp11 == "yes"],
-            [AC_DEFINE([HAVE_CXX11])])
+AX_CXX_COMPILE_STDCXX([23], [noext], [optional])
+AS_IF([test $ax_cv_cxx_compile_cxx23__std_cpp23 != "yes"], [
+    AX_CXX_COMPILE_STDCXX([20], [noext], [optional])
+    AS_IF([test $ax_cv_cxx_compile_cxx20__std_cpp20 != "yes"], [
+        AX_CXX_COMPILE_STDCXX_17([noext], [optional])
+        AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 == "yes"],
+            [AC_DEFINE([HAVE_CXX17])],
+            [AX_CXX_COMPILE_STDCXX_14([noext], [optional])
+            AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 == "yes"],
+                [AC_DEFINE([HAVE_CXX14])],
+                [AX_CXX_COMPILE_STDCXX_11([noext], [optional])
+                AS_IF([test $ax_cv_cxx_compile_cxx11__std_cpp11 == "yes"],
+                    [AC_DEFINE([HAVE_CXX11])])
+                ])
+            ])
         ])
     ])
 AC_ARG_VAR([XA], [6502 assembler - must be full path])
@@ -912,14 +917,6 @@ AC_CHECK_DECL(
         [AC_CHECK_FUNCS([strnicmp])]
     )]
 )
-AC_CACHE_CHECK([for working bool], ac_cv_cxx_bool,
-[AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM([],
-    [[bool flag;]])],
-  [ac_cv_cxx_bool=yes],
-  [ac_cv_cxx_bool=no])]
-)
-AS_IF([test "x$ac_cv_cxx_bool" = "xno"], [HAVE_BOOL=0], [HAVE_BOOL=1])
 dnl TODO RESID_BRANCH_HINTS
 dnl Enable branch prediction hints.
 AC_ARG_ENABLE([branch-hints],
@@ -929,9 +926,6 @@ AC_ARG_ENABLE([branch-hints],
   [enable_branch_hints=yes]
 )
 AS_IF([test "$enable_branch_hints" != no], [RESID_BRANCH_HINTS=1], [RESID_BRANCH_HINTS=0])
-AC_CACHE_CHECK([for log1p], [resid_cv_log1p],
-  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <math.h>]], [[ log1p(1); ]])],[resid_cv_log1p=yes],[resid_cv_log1p=no])])
-AS_IF([test "$resid_cv_log1p" = no], [HAVE_LOG1P=0], [HAVE_LOG1P=1])
 AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { __builtin_expect(0, 0); }])],
     [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
@@ -939,20 +933,22 @@ AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
 AS_IF([test "$resid_cv_builtin_expect" = no], [HAVE_BUILTIN_EXPECT=0], [HAVE_BUILTIN_EXPECT=1])
 LIBSIDPLAYCXX="$CXX -DHAVE_CONFIG_H=1 -DSIDTUNE_NO_STDIN_LOADER=1 -DPACKAGE_NAME=\\\"sidplayfp\\\" -DVERSION=\\\"2.5.10\\\" -DPACKAGE_VERSION=\\\"2.5.10-1\\\" -DPACKAGE_URL=\\\"\\\""
 LIBSIDPLAYCXXFLAGS="$CXXFLAGS"
+dnl RUNTIME_DISPATCH makes noisy audio output, atleast with OpenCubicPlayer
+dnl AS_CASE([$target],
+dnl 	[x86_64-*],[
+dnl 		LIBSIDPLAYCXX+=" -DRUNTIME_DISPATCH"   # enables SIMD support
+dnl 	]
+dnl )
 AC_SUBST(LIBSIDPLAYCXX)
 AC_SUBST(LIBSIDPLAYCXXFLAGS)
 AC_LANG_POP
 CXX=$origCXX
 CXXFLAGS=$origCXXFLAGS
-NEW_8580_FILTER=0
 
-AC_SUBST(HAVE_BOOL)
-AC_SUBST(HAVE_LOG1P)
 AC_SUBST(HAVE_BUILTIN_EXPECT)
 AC_SUBST(RESID_INLINING)
 AC_SUBST(RESID_INLINE)
 AC_SUBST(RESID_BRANCH_HINTS)
-AC_SUBST(NEW_8580_FILTER)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 
@@ -1184,8 +1180,8 @@ AC_CONFIG_FILES(doc/opencp.dox)
 AC_CONFIG_FILES(doc/texi/faq.texi)
 AC_CONFIG_FILES(doc/texi/ocp.texi)
 AC_CONFIG_FILES(doc/ocp.1)
-AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/resid-builder/resid/siddefs.h)
 AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h)
+AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fpII.h)
 AC_CONFIG_FILES(playopl/libbinio-git/src/binio.h)
 AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
 AC_CONFIG_FILES(haiku/ocp.rdef)

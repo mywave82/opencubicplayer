@@ -1,5 +1,5 @@
 [version]
-  epoch=20250213
+  epoch=20251026
 
 [general]
 ;link=
@@ -95,9 +95,9 @@
   showallfiles=off        ; Show all files in the filebrowser, or just audio/music files
 
 [libsidplayfp]
-; emulator=residfp  to use the floating point version (CPU heavy)
-; emulator=resid    to use the integer version (use this if residfp makes cracking sounds)
-  emulator=residfp
+; emulator=residfp    to use the floating point version (CPU heavy)
+; emulator=residfpII  to use the floating point version (CPU heavy), mark II
+  emulator=residfpII
 ; defaultC64=PAL       Use the PAL      C64 model if .SID file does not specify the model
 ; defaultC64=NTSC      Use the NTSC     C64 model if .SID file does not specify the model
 ; defaultC64=OLD-NTSC  Use the OLD-NTSC C64 model if .SID file does not specify the model
@@ -117,10 +117,6 @@
   CIA=MOS6526
 ; filter=on/off  Sets the default state of the filter. Parameters will follow
   filter=on
-; filterbias=x  Controls the filter bias if emulator=resid.  The bias is
-;               given in millivolts, and a maximum reasonable control range is
-;               approximately -500 to 500, the default value is 0.0.
-  filterbias=0.0
 ; filtercurve6581=0.5  Controls the filter curve for the MOS6581 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
   filterrange6581=0.5
