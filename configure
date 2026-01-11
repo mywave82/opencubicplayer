@@ -3792,8 +3792,17 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 printf %s "checking GIT submodules are checked out... " >&6; }
 if test -f playtimidity/timidity-git/Makefile.am
 then :
+
+        if test -f playqoa/qoa-git/qoa.h
+then :
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 printf "%s\n" "ok" >&6; }
+else case e in #(
+  e) as_fn_error $? "playqoa/qoa-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
+         ;;
+esac
+fi
+
 else case e in #(
   e) as_fn_error $? "playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'" "$LINENO" 5
  ;;

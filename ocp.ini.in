@@ -1,5 +1,5 @@
 [version]
-  epoch=20251026
+  epoch=20260111
 
 [general]
 ;link=
@@ -202,6 +202,7 @@
   OKT=5
   OPL=6
   PTM=2
+  QOA=6
   S3M=2
   SID=6
   STM=2

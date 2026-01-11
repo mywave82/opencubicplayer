@@ -16,3 +16,6 @@
 [submodule "playopl/adplugdb-git"]
 	path = playopl/adplugdb-git
 	url = https://github.com/adplug/database.git
+[submodule "playqoa/qoa-git"]
+	path = playqoa/qoa-git
+	url = https://github.com/phoboslab/qoa

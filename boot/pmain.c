@@ -1050,9 +1050,15 @@ static int init_modules(int argc, char *argv[])
 			cfRemoveEntry("libsidplayfp", "filterbias");
 		}
 
-		if (epoch < 20251026)
+		if (epoch < 20260111)
 		{
-			cfSetProfileInt("version", "epoch", 20251026, 10);
+			fprintf(stderr, "ocp.ini update (3.1.0) add [fscolors] QOA=6\n");
+			cfSetProfileInt ("fscolors", "QOA", 6, 10);
+		}
+
+		if (epoch < 20260111)
+		{
+			cfSetProfileInt("version", "epoch", 20260111, 10);
 			cfStoreConfig();
 			if (isatty(2))
 			{
@@ -1063,14 +1069,14 @@ static int init_modules(int argc, char *argv[])
 			sleep(5);
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20251026)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260111)
 	{
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20251026\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260111\033[0m\n\n");
 			sleep(5);
 		} else {
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20251026\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260111\n\n");
 		}
 	}
 

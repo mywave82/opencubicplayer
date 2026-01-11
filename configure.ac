@@ -13,7 +13,13 @@ AC_DEFINE([OCP_PATCH_VERSION], [PATCH_VERSION])
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([GIT submodules are checked out])
-AS_IF([test -f playtimidity/timidity-git/Makefile.am], [AC_MSG_RESULT([ok])],
+AS_IF([test -f playtimidity/timidity-git/Makefile.am],
+      [
+        AS_IF([test -f playqoa/qoa-git/qoa.h],
+              [AC_MSG_RESULT([ok])],
+              [AC_MSG_ERROR([playqoa/qoa-git is missing - please execute 'git submodule update --init --recursive'])]
+        )
+      ],
       [AC_MSG_ERROR([playtimidity/timidity-git is missing - please execute 'git submodule update --init --recursive'])]
 )
 
