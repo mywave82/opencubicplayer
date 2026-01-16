@@ -25,6 +25,7 @@ resource file_types message {
        "types" = "audio/mpeg",
        "types" = "audio/ogg",
        "types" = "audio/prs.sid",
+       "types" = "audio/qoa",
        "types" = "audio/x-a2m",
        "types" = "audio/x-adl",
        "types" = "audio/x-adlib-midi",

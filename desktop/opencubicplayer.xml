@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
 
+ <mime-type type="audio/qoa">
+   <comment>Quite OK audio format</comment>
+   <magic priority="50">
+    <match type="string" value="qoaf" offset="0"/>
+   </magic>
+   <glob pattern="*.qoa"/>
+ </mime-type>
+
  <mime-type type="audio/x-a2m">
    <comment>AdLib Tracker 2</comment>
    <magic priority="50">

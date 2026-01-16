@@ -44,5 +44,9 @@ playsid/ setup dialog contains
    * a fork of the original libsidplayfp GIT master with modifications
 
 
+playqoa/ plugin contains code from QOA project.
+    Copyright (c) 2024, Dominic Szablewski
+
+
 --
 Stian Skjelstad

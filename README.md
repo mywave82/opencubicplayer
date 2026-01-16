@@ -39,6 +39,7 @@ Audio Files (both compressed and PCM styled):
 - \*.FLAC
 - \*.MP2
 - \*.MP3
+- \*.QOA [Quite OK Audio](https://qoaformat.org/)
 
 Audio CDs: Linux support only, using digital read out API
 - \*.CDA
