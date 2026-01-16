@@ -1,3 +1,41 @@
+Version 3.1.0
+=============
+Highlighs are support for QOA files, a larger font and UTF-16 support in the Windows builds.
+
+ * Add 16x32 font, which is nice for high DPI screens. Access the setting via ALT-C.
+ * [QOA] Add support for "Quite OK Audio" files
+ * [IT]
+   * Files created with other trackers than Impulse Tracker, was not marked correctly by file-detection.
+   * Loading *.IT files with stereo samples caused random noise due to only reading one channel of the stereo sample causing multiple problems.
+ * [devw]
+   * Add support for playback of stereo-samples (instead of down-converting to mono)
+   * If same sample could both be looped, and unlooped; minor curruption of data just after the loop-end could occure under special occations.
+ * [S3M] commit 5732560 made stereo-commands pan aggressivly away from center (absolute + repeat relative) and "randomly" enable stereo if value was 1.
+ * [XM] Make it possible to load songs that are partially truncated, missing some of the sample-data.
+ * [modland.com] setup dialog:
+   * select mirror: the custom editfield did not 100% match position when entering edit-mode.
+   * cachedir: Add missing $ in the UI
+ * Multiple updates regarding graphical modes:
+   * Remove leftovers of "gdb-helpers"
+   * Attemping to enable graphic mode needs to be able to gracefully fail, even when announced present (and revert back to text)
+   * Changing fontsize, while graphical mode was enable did not have an impact on the textmodes.
+   * Saving `fontsize` from ALT+C dialog did not work as expected, due to `screentype` likely being another value than 8 in ocp.ini. Update `screentype` value too when in this dialog to the relevant value.
+   * SDL 1.x, enabling graphical mode two times in a row (and window size did not match from textmode), would cause the window to not resize correctly.
+ * Remove a possible occation of strcpy where dst == src, which causes undefined behaviour.
+ * [Windows]
+   * Use WideChar / UTF-16 interface version of Windows filesystem API calls. This should make it possible to view file names that are using non-ASCII characters.
+   * Make driver letters capital and sort them infront of the other protocols in the file browser.
+ * [Timidity] Setup dialog for soundfonts:
+   * When selecting soundfont / configfile, give hints in the bottom of the dialog about locations searched.
+   * On Windows, add "*" to the end of the path when performing directory listings, to be compliant with the windows APIs.
+   * On Windows, search $OCP\data for sf2 files.
+   * On Windows, timidityplay.c didn't follow the TiMidity windows search logic.
+   * If user-override only if found for timidity.cfg, relay this in the config dialog.
+   * Add file-browser in the config-dialog. Making it possible to select SF2 file outside the default search-scopes.
+ * [adplug] Update to current master
+ * [libsidplayfp] Update to current master
+ * [MOD] MOD (Amiga ProTracker 1.1b), MODd (Dual Module Player) and MODt (old Amiga ProTracker) now use 8287Hz as the base-freqeuncy for samples matching Amiga PAL machines, while MODf (Fast Tracker II) still use 8363Hz. If a song now plays the samples slightly too fast, they should be marked with MODf (press <ALT>+<E> in the filebrowser, move the cursor over to "type:" and press <ENTER>)
+
 Version 3.0.1
 =============
 Bugfix release, with the exception of adplug adding support for "Palladix" files.
