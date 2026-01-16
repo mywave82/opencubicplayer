@@ -160,11 +160,14 @@ distclean: clean
 		goodies/helpc/Makefile \
 		goodies/pack/Makefile \
 		ocp.ini \
+		ocp.hlp \
 		desktop/opencubicplayer.desktop \
 		doc/ocp.1 \
 		doc/opencp.dox \
 		doc/texi/faq.texi \
 		doc/texi/ocp.texi \
+		haiku/ocp.rdef \
+		haiku/ocp.rsrc \
 		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h \
 		playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fp.h \
 		mingw/ocp.rc
