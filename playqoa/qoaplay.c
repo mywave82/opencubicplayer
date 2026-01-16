@@ -133,7 +133,7 @@ static void qoaIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 		qoa_file_data_fill = 0;
 		qoa_file_data_remaining = 0;
 		qoa_needseek = 0;
-		ringbuffer_reset (qoa_audio_ring_position);
+		cpifaceSession->ringbufferAPI->reset (qoa_audio_ring_position);
 	}
 
 	/* fill up the file I/O buffer */
