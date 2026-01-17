@@ -1,3 +1,10 @@
+Version 3.1.1
+=============
+Bugfix release
+
+ * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg not present
+ * Avoid using extended SED syntax in stuff/Makefile
+
 Version 3.1.0
 =============
 Highlighs are support for QOA files, a larger font and UTF-16 support in the Windows builds.

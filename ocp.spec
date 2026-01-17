@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.1.0
+%define version 3.1.1
 
 Name: %{name}
 Version: %{version}
@@ -33,6 +33,10 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
+Changes from version 3.0.1 to 3.1.1:
+ * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg not present
+ * Avoid using extended SED syntax in stuff/Makefile
+
 Changes from version 3.0.1 to 3.1.0:
  * Add 16x32 font, which is nice for high DPI screens. Access the setting via ALT-C.
  * [QOA] Add support for "Quite OK Audio" files
