@@ -313,10 +313,10 @@ CaseFolding.txt:
 	curl https://www.unicode.org/Public/16.0.0/ucd/CaseFolding.txt -o $@
 
 CaseFoldingTable-1.c: CaseFolding.txt
-	cat CaseFolding.txt |grep "^[0-9A-F]*; C; [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); C; \([0-9A-Z]*\)*;.*/{0x\1, 0x\2},/' > $@
+	cat CaseFolding.txt |grep "^[0-9A-F]*; C; [0-9A-F]*;"|sed -e 's/; C;//' -e 's/; #.*//' -e 's/ /, 0x/g' -e 's/^/{0x/' -e 's/$$/},/' >$@
 
 CaseFoldingTable-2.c: CaseFolding.txt
-	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); F; \([0-9A-Z]*\)* \([0-9A-Z]*\)*;.*/{0x\1, 0x\2, 0x\3},/' > $@
+	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]*;"|sed -e 's/; F;//' -e 's/; #.*//' -e 's/ /, 0x/g' -e 's/^/{0x/' -e 's/$$/},/' >$@
 
 CaseFoldingTable-3.c: CaseFolding.txt
-	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]* [0-9A-F]*;"|sed -e 's/^\([0-9A-F]*\); F; \([0-9A-Z]*\)* \([0-9A-Z]*\)* \([0-9A-Z]*\)*;.*/{0x\1, 0x\2, 0x\3, 0x\4},/' > $@
+	cat CaseFolding.txt |grep "^[0-9A-F]*; F; [0-9A-F]* [0-9A-F]* [0-9A-F]*;"|sed -e 's/; F;//' -e 's/; #.*//' -e 's/ /, 0x/g' -e 's/^/{0x/' -e 's/$$/},/' >$@
