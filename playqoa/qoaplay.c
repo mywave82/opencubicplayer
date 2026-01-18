@@ -223,6 +223,7 @@ static void qoaIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 				}
 				break;
 			default:
+			{
 				int16_t *src = qoa_audio_frame_buffer;
 				int16_t *dst = qoa_audio_ring_buffer + (pos1 << 1); /* we only need << 1, since qoa_audio_ring_buffer is int16_t already */ 
 				int extra = qoa.channels - 2;
@@ -242,6 +243,7 @@ static void qoaIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 					dst += extra;
 				}
 				break;
+			}
 		}
 		cpifaceSession->ringbufferAPI->head_add_samples (qoa_audio_ring_position, samplefill);
 		qoa_samplepos += samplefill;
