@@ -103,12 +103,18 @@ struct download_request_t *download_request_spawn (const struct configAPI_t *con
 		req->pipehandle = ocpPipeProcess_create (command_line);
 		if (!req->pipehandle)
 		{
+#ifdef _WIN32
+			req->errcode = 255;
+			req->errmsg = "Unable to execute curl.exe helper program.";
+			return req;
+#else
 			free (req->tempheader_filename);
 			free (req->tempdata_filename);
 			free (req->tempheader_filepath);
 			free (req->tempdata_filepath);
 			free (req);
 			return 0;
+#endif
 		}
 		return req;
 	}
@@ -465,6 +471,9 @@ int download_request_iterate (struct download_request_t *req)
 			case 97: req->errmsg="Proxy handshake error."; break;
 			case 98: req->errmsg="A client‐side certificate is required to complete the TLS handshake."; break;
 			case 99: req->errmsg="Poll or select returned fatal error."; break;
+#ifndef _WIN32
+			case 255: req->errmsg="Unable to execute curl helper program."; break;
+#endif
 			default: req->errmsg="CURL failed, unknown reason."; break;
 		}
 		return 0;

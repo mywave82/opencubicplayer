@@ -26,6 +26,7 @@ BuildRequires: ncurses-devel zlib-devel bzip2-devel libmad-devel SDL2-devel libo
 BuildRequires: ncurses-devel zlib-devel bzip2-devel libmad-devel libSDL2-devel libogg-devel libvorbis-devel gcc >= 3.0-0 gcc-c++ >= 3.0-0 flac-devel desktop-file-utils hicolor-icon-theme unzip texinfo libjpeg-turbo-devel libpng-devel xa libdiscid-devel cjson-devel alsa-lib-devel libfreetype-devel unifont-fonts ancient-devel libgme-devel
 %endif
 %endif
+Requires: curl
 
 %description
 Open Cubic Player is a music player ported from DOS. Provides a nice text-based

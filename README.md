@@ -69,6 +69,10 @@ Fork of [TiMidity++](http://timidity.sourceforge.net/) is used to play [MIDI](ht
 - \*.SPC, [Super Nintendo / Super Famicom SPC-700 co-processor](http://vspcplay.raphnet.net/spc_file_format.txt)
 - \*.VGM \*.VGZ, [Video Game Music](https://vgmrips.net/wiki/VGM_File_Format)
 
+# Integrated support for modland.com
+
+Built into the file-browser is support for directly browsing https://modland.com utilizing curl. You need to initially fetch the database containing all the file names, this is available via modland.com/setup.dev inside built-in file browser.
+
 # Manual Page
 
 https://manpages.debian.org/testing/opencubicplayer/ocp.1.en.html

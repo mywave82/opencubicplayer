@@ -110,7 +110,7 @@ void *ocpPipeProcess_create (const char * const commandLine[])
 
 	perror ("execvp()");
 
-	_exit (1);
+	_exit (255);
 }
 
 int ocpPipeProcess_destroy (void *_process)
@@ -126,12 +126,12 @@ int ocpPipeProcess_destroy (void *_process)
 
 	while (process->pid >= 0)
 	{
-		pid_t retval = waitpid (process->pid, &retval, WNOHANG);
-		if (retval == process->pid)
+		pid_t result = waitpid (process->pid, &retval, WNOHANG);
+		if (result == process->pid)
 		{
 			break;
 		}
-		if (retval < 0)
+		if (result < 0)
 		{
 			if ((errno != EAGAIN) &&
 			    (errno != EINTR))
