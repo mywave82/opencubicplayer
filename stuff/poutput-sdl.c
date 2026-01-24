@@ -448,9 +448,9 @@ static void sdl_DisplaySetupTextMode(void)
 		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 		make_title("sdl-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
-		swtext_displaystr_cp437(1, 24, Console.CurrentFont == _16x32 ? 0x0f : 0x07, "16x32", 5);
+		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8   ? 0x0f : sdl_CurrentFontWanted == _8x8   ? 0x02 : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16  ? 0x0f : sdl_CurrentFontWanted == _8x16  ? 0x02 : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 24, Console.CurrentFont == _16x32 ? 0x0f : sdl_CurrentFontWanted == _16x32 ? 0x02 : 0x07, "16x32", 5);
 
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
@@ -468,7 +468,7 @@ static void sdl_DisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				sdl_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8) ? _8x16 : (Console.CurrentFont == _8x16) ? _16x32 : _8x8;
+				sdl_CurrentFontWanted = Console.CurrentFont = (sdl_CurrentFontWanted == _8x8) ? _8x16 : (sdl_CurrentFontWanted == _8x16) ? _16x32 : _8x8;
 				set_state_textmode(do_fullscreen, Console.GraphBytesPerLine, Console.GraphLines);
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;

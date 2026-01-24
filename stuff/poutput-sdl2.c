@@ -735,13 +735,13 @@ static void sdl2_DisplaySetupTextMode(void)
 		memset (virtual_framebuffer, 0, Console.GraphBytesPerLine * Console.GraphLines);
 		make_title("sdl2-driver setup", 0);
 		swtext_displaystr_cp437(1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
-		swtext_displaystr_cp437(1, 24, Console.CurrentFont == _16x32 ? 0x0f : 0x07, "16x32", 5);
+		swtext_displaystr_cp437(1, 15, Console.CurrentFont == _8x8   ? 0x0f : sdl2_CurrentFontWanted == _8x8   ? 0x02 : 0x07, "8x8", 3);
+		swtext_displaystr_cp437(1, 19, Console.CurrentFont == _8x16  ? 0x0f : sdl2_CurrentFontWanted == _8x16  ? 0x02 : 0x07, "8x16", 4);
+		swtext_displaystr_cp437(1, 24, Console.CurrentFont == _16x32 ? 0x0f : sdl2_CurrentFontWanted == _16x32 ? 0x02 : 0x07, "16x32", 5);
 /*
 		swtext_displaystr_cp437(2, 0, 0x07, "2:  fullscreen: ", 16);
-		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);*/
-
+		swtext_displaystr_cp437(3, 0, 0x07, "3:  resolution in fullscreen:", 29);
+*/
 		swtext_displaystr_cp437(Console.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", Console.TextWidth);
 
 		while (!ekbhit())
@@ -754,10 +754,9 @@ static void sdl2_DisplaySetupTextMode(void)
 		{
 			case '1':
 				/* we can assume that we are in text-mode if we are here */
-				sdl2_CurrentFontWanted = Console.CurrentFont = (Console.CurrentFont == _8x8) ? _8x16 : (Console.CurrentFont == _8x16) ? _16x32 : _8x8;
+				sdl2_CurrentFontWanted = Console.CurrentFont = (sdl2_CurrentFontWanted == _8x8) ? _8x16 : (sdl2_CurrentFontWanted == _8x16) ? _16x32 : _8x8;
 				set_state_textmode (current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines, 0);
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
-
 				break;
 			case KEY_EXIT:
 			case KEY_ESC: return;

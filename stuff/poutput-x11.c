@@ -1503,7 +1503,9 @@ static void x11_SetTextMode (unsigned char x)
 
 #else
 	/* if invalid mode, set it to zero */
-	if (x>=8)
+
+	Console.CurrentFont = x11_CurrentFontWanted;
+	if (x>7)
 	{
 		x=8;
 		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _16x32 ) ? 32 : (x11_CurrentFontWanted == _8x16) ? 16 : 8;
@@ -1518,7 +1520,7 @@ static void x11_SetTextMode (unsigned char x)
 		Console.GraphBytesPerLine = modes[x].windowx;
 		Console.GraphLines = modes[x].windowy;
 
-		x11_CurrentFontWanted = modes[x].bigfont ? _8x16 : _8x8;
+		Console.CurrentFont = modes[x].bigfont ? _8x16 : _8x8;
 		Textmode_Window_Width = Console.TextWidth * 8;
 		Textmode_Window_Height = Console.TextHeight * (modes[x].bigfont ? 16 : 8);
 	}
@@ -1530,7 +1532,7 @@ static void x11_SetTextMode (unsigned char x)
 		create_window();
 	}
 
-	TextModeSetState(x11_CurrentFontWanted, do_fullscreen);
+	TextModeSetState(Console.CurrentFont, do_fullscreen);
 
 	___push_key(VIRT_KEY_RESIZE);
 
@@ -2219,19 +2221,16 @@ static void x11_DisplaySetupTextMode (void)
 	while (1)
 	{
 		uint16_t c;
-
 		memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
-
 		make_title("x11-driver setup", 0);
 		swtext_displaystr_cp437 (1, 0, 0x07, "1:  font-size:", 14);
-		swtext_displaystr_cp437 (1, 15, Console.CurrentFont == _8x8 ? 0x0f : 0x07, "8x8", 3);
-		swtext_displaystr_cp437 (1, 19, Console.CurrentFont == _8x16 ? 0x0f : 0x07, "8x16", 4);
-		swtext_displaystr_cp437 (1, 24, Console.CurrentFont == _16x32 ? 0x0f : 0x07, "16x32", 5);
+		swtext_displaystr_cp437 (1, 15, Console.CurrentFont == _8x8   ? 0x0f : x11_CurrentFontWanted == _8x8   ? 0x02 : 0x07, "8x8", 3);
+		swtext_displaystr_cp437 (1, 19, Console.CurrentFont == _8x16  ? 0x0f : x11_CurrentFontWanted == _8x16  ? 0x02 : 0x07, "8x16", 4);
+		swtext_displaystr_cp437 (1, 24, Console.CurrentFont == _16x32 ? 0x0f : x11_CurrentFontWanted == _16x32 ? 0x02 : 0x07, "16x32", 5);
 /*
 		swtext_displaystr_cp437 (2, 0, 0x07, "2:  fullscreen: ", 16);
 		swtext_displaystr_cp437 (3, 0, 0x07, "3:  resolution in fullscreen:", 29);
 */
-
 		swtext_displaystr_cp437 (Console.TextHeight - 1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", Console.TextWidth);
 
 		while (! ekbhit())
@@ -2247,7 +2246,6 @@ static void x11_DisplaySetupTextMode (void)
 				/* we can assume that we are in text-mode if we are here */
 				x11_CurrentFontWanted = (x11_CurrentFontWanted == _8x8) ? _8x16 : (x11_CurrentFontWanted == _8x16) ? _16x32 : _8x8;
 				TextModeSetState (x11_CurrentFontWanted, do_fullscreen);
-				x11_CurrentFontWanted = Console.CurrentFont;
 				cfSetProfileInt(cfScreenSec, "fontsize", Console.CurrentFont, 10);
 				break;
 			case KEY_EXIT:
