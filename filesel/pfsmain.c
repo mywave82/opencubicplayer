@@ -365,7 +365,7 @@ static int _fsMain(int argc, char *argv[])
 						stop=callselector (&nextinfo, &nextf, DoAutoCallFS, DoForceCallFS, DoNotForceNext, &nextintr, &nextintrparam)?interfaceReturnNextAuto:interfaceReturnContinue;
 						break;
 					case interfaceReturnDosShell: /* dos shell */
-						plSetTextMode(fsScrType);
+						plSetTextMode(plScrType);
 						if (conRestore())
 							break;
 						stop=interfaceReturnContinue;
@@ -381,7 +381,7 @@ static int _fsMain(int argc, char *argv[])
 		}
 	}
 
-	plSetTextMode(fsScrType);
+	plSetTextMode(plScrType);
 	conRestore();
 	if (plintr)
 		plintr->Close();

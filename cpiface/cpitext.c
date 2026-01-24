@@ -440,8 +440,7 @@ void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 static int txtSetMode (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpitextmoderegstruct *mode;
-	plSetTextMode(fsScrType);
-	fsScrType=plScrType;
+	plSetTextMode(plScrType);
 
 	for (mode=cpiTextActModes; mode; mode=mode->nextact)
 	{
@@ -494,11 +493,11 @@ static int txtIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 	switch (key)
 	{
 		case 'x': case 'X':
-			fsScrType=7;
+			plScrType=7;
 			cpiTextSetMode (cpifaceSession, cpiFocusHandle);
 			return 1;
 		case KEY_ALT_X:
-			fsScrType=0;
+			plScrType=0;
 			cpiTextSetMode (cpifaceSession, cpiFocusHandle);
 			return 1;
 		case 'z': case 'Z':
@@ -539,44 +538,44 @@ static int txtAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t 
 			cpiKeyHelp(KEY_CTRL_Z, "Adjust screen text screen mode (toggle minor size)");
 			return 0;
 		case 'x': case 'X':
-			fsScrType=7;
+			plScrType=7;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			return 1;
 		case KEY_ALT_X:
-			fsScrType=0;
+			plScrType=0;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			return 1;
 		case 'z': case 'Z':
-			if (fsScrType == 8)
+			if (plScrType == 8)
 			{
-				fsScrType = 7;
+				plScrType = 7;
 			}
-			fsScrType^=2;
+			plScrType^=2;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_ALT_Z:
-			if (fsScrType == 8)
+			if (plScrType == 8)
 			{
-				fsScrType = 7;
+				plScrType = 7;
 			}
-			fsScrType^=4;
+			plScrType^=4;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case KEY_CTRL_Z:
-			if (fsScrType == 8)
+			if (plScrType == 8)
 			{
-				fsScrType = 7;
+				plScrType = 7;
 			}
-			fsScrType^=1;
+			plScrType^=1;
 			cpiForwardIProcessKey (cpifaceSession, key);
 			cpiResetScreen();
 			break;
 		case VIRT_KEY_RESIZE:
-			fsScrType = plScrType;
+			plScrType = plScrType;
 			break;
 		default:
 			return 0;

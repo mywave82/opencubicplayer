@@ -113,7 +113,7 @@ static void msgDraw (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static int msgSetMode(struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	cpiSetTextMode(0);
+	cpiSetTextMode(plScrType);
 	plWinFirstLine=6;
 	plWinHeight=19;
 

@@ -223,16 +223,17 @@ static void fsReadDir_file (void *_token, struct ocpfile_t *file)
 									{
 										innertoken.cancel_recursive = 1;
 									}
+#if 0
 									if (key == VIRT_KEY_RESIZE)
 									{
-										fsScrType = plScrType;
 										continue;
 									}
+#endif
 								}
 							}
 						}
 
-					  free (innertoken.parent_displaydir);
+						free (innertoken.parent_displaydir);
 						if (innertoken.fileretain)
 						{
 							innertoken.fileretain->unref (innertoken.fileretain);
@@ -717,7 +718,6 @@ int fsLoopMods=1;
 int fsScanNames=1;
 int fsScanArcs=0;
 int fsScanInArc=1;
-int fsScrType=0;
 int fsEditWin=1;
 int fsColorTypes=1;
 int fsInfoMode=0;
@@ -1034,8 +1034,8 @@ int fsPreInit (const struct configAPI_t *configAPI)
 	mt.integer.i = MODULETYPE("DEVv");
 	fsTypeRegister (mt, DEVv_description, "VirtualInterface", 0);
 
-	fsScrType      =  configAPI->GetProfileInt2   (configAPI->ScreenSec, "screen",        "screentype",   7, 10);
-	if ((fsScrType < 0) || (fsScrType > 8)) fsScrType = 8;
+	plScrType      =  configAPI->GetProfileInt2   (configAPI->ScreenSec, "screen",        "screentype",   7, 10);
+	if ((plScrType < 0) || (plScrType > 8)) plScrType = 8;
 	fsColorTypes   =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "typecolors",   1, 1);
 	fsEditWin      =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "editwin",      1, 1);
 	fsWriteModInfo =  configAPI->GetProfileBool2  (sec,                  "fileselector",  "writeinfo",    1, 1);
@@ -2179,7 +2179,7 @@ void fsSetup(void)
 	int LastCurrent;
 	int InKeyboardHelp = 0;
 
-	plSetTextMode(fsScrType);
+	plSetTextMode(plScrType);
 	while (1)
 	{
 		const char *fsInfoModes[] =
@@ -2245,9 +2245,9 @@ superbreak:
 		{
 			case '1': stored = 0;
 			                      plDisplaySetupTextMode();
-			                      fsScrType = Console.CurrentMode;
+			                      plScrType = Console.CurrentMode;
 			                      break;
-			/*case '1': stored = 0; fsScrType=(fsScrType+1)&7; break;*/
+			/*case '1': stored = 0; plScrType=(plScrType+1)&7; break;*/
 			case '2': stored = 0; fsListScramble=!fsListScramble; break;
 			case '3': stored = 0; fsListRemove=!fsListRemove; break;
 			case '4': stored = 0; fsLoopMods=!fsLoopMods; break;
@@ -2267,7 +2267,7 @@ superbreak:
 			{
 				const char *sec=cfGetProfileString(cfConfigSec, "fileselsec", "fileselector");
 
-				cfSetProfileInt(cfScreenSec, "screentype", fsScrType, 10);
+				cfSetProfileInt(cfScreenSec, "screentype", plScrType, 10);
 				cfSetProfileBool(sec, "randomplay", fsListScramble);
 				cfSetProfileBool(sec, "playonce", fsListRemove);
 				cfSetProfileBool(sec, "loop", fsLoopMods);
@@ -2285,9 +2285,10 @@ superbreak:
 				stored = 1;
 				break;
 			}
+#if 0
 			case VIRT_KEY_RESIZE:
-				fsScrType = plScrType;
 				break;
+#endif
 			case KEY_EXIT:
 			case KEY_ESC:
 				    return;
@@ -2467,9 +2468,10 @@ static int fsEditModType (struct moduletype *oldtype, int _Bottom, int _Right)
 	{
 		switch (Console.KeyboardGetChar())
 		{
+#if false
 			case VIRT_KEY_RESIZE:
-				fsScrType = plScrType;
 				break;
+#endif
 			case KEY_RIGHT:
 				if (curindex != fsTypesCount)
 				{
@@ -2619,9 +2621,10 @@ static int fsEditChan(int y, int x, uint8_t *chan)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+#if 0
 			case VIRT_KEY_RESIZE:
-				fsScrType = plScrType;
 				break;
+#endif
 			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
@@ -2709,9 +2712,10 @@ static int fsEditPlayTime(int y, int x, uint16_t *playtime)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+#if 0
 			case VIRT_KEY_RESIZE:
-				fsScrType = plScrType;
 				break;
+#endif
 			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
@@ -2834,9 +2838,10 @@ static int fsEditDate(int y, int x, uint32_t *date)
 				if (key==KEY_BACKSPACE)
 					str[curpos]='0';
 				break;
+#if 0
 			case VIRT_KEY_RESIZE:
-				fsScrType = plScrType;
 				break;
+#endif
 			case KEY_EXIT:
 			case KEY_ESC:
 				setcurshape(0);
@@ -3227,8 +3232,7 @@ signed int fsFileSelect(void)
 		fsScanDir(1);
 	}
 
-	plSetTextMode(fsScrType);
-	fsScrType=plScrType;
+	plSetTextMode(plScrType);
 
 	isnextplay=NextPlayNone;
 
@@ -3400,7 +3404,6 @@ superbreak:
 
 			if (c == VIRT_KEY_RESIZE)
 			{
-				fsScrType = plScrType;
 				continue;
 			}
 
@@ -3537,8 +3540,7 @@ superbreak:
 					break;
 				case KEY_ALT_C:
 					fsSetup();
-					plSetTextMode(fsScrType);
-					fsScrType=plScrType;
+					plSetTextMode(plScrType);
 					fsScanDir(0);
 					goto superbreak;
 				case KEY_ALT_P:
@@ -3549,11 +3551,11 @@ superbreak:
 				case KEY_F(1):
 					if (!fsHelp2())
 						return -1;
-					plSetTextMode(fsScrType);
+					plSetTextMode(plScrType);
 					break;
 				case KEY_ALT_Z:
-					fsScrType=(fsScrType==0)?7:0;
-					plSetTextMode(fsScrType);
+					plScrType=(plScrType==0)?7:0;
+					plSetTextMode(plScrType);
 					break;
 				case KEY_CTRL_ENTER:
 				case KEY_ALT_ENTER:

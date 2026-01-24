@@ -27,7 +27,6 @@ extern int fsLoopMods;
 extern int fsScanNames;
 extern int fsScanArcs;
 extern int fsScanInArc;
-extern int fsScrType;
 extern int fsEditWin;
 extern int fsColorTypes;
 extern int fsInfoMode;

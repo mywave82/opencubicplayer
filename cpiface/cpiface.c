@@ -2677,7 +2677,6 @@ static interfaceReturnEnum plmpDrawScreen(void)
 				break;
 			case KEY_ALT_C:
 				fsSetup();
-				fsScrType=plScrType; // store the new "default" textmode
 				if (curmode)
 				{
 					curmode->SetMode(&cpifaceSessionAPI.Public);
@@ -2829,7 +2828,7 @@ static void cpiDebugRun (void)
 	int noexit = 1;
 	int mlScroll = 0;
 
-	plSetTextMode(fsScrType);
+	plSetTextMode(plScrType);
 
 	while (noexit)
 	{

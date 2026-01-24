@@ -54,7 +54,7 @@ unsigned char fsHelp2(void)
 {
 	helppage *cont;
 
-	plSetTextMode(0);
+	plSetTextMode(plScrType);
 
 	cont=brDecodeRef("Contents");
 
