@@ -517,12 +517,16 @@ static void sidSetPitch (uint32_t sp)
 		SidStatBuffers_newtarget = MAX_ROW_BUFFERS;
 	}
 
+#ifdef PLAYSID_DEBUG
 	fprintf (stderr, "sidSetPitch: sp=0x%08x   old_avail=%d old_target=%d    ", sp, SidStatBuffers_available, SidStatBuffers_target);
+#endif
 
 	SidStatBuffers_available += (SidStatBuffers_newtarget - SidStatBuffers_target);
 	SidStatBuffers_target = SidStatBuffers_newtarget;
 
+#ifdef PLAYSID_DEBUG
 	fprintf (stderr, "new_avail=%d new_target=%d\n", SidStatBuffers_available, SidStatBuffers_target);
+#endif
 }
 
 static void sidSetVolume (void)
@@ -961,7 +965,7 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 	sid_samples_per_row = (unsigned long long) sidRate * mySidPlayer->GetVICIICyclesPerFrame() / mySidPlayer->getMainCpuSpeed();
 	/* libsidplayfp will perform less samples than sid_samples_per_row when doing sid_clocks_per_row clock cycles..... go figure. If it was larger we would need to compensate */
 
-#if 0
+#ifdef PLAYSID_DEBUG
 	fprintf (stderr, "GetVICIICyclesPerFrame()=%u\n", (unsigned int) mySidPlayer->GetVICIICyclesPerFrame());
 	fprintf (stderr, "mySidPlayer->getMainCpuSpeed()=%u\n", (unsigned int) mySidPlayer->getMainCpuSpeed());
 	fprintf (stderr, "sidRate=%u\n", (unsigned int)sidRate);
