@@ -180,7 +180,19 @@ static int cfReadINIFile(int argc, char *argv[])
 	cfINIApps=0;
 	cfINInApps=0;
 
+#ifdef _WIN32
+	uint16_t *wpath = utf8_to_utf16_LFN (path, 0);
+	if (!wpath)
+	{
+		fprintf (stderr, "cfReadINIFile: utf8_to_utf16_LFN(\"%s\") failed\n", path);
+		return 1;
+	}
+	f=_wfopen(wpath, L"rb");
+	free (wpath); wpath = 0;
+	if (!f)
+#else
 	if (!(f=fopen(path, "r")))
+#endif
 	{
 		fprintf (stderr, "fopen(\"%s\", \"r\"): %s\n", path, strerror (errno));
 		free (path);
@@ -793,7 +805,19 @@ static int _cfStoreConfig(void)
 	path = malloc (strlen (configAPI.ConfigHomePath) + strlen ("ocp.ini") + 1);
 	sprintf (path, "%socp.ini", configAPI.ConfigHomePath);
 
+#ifdef _WIN32
+	uint16_t *wpath = utf8_to_utf16_LFN (path, 0);
+	if (!wpath)
+	{
+		fprintf (stderr, "cfReadINIFile: utf8_to_utf16_LFN(\"%s\") failed\n", path);
+		return 1;
+	}
+	f=_wfopen(wpath, L"wb");
+	free (wpath); wpath = 0;
+	if (!f)
+#else
 	if (!(f=fopen(path, "w")))
+#endif
 	{
 		fprintf (stderr, "fopen(\"%s\", \"w\"): %s\n", path, strerror (errno));
 		free (path);

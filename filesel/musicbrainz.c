@@ -50,6 +50,7 @@
 #include "stuff/file.h"
 #include "stuff/piperun.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-16.h"
 #include "stuff/utf-8.h"
 
 const char musicbrainzsigv1[64] = "Cubic Player MusicBrainz Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
@@ -709,7 +710,13 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 
 	path = malloc (strlen (configAPI->DataHomePath) + strlen ("CPMUSBRN.DAT") + 1);
 	sprintf (path, "%sCPMUSBRN.DAT", configAPI->DataHomePath);
+#ifdef _WIN32
+	uint16_t *wpath = utf8_to_utf16 (path);
+	fwprintf (stderr, L"Loading %ls .. ", wpath);
+	free (wpath);
+#else
 	fprintf (stderr, "Loading %s .. ", path);
+#endif
 	musicbrainz.File = osfile_open_readwrite (path, 1, 0);
 	free (path);
 	path = 0;

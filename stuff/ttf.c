@@ -44,6 +44,7 @@
 #include "types.h"
 
 #include "ttf.h"
+#include "utf-16.h"
 #include "utf-8.h"
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -659,7 +660,18 @@ int TTF_SetFontSizeDPI(TTF_Font *font, int ptsize, unsigned int hdpi, unsigned i
 
 TTF_Font* TTF_OpenFontFilename(const char *filename, int ptsize, long index, unsigned int hdpi, unsigned int vdpi)
 {
+#ifdef _WIN32
+	uint16_t *wfilename = utf8_to_utf16_LFN (filename, 0);
+	if (!wfilename)
+	{
+		fprintf (stderr, "TTF_OpenFontFilename: utf8_to_utf16_LFN(\"%s\") failed\n", filename);
+		return NULL;
+	}
+	FILE *file = _wfopen (wfilename, L"rb");
+	free (wfilename);
+#else
 	FILE *file = fopen (filename, "rb");
+#endif
 	if ( file == NULL )
 	{
 		return NULL;

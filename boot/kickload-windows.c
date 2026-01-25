@@ -39,8 +39,10 @@
 #include "config.h"
 #include <assert.h>
 #include <errhandlingapi.h>
+#include <fcntl.h>
 #include <fileapi.h>
 #include <handleapi.h>
+#include <io.h>
 #include <libloaderapi.h>
 #include <windows.h>
 #include <shlobj.h>
@@ -503,11 +505,21 @@ static int runocp (int argc, char *argv[])
 		return -1;
 	}
 
-	fprintf(stderr, "Setting cfHome to %s\n", _cfHomePath);
-	fprintf(stderr, "Setting cfConfigHomePath to %s\n", _cfConfigHomePath);
-	fprintf(stderr, "Setting cfDataHomePath to %s\n", _cfDataHomePath);
-	fprintf(stderr, "Setting cfDataPath to %s\n", _cfDataPath);
-	fprintf(stderr, "Setting cfProgramPath to %s\n", _cfProgramPath);
+	uint16_t *wcfHomePath       = utf8_to_utf16 (_cfHomePath);
+	uint16_t *wcfConfigHomePath = utf8_to_utf16 (_cfConfigHomePath);
+	uint16_t *wcfDataHomePath   = utf8_to_utf16 (_cfDataHomePath);
+	uint16_t *wcfDataPath       = utf8_to_utf16 (_cfDataPath);
+	uint16_t *wcfProgramPath    = utf8_to_utf16 (_cfProgramPath);
+	fwprintf(stderr, L"Setting cfHome to %ls\n", wcfHomePath);
+	fwprintf(stderr, L"Setting cfConfigHomePath to %ls\n", wcfConfigHomePath);
+	fwprintf(stderr, L"Setting cfDataHomePath to %ls\n", wcfDataHomePath);
+	fwprintf(stderr, L"Setting cfDataPath to %ls\n", wcfDataPath);
+	fwprintf(stderr, L"Setting cfProgramPath to %ls\n", wcfProgramPath);
+	free (wcfHomePath);
+	free (wcfConfigHomePath);
+	free (wcfDataHomePath);
+	free (wcfDataPath);
+	free (wcfProgramPath);
 
 	return bootup->main(argc, argv, _cfHomePath, _cfConfigHomePath, _cfDataHomePath, _cfDataPath, _cfProgramPath);
 }
@@ -518,6 +530,8 @@ int main(int argc, char *argv[])
 	char *path;
 	uint16_t wt[32767+1]; /* SHGetFolderPathW requires MAX_PATH, GetEnvironmentVariableW can require 32767+1 */
 	DWORD r;
+
+	SetConsoleOutputCP(CP_UTF8);
 
 #ifdef HAVE_DUMA
 	DUMA_newFrame();

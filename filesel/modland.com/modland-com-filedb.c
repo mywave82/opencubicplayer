@@ -166,7 +166,13 @@ static int modland_com_filedb_load (const struct configAPI_t *configAPI)
 		return 0;
 	}
 	snprintf (path, len, "%sCPMDLAND.DAT", MCDBDATAHOMEDIR);
+#ifdef _WIN32
+	uint16_t *wpath = utf8_to_utf16 (path);
+	fwprintf (stderr, L"Loading %ls .. ", wpath);
+	free (wpath);
+#else
 	fprintf (stderr, "Loading %s .. ", path);
+#endif
 
 	modland_com_filedb_File = osfile_open_readwrite (path, 1, 0);
 	free (path);

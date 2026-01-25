@@ -54,7 +54,8 @@ adbmeta.o: adbmeta.c adbmeta.h \
 	../types.h \
 	../boot/psetting.h \
 	../filesel/dirdb.h \
-	../stuff/file.h
+	../stuff/file.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 adbmeta-test$(EXE_SUFFIX): adbmeta-test.c adbmeta.c adbmeta.h \
@@ -95,6 +96,7 @@ dirdb.o: dirdb.c \
 	../stuff/compat.h \
 	../stuff/file.h \
 	../stuff/poutput.h \
+	../stuff/utf-16.h \
 	../stuff/utf-8.h \
 	dirdb.h \
 	mdb.h
@@ -432,7 +434,8 @@ mdb.o: mdb.c \
 	../stuff/compat.h \
 	../stuff/file.h \
 	../stuff/imsrtns.h \
-	../stuff/latin1.h
+	../stuff/latin1.h \
+	../stuff/utf-16.h
 	$(CC) $< -o $@ -c
 
 mdb-test$(EXE_SUFFIX): mdb-test.c \
@@ -466,6 +469,7 @@ musicbrainz.o: musicbrainz.c \
 	../stuff/file.h \
 	../stuff/piperun.h \
 	../stuff/poutput.h \
+	../stuff/utf-16.h \
 	../stuff/utf-8.h
 	$(CC) $< -o $@ -c $(LIBCJSON_CFLAGS)
 
@@ -532,6 +536,7 @@ pfilesel.o: pfilesel.c \
 	musicbrainz.h \
 	pfilesel.h \
 	../stuff/compat.h \
+	../stuff/file.h \
 	../stuff/framelock.h \
 	../stuff/imsrtns.h \
 	../stuff/piperun.h \

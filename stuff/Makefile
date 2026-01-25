@@ -278,6 +278,7 @@ framelock.o: framelock.c framelock.h \
 	$(CC) framelock.c -o $@ -c
 
 ttf.o: ttf.c ttf.h \
+	utf-16.h \
 	utf-8.h
 	$(CC) $< -o $@ -c $(FREETYPE2_CFLAGS) $(FREETYPE2_CFLAGS)
 

@@ -30,6 +30,7 @@
 #include "adbmeta.h"
 #include "boot/psetting.h"
 #include "stuff/file.h"
+#include "stuff/utf-16.h"
 
 #ifndef ADBMETA_SILENCE_OPEN_ERRORS
  #define ADBMETA_SILENCE_OPEN_ERRORS 0
@@ -291,7 +292,13 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 	}
 	sprintf (adbMetaPath, "%sCPARCMETA.DAT", CFDATAHOMEDIR);
 
+#ifdef _WIN32
+	uint16_t *wadbMetaPath = utf8_to_utf16 (adbMetaPath);
+	fwprintf(stderr, L"Loading %ls .. ", wadbMetaPath);
+	free (wadbMetaPath);
+#else
 	fprintf(stderr, "Loading %s .. ", adbMetaPath);
+#endif
 
 	adbMetaFile = osfile_open_readwrite (adbMetaPath, 1, 0);
 	free (adbMetaPath);

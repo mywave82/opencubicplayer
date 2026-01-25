@@ -41,6 +41,7 @@
 #include "stuff/compat.h"
 #include "stuff/file.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-16.h"
 #include "stuff/utf-8.h"
 
 #ifdef CFHOMEDIR_OVERRIDE
@@ -190,7 +191,13 @@ int dirdbInit (const struct configAPI_t *configAPI)
 		return 1;
 	}
 	sprintf (dirdbPath, "%sCPDIRDB.DAT", CFDATAHOMEDIR);
+#ifdef _WIN32
+	uint16_t *wdirdbPath = utf8_to_utf16 (dirdbPath);
+	fwprintf(stderr, L"Loading %ls .. ", wdirdbPath);
+	free (wdirdbPath);
+#else
 	fprintf(stderr, "Loading %s .. ", dirdbPath);
+#endif
 
 	dirdbFile = osfile_open_readwrite (dirdbPath, 1, 0);
 	free (dirdbPath);
