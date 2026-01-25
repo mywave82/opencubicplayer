@@ -4124,13 +4124,12 @@ static int fsSavePlayList(const struct modlist *ml)
 #endif
 
 	f = osfile_open_readwrite (newpath, 0, 1);
+	free (newpath); newpath = 0;
 	if (!f)
 	{
 		state = 3; /* "Failed to create file" */
-		free (newpath);
 		return 1; /* continue, to show error message */
 	}
-	free (newpath); newpath = 0;
 
 	snprintf (linebuffer, linebuffersize,
 	          "[playlist]\n"
