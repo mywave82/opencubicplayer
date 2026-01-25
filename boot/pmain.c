@@ -1073,7 +1073,7 @@ static int init_modules(int argc, char *argv[]
 			if (isatty(2))
 			{
 				fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\033[0m\nrm -f ~/.ocp/ocp.ini\033[1m\033[31m or \033[0m\nrm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
-			} else
+			} else {
 				fprintf(stderr,"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\nrm -f ~/.ocp/ocp.ini or rm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			}
 			sleep(5);
