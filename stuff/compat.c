@@ -106,7 +106,11 @@ void getext_malloc(const char *src, char **ext)
 	}
 }
 
+#ifdef _WIN32
+int splitpath4backslash_malloc(const char *src, char **drive, char **path, char **file, char **ext)
+#else
 int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext)
+#endif
 {
 	/* returns non-zero on errors */
 	const char *ref1;
@@ -119,7 +123,11 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 	if (ext) *ext = 0;
 
 	/* if src string starts with /, we do not have a drive string for sure */
+#ifdef _WIN32
+	if (*src!='\\')
+#else
 	if (*src!='/')
+#endif
 	{
 		/* if src does not contain a :, we do not have a drive string for sure */
 		if ((ref1=strchr(src, ':')))
@@ -127,7 +135,11 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 			/* ref1 now points at the first occurance of : */
 
 			/* the first occurance of /, should be the character after :, unless src only contains the drive */
+#ifdef _WIN32
+			if (((ref1+1)==strchr(src, '\\'))||(!ref1[1]))
+#else
 			if (((ref1+1)==strchr(src, '/'))||(!ref1[1]))
+#endif
 			{
 				if (drive)
 				{
@@ -154,14 +166,25 @@ int splitpath4_malloc(const char *src, char **drive, char **path, char **file, c
 			goto error_out;
 		}
 	}
-
+#ifdef _WIN32
+	if (drive && *drive && *src!='\\') /* Paths with drive should always start with / */
+	{
+		fprintf (stderr, "splitpath_malloc: PATH does not start with \\\n");
+		goto error_out;
+	}
+#else
 	if (drive && *drive && *src!='/') /* Paths with drive should always start with / */
 	{
 		fprintf (stderr, "splitpath_malloc: PATH does not start with /\n");
 		goto error_out;
 	}
+#endif
 
+#ifdef _WIN32
+	if ((ref1=strrchr(src, '\\')))
+#else
 	if ((ref1=strrchr(src, '/')))
+#endif
 	{
 		if (path)
 		{

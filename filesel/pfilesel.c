@@ -96,12 +96,13 @@
 #include "musicbrainz.h"
 #include "pfilesel.h"
 #include "stuff/compat.h"
+#include "stuff/file.h"
 #include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
 #include "stuff/piperun.h"
 #include "stuff/poutput.h"
-#include "stuff/utf-8.h"
 #include "stuff/utf-16.h"
+#include "stuff/utf-8.h"
 
 #include "pfilesel-charset.c"
 
@@ -3987,7 +3988,7 @@ superbreak:
 static int fsSavePlayList(const struct modlist *ml)
 {
 	static int state = 0;
-	static char *temppath;
+	static char *temppath = 0;
 	char *newpath;
 	int mlTop=plScrHeight/2-2;
 	unsigned int i;
@@ -3995,35 +3996,66 @@ static int fsSavePlayList(const struct modlist *ml)
 	char *di;
 	char *fn;
 	char *ext;
-	FILE *f;
+	struct osfile_t *f;
 	int retval;
+#define linebuffersize 64
+	char linebuffer[linebuffersize];
 
-	if (state == 0)
+	switch (state)
 	{
-		dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
-		state = 1;
+		case 0:
+#ifdef _WIN32
+			dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH | DIRDB_FULLNAME_BACKSLASH);
+#else
+			dirdbGetFullname_malloc (dirdbcurdirpath, &temppath, DIRDB_FULLNAME_ENDSLASH);
+#endif
+			state = 1;
+			break;
+
+		case 2:
+			Console.DisplayFrame (mlTop, 4, 5, plScrWidth-8, 0x04, "Export playlist failed", 0, 0, 0);
+#ifdef _WIN32
+			Console.Driver->DisplayStr_utf8 (mlTop + 1, 5, 0x0b, "drive/driveletter not valid", 27);
+#else
+			Console.Driver->DisplayStr_utf8 (mlTop + 1, 5, 0x0b, "file: is the only supported drive", 33);
+#endif
+			Console.Driver->DisplayStr_utf8 (mlTop + 3, 5, 0x0b, "Press a key to close this dialog", 32);
+
+			framelock();
+			while (Console.KeyboardHit())
+			{
+				uint16_t key = Console.KeyboardGetChar ();
+				if (key == VIRT_KEY_RESIZE)
+				{
+					continue;
+				}
+				state = 0;
+			}
+
+			return state != 0;
+
+		case 3:
+			Console.DisplayFrame (mlTop, 4, 5, plScrWidth-8, 0x04, "Export playlist failed", 0, 0, 0);
+			Console.Driver->DisplayStr_utf8 (mlTop + 1, 5, 0x0b, "Failed to create file (or file already exists)", 46);
+			Console.Driver->DisplayStr_utf8 (mlTop + 3, 5, 0x0b, "Press a key to close this dialog", 32);
+
+			framelock();
+			while (Console.KeyboardHit())
+			{
+				uint16_t key = Console.KeyboardGetChar ();
+				if (key == VIRT_KEY_RESIZE)
+				{
+					continue;
+				}
+				state = 0;
+			}
+
+			return state != 0;
 	}
 
-	displayvoid(mlTop+1, 5, plScrWidth-10);
-	displayvoid(mlTop+2, 5, plScrWidth-10);
-	displayvoid(mlTop+3, 5, plScrWidth-10);
-	displaystr(mlTop, 4, 0x04, "\xda", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop, i, 0x04, "\xc4", 1);
-	displaystr(mlTop, plScrWidth-5, 0x04, "\xbf", 1);
-	displaystr(mlTop+1, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, 4, 0x04, "\xb3", 1);
-	displaystr(mlTop+1, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+2, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+3, plScrWidth-5, 0x04, "\xb3", 1);
-	displaystr(mlTop+4, 4, 0x04, "\xc0", 1);
-	for (i=5;i<(plScrWidth-5);i++)
-		displaystr(mlTop+4, i, 0x04, "\xc4", 1);
-	displaystr(mlTop+4, plScrWidth-5, 0x04, "\xd9", 1);
-
-	displaystr(mlTop+1, 5, 0x0b, "Store playlist, please give filename (.pls format):", 50);
-	displaystr(mlTop+3, 5, 0x0b, "-- Abort with escape --", 23);
+	Console.DisplayFrame (mlTop, 4, 5, plScrWidth-8, 0x04, "Export playlist", 0, 0, 0);
+	Console.Driver->DisplayStr_utf8 (mlTop + 1, 5, 0x0b, "Store playlist, please give filename (.pls format):", 50);
+	Console.Driver->DisplayStr_utf8 (mlTop + 3, 5, 0x0b, "-- Abort with escape --", 23);
 
 	retval = EditStringUTF8(mlTop+2, 5, plScrWidth-10, &temppath);
 	if (retval > 0)
@@ -4031,14 +4063,20 @@ static int fsSavePlayList(const struct modlist *ml)
 		return 1;
 	}
 
+	state = 0;
 	if (retval < 0)
 	{ /* abort */
 		free (temppath);
-		state = 0;
+		temppath = 0;
 		return 0;
 	}
 
+#ifdef _WIN32
+	splitpath4backslash_malloc(temppath, &dr, &di, &fn, &ext);
+#else
 	splitpath4_malloc(temppath, &dr, &di, &fn, &ext);
+#endif
+
 	if (!*ext)
 	{
 		free (ext);
@@ -4046,14 +4084,35 @@ static int fsSavePlayList(const struct modlist *ml)
 	}
 	free (temppath); temppath = 0;
 
-	if (strcmp(dr, "file:"))
+#ifdef _WIN32
+	if ( (strlen (dr) != 2) ||
+	      (!((dr[0] >= 'a' && dr[0] <= 'z') ||
+	         (dr[0] >= 'A' && dr[0] <= 'Z'))) )
 	{
-		fprintf(stderr, "[filesel] file: is the only supported drive currently\n");
+		state = 2; /* "drive/driveletter not valid */
 		free (dr);
 		free (di);
 		free (fn);
 		free (ext);
-		return 0;
+		return 1; /* continue, to show error message */
+	}
+
+	newpath = malloc (strlen (di) + strlen (fn) + strlen (ext) + 1);
+	sprintf (newpath, "%s%s%s%s", dr, di, fn, ext);
+	free (dr); dr = 0;
+	free (fn); fn = 0;
+	free (ext); ext = 0;
+	free (di); di = 0;
+
+#else
+	if (strcmp(dr, "file:"))
+	{
+		state = 2; /* "file: is the only supported drive" */
+		free (dr);
+		free (di);
+		free (fn);
+		free (ext);
+		return 1; /* continue, to show error message */
 	}
 
 	free (dr); dr = 0;
@@ -4062,22 +4121,28 @@ static int fsSavePlayList(const struct modlist *ml)
 	free (fn); fn = 0;
 	free (ext); ext = 0;
 	free (di); di = 0;
+#endif
 
-	if (!(f=fopen(newpath, "w")))
+	f = osfile_open_readwrite (newpath, 0, 1);
+	if (!f)
 	{
-		fprintf (stderr, "Failed to create file %s: %s\n", newpath, strerror (errno));
+		state = 3; /* "Failed to create file" */
 		free (newpath);
-		return 0;
+		return 1; /* continue, to show error message */
 	}
 	free (newpath); newpath = 0;
-	fprintf(f, "[playlist]\n");
-	fprintf(f, "NumberOfEntries=%d\n", ml->num);
+
+	snprintf (linebuffer, linebuffersize,
+	          "[playlist]\n"
+	          "NumberOfEntries=%d\n", ml->num);
+	osfile_write (f, linebuffer, strlen (linebuffer));
 
 	for (i=0; i<ml->num; i++)
 	{
 		char *npath;
 		struct modlistentry *m;
-		fprintf(f, "File%d=",i+1);
+		snprintf (linebuffer, linebuffersize, "File%d=", i+1);
+		osfile_write (f, linebuffer, strlen (linebuffer));
 		m=modlist_get(ml, i);
 		if (m->file)
 		{
@@ -4088,15 +4153,21 @@ static int fsSavePlayList(const struct modlist *ml)
 #endif
 			if (npath)
 			{
-				fputs (npath, f);
+				osfile_write (f, npath, strlen (npath));
 				free (npath);
 			}
 		}
-		fprintf(f, "\n");
-
+#ifdef _WIN32
+		osfile_write (f, "\r\n", 2);
+#else
+		osfile_write (f, "\n", 1);
+#endif
 	}
-	fclose(f);
+	osfile_truncate_at (f, osfile_getpos(f));
+	osfile_close (f);
 	fsScanDir(1);
+
+#undef linebuffersize
 
 	return 0;
 }

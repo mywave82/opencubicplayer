@@ -7,7 +7,11 @@
 #endif
 
 void getext_malloc (const char *src, char **ext);
+#ifdef _WIN32
+extern int splitpath4backslash_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
+#else
 extern int splitpath4_malloc(const char *src, char **drive, char **path, char **file, char **ext); /* returns non-zero on errors */
+#endif
 extern int splitpath_malloc(const char *src, char **drive, char **path, char **filename); /* returns non-zero on errors */
 
 #ifndef HAVE_MEMRCHR
