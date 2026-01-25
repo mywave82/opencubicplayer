@@ -16,8 +16,6 @@ char *utf16_to_utf8(const uint16_t *src);
 
 uint16_t *utf8_to_utf16(const char *src);
 
-uint16_t *utf8_to_utf16(const char *src);
-
 #if defined(_WIN32) || defined(TESTING)
 uint16_t *utf8_to_utf16_LFN(const char *src, const int slashstar);
 #endif
