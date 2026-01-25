@@ -26,7 +26,8 @@ pmain.o: pmain.c pmain.h \
 	psetting.h \
 	../stuff/err.h \
 	../stuff/framelock.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/utf-16.h
 	$(CC) pmain.c -o $@ -c
 
 psetting.o: psetting.c psetting.h \

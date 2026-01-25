@@ -56,6 +56,7 @@
 #include "stuff/err.h"
 #include "stuff/framelock.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-16.h"
 #include "plinkman.h"
 #include "psetting.h"
 
@@ -114,7 +115,11 @@ static int cmdhlp(void)
 
 extern char compiledate[], compiletime[]/*, compiledby[]*/;
 
-static int init_modules(int argc, char *argv[])
+static int init_modules(int argc, char *argv[]
+#ifdef _WIN32
+, const char *ConfigHomePath
+#endif
+)
 {
 	int ret;
 
@@ -1060,16 +1065,19 @@ static int init_modules(int argc, char *argv[])
 		{
 			cfSetProfileInt("version", "epoch", 20260111, 10);
 			cfStoreConfig();
-#ifndef _WIN32
+#ifdef _WIN32
+			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
+			fwprintf(stderr, L"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing:\ndel \"%lsocp.ini\"\n\n", wConfigHomePath);
+			free (wConfigHomePath);
+#else
 			if (isatty(2))
 			{
 				fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\033[0m\nrm -f ~/.ocp/ocp.ini\033[1m\033[31m or \033[0m\nrm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			} else
-#endif
-			{
 				fprintf(stderr,"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\nrm -f ~/.ocp/ocp.ini or rm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			}
 			sleep(5);
+#endif
 		}
 	}
 	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260111)
@@ -1201,7 +1209,13 @@ static int _bootup(int argc, char *argv[], const char *HomePath, const char *Con
 		return -1;
 	}
 
-	result=init_modules(argc, argv);
+	result = init_modules
+	(
+		argc, argv
+#ifdef _WIN32
+		,ConfigHomePath
+#endif
+	);
 	if (result)
 		if (result!=errHelpPrinted)
 			fprintf(stderr, "%s\n", errGetLongString(result));
