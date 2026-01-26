@@ -183,6 +183,9 @@ static void free_EventDelayed (CtlEventDelayed *self)
 
 struct mchaninfo channelstat[16] = {{{0}}};
 
+static int dump_rc(int rc);
+static void debug_events(MidiEvent *events);
+
 OCP_INTERNAL void timidityGetChanInfo (uint8_t ch, struct mchaninfo *ci)
 {
 	assert (ch < 16);
@@ -647,7 +650,7 @@ static void ocp_ctl_event(CtlEvent *event)
 			PRINT ("ctl->event (event=CTLE_MUTE, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" is_mute)\n", event->v1, event->v2);
 			break;
 		case CTLE_PROGRAM:
-			PRINT ("ctl->event (event=CTLE_PROGRAM, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" prog, v3=name \"%s\", v4=%"PRIdPTR" bank %dmsb.%dlsb)\n", event->v1, event->v2, (char *)event->v3, event->v4, (intptr_t)(event->v4>>8), (intptr_t)(event->v4&0xff));
+			PRINT ("ctl->event (event=CTLE_PROGRAM, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" prog, v3=name \"%s\", v4=%"PRIdPTR" bank %dmsb.%dlsb)\n", event->v1, event->v2, (char *)event->v3, event->v4, (int)(intptr_t)(event->v4>>8), (int)(intptr_t)(event->v4&0xff));
 			break;
 		case CTLE_VOLUME:
 			PRINT ("ctl->event (event=CTLE_VOLUME, v1=%"PRIdPTR" ch, v2=%"PRIdPTR" value)\n", event->v1, event->v2);
@@ -922,6 +925,81 @@ PlayMode *play_mode_list[2] = {&ocp_playmode, 0}, *target_play_mode = &ocp_playm
 
 ControlMode *ctl_list[2] = {&ocp_ctl, 0}, *ctl = &ocp_ctl;
 
+struct lyric_t lyrics[2];
+
+static void scan_lyrics (struct cpifaceSessionAPI_t *cpifaceSession, const MidiEvent *events)
+{
+	const MidiEvent *event;
+
+	for (event = events; event->type != ME_EOT; event++)
+	{
+		if (event->type == ME_KARAOKE_LYRIC)
+		{
+			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
+			if (t && t[0] && ((event->time != 0) || (t[1] != '@')))
+			{
+				const char *e;
+				for (t++; t[0]; t = e)
+				{
+					char *p, *n;
+					e = t + strlen(t);
+					if ((p = strchr (t, '/')) /* && (p < e) */)
+					{
+						e = p + 1;
+					}
+					if ((n = strchr (t, '\\')) && (n < e))
+					{
+						e = n + 1;
+					}
+					if (t[0] == '/')
+					{
+						karaoke_new_paragraph (&lyrics[0]);
+					} else if (t[0] == '\\')
+					{
+						karaoke_new_line (&lyrics[0]);
+					} else {
+						karaoke_new_syllable (cpifaceSession, &lyrics[0], event->time, t, e - t);
+					}
+				}
+			}
+		}
+	}
+
+	for (event = events; event->type != ME_EOT; event++)
+	{
+		if ((event->type == ME_LYRIC) || (event->type == ME_TEXT) || (event->type == ME_CHORUS_TEXT))
+		{
+			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
+			if (t && t[0] && t[1] != '%' /* chords */)
+			{
+				const char *e;
+				for (t++; t[0]; t = e)
+				{
+					char *p, *n;
+					e = t + strlen(t);
+					if ((p = strchr (t, '\n')) /* && (p < e) */)
+					{
+						e = p + 1;
+					}
+					if ((n = strchr (t, '\r')) && (n < e))
+					{
+						e = n + 1;
+					}
+					if (t[0] == '\n')
+					{
+						karaoke_new_paragraph (&lyrics[1]);
+					} else if (t[0] == '\r')
+					{
+						karaoke_new_line (&lyrics[1]);
+					} else {
+						karaoke_new_syllable (cpifaceSession, &lyrics[1], event->time, t, e - t);
+					}
+				}
+			}
+		}
+	}
+}
+
 static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	int expect_post_to_fail = 0;
@@ -1120,8 +1198,10 @@ static void emulate_main_end(struct timiditycontext_t *c)
 		free_drum_effect(c, i);
 }
 
-int emulate_timidity_play_main_start (struct timiditycontext_t *c)
+static int emulate_timidity_play_main_start (struct timiditycontext_t *c, const char *fn, struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	int rc;
+
 	if(wrdt->open(NULL))
 	{
 		PRINT ("Couldn't open WRD Tracer: %s (`%c')\n", wrdt->name, wrdt->id);
@@ -1167,6 +1247,25 @@ int emulate_timidity_play_main_start (struct timiditycontext_t *c)
 
 	if(tc.allocate_cache_size > 0)
 		resamp_cache_reset(&tc);
+
+	PRINT ("Load the file!!!\n");
+	rc = play_midi_load_file(&tc, (char *)fn, &timidity_main_session.event, &timidity_main_session.nsamples);
+	dump_rc (rc);
+	if ((rc != RC_NONE) || (!timidity_main_session.event) || (!timidity_main_session.nsamples))
+	{
+		return 3;
+	}
+	PRINT ("play_midi_load_file => s->event=%p s->nsamples=%lu\n", timidity_main_session.event, (unsigned long int)timidity_main_session.nsamples);
+	debug_events (timidity_main_session.event);
+	scan_lyrics (cpifaceSession, timidity_main_session.event);
+
+	if (lyrics[0].lines && (lyrics[0].lines > lyrics[1].lines))
+	{
+		cpiKaraokeInit (cpifaceSession, lyrics + 0);
+	} else if (lyrics[1].lines)
+	{
+		cpiKaraokeInit (cpifaceSession, lyrics + 1);
+	}
 
 	return 0;
 }
@@ -1386,7 +1485,7 @@ static int emulate_play_event (struct timiditycontext_t *c, MidiEvent *ev)
 		}
 	}
 
-	_PRINT ("Allow\n");
+	_PRINT ("Allow (%.8d)\n", ev->time);
 
 	PRINT ("emulate_play_event calling play_event\n");
 
@@ -1564,108 +1663,20 @@ static void debug_events(MidiEvent *events)
 #endif
 }
 
-struct lyric_t lyrics[2];
-
-static void scan_lyrics (struct cpifaceSessionAPI_t *cpifaceSession, const MidiEvent *events)
-{
-	const MidiEvent *event;
-
-	for (event = events; event->type != ME_EOT; event++)
-	{
-		if (event->type == ME_KARAOKE_LYRIC)
-		{
-			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
-			if (t && t[0] && ((event->time != 0) || (t[1] != '@')))
-			{
-				const char *e;
-				for (t++; t[0]; t = e)
-				{
-					char *p, *n;
-					e = t + strlen(t);
-					if ((p = strchr (t, '/')) /* && (p < e) */)
-					{
-						e = p + 1;
-					}
-					if ((n = strchr (t, '\\')) && (n < e))
-					{
-						e = n + 1;
-					}
-					if (t[0] == '/')
-					{
-						karaoke_new_paragraph (&lyrics[0]);
-					} else if (t[0] == '\\')
-					{
-						karaoke_new_line (&lyrics[0]);
-					} else {
-						karaoke_new_syllable (cpifaceSession, &lyrics[0], event->time, t, e - t);
-					}
-				}
-			}
-		}
-	}
-
-	for (event = events; event->type != ME_EOT; event++)
-	{
-		if ((event->type == ME_LYRIC) || (event->type == ME_TEXT) || (event->type == ME_CHORUS_TEXT))
-		{
-			const char *t = event2string (&tc, event->a | (int)(event->b << 8));
-			if (t && t[0] && t[1] != '%' /* chords */)
-			{
-				const char *e;
-				for (t++; t[0]; t = e)
-				{
-					char *p, *n;
-					e = t + strlen(t);
-					if ((p = strchr (t, '\n')) /* && (p < e) */)
-					{
-						e = p + 1;
-					}
-					if ((n = strchr (t, '\r')) && (n < e))
-					{
-						e = n + 1;
-					}
-					if (t[0] == '\n')
-					{
-						karaoke_new_paragraph (&lyrics[1]);
-					} else if (t[0] == '\r')
-					{
-						karaoke_new_line (&lyrics[1]);
-					} else {
-						karaoke_new_syllable (cpifaceSession, &lyrics[1], event->time, t, e - t);
-					}
-				}
-			}
-		}
-	}
-}
-
-static int emulate_play_midi_file_iterate (struct cpifaceSessionAPI_t *cpifaceSession, struct timiditycontext_t *c, const char *fn, struct emulate_play_midi_file_session *s)
+static int emulate_play_midi_file_iterate (struct cpifaceSessionAPI_t *cpifaceSession, struct timiditycontext_t *c, struct emulate_play_midi_file_session *s)
 {
 	int i, rc;
 
 	if (s->first)
 	{
-play_reload: /* Come here to reload MIDI file */
-		PRINT ("RELOAD RELOAD RELOAD RC_TUNE_END perhaps?\n");
+		PRINT ("FIRST FIRST FIRST, load the file!!!\n");
 		s->first = 0;
-		rc = play_midi_load_file(&tc, (char *)fn, &s->event, &s->nsamples);
-		if (s->event)
+		while (0)
 		{
-			debug_events (s->event);
+play_reload: /* Come here to reload MIDI file */
+			PRINT ("RESTART RESTART RESTART RC_TUNE_END perhaps?\n");
+			{}; /* if PRINT is defined away, we must have atleast have an empty block to make the label valid */
 		}
-		scan_lyrics (cpifaceSession, s->event);
-
-		if (lyrics[0].lines && (lyrics[0].lines > lyrics[1].lines))
-		{
-			cpiKaraokeInit (cpifaceSession, lyrics + 0);
-		} else if (lyrics[1].lines)
-		{
-			cpiKaraokeInit (cpifaceSession, lyrics + 1);
-		}
-
-		dump_rc (rc);
-		if (RC_IS_SKIP_FILE(rc))
-			goto play_end; /* skip playing */
 
 		init_mblock(&c->playmidi_pool);
 
@@ -1673,7 +1684,6 @@ play_reload: /* Come here to reload MIDI file */
 		play_mode->acntl(PM_REQ_PLAY_START, NULL);
 
 		rc = emulate_play_midi_start(&tc, s->event, s->nsamples);
-
 		if (rc != RC_NONE)
 			return rc;
 	}
@@ -1694,38 +1704,6 @@ play_reload: /* Come here to reload MIDI file */
 		memset(tc.channel[i].drums, 0, sizeof(tc.channel[i].drums));
 	}
 
-play_end:
-	free_all_midi_file_info (&tc);
-#if defined(TILD_SCHEME_ENABLE)
-        free (tc.url_expand_home_dir_path);
-	free (tc.url_unexpand_home_dir_path);
-        tc.url_expand_home_dir_path = 0;
-        tc.url_unexpand_home_dir_path = 0;
-#endif
-	free (tc.current_filename);
-	tc.current_filename = 0;
-
-	if(wrdt->opened)
-		wrdt->end();
-
-	if(c->free_instruments_afterwards)
-	{
-		int cnt;
-		free_instruments(&tc, 0);
-		cnt = free_global_mblock(c); /* free unused memory */
-		if(cnt > 0)
-		{
-			ctl->cmsg(CMSG_INFO, VERB_VERBOSE, "%d memory blocks are free", cnt);
-		}
-	}
-
-	free_special_patch(c, -1);
-
-	if(s->event != NULL)
-	{
-		free(s->event);
-		s->event = NULL;
-	}
 	if ((rc == RC_JUMP) || (rc == RC_RELOAD) || ((rc == RC_TUNE_END) && (!donotloop)) )
 	{
 		goto play_reload;
@@ -1746,7 +1724,7 @@ static void timidityIdler(struct cpifaceSessionAPI_t *cpifaceSession, struct tim
 			break;
 		if (gmibuffree >= (audio_buffer_size*2))
 		{
-			rc = emulate_play_midi_file_iterate (cpifaceSession, &tc, current_path, &timidity_main_session);
+			rc = emulate_play_midi_file_iterate (cpifaceSession, &tc, &timidity_main_session);
 			if (rc == RC_ASYNC_HACK)
 				break;
 		} else {
@@ -2280,13 +2258,13 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	gmi_looped=0;
 	gmi_eof=0;
 
-	if (emulate_timidity_play_main_start (&tc))
+	current_path = strdup (path);
+	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
+
+	if (emulate_timidity_play_main_start (&tc, current_path, cpifaceSession))
 	{
 		return errGen;
 	}
-
-	current_path = strdup (path);
-	emulate_play_midi_file_start(current_path, buffer, bufferlen, &timidity_main_session); /* gmibuflen etc must be set, since we will start to get events already here... */
 
 	cpifaceSession->mcpSet = timiditySet;
 	cpifaceSession->mcpGet = timidityGet;
