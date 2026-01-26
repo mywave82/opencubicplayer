@@ -827,11 +827,14 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	if (dsel == 0)
 	{
 		contentsel = 1;
-	} else if ((dsel <= global_timidity_count_or_none))
+	} else if (dsel < (1 + global_timidity_count_or_none))
 	{
-		contentsel = dsel - 1 + 4;
-	} else {
-		contentsel = dsel - 2 + 6 + global_timidity_count_or_none;
+		contentsel = dsel + 3;
+	} else if (dsel <= (1 + global_timidity_count_or_none + sf2_files_count_or_none))
+	{
+		contentsel = dsel + 5;
+  } else {
+		contentsel = dsel + 7;
 	}
 
 	if (maxcontentheight <= contentheight)
@@ -914,12 +917,12 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 		}
 		if ((masterindex == (global_timidity_count_or_none + 6)) && (!sf2_files_count))
 		{
-			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == (masterindex - global_timidity_count_or_none - 6 + 2)) ? 0x8c : 0x0c, " No soundfonts found", mlWidth);
+			API->console->Driver->DisplayStr  (mlTop++, mlLeft, (dsel == (masterindex - 6 + 1)) ? 0x8c : 0x0c, " No soundfonts found", mlWidth);
 			continue;
 		}
 		if ((masterindex >= (global_timidity_count_or_none + 6)) && (masterindex < (global_timidity_count_or_none + sf2_files_count + 6)))
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel==(masterindex - 6 + 1))?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count_or_none - 6]);
+			API->console->DisplayPrintf (mlTop++, mlLeft, (dsel == (masterindex - 6 + 1) )?0x8f:0x0f, mlWidth, " %.*S", mlWidth - 1, sf2_files_path[masterindex - global_timidity_count_or_none - 6]);
 			continue;
 		}
 
