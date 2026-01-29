@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.1.1
+%define version 3.1.2
 
 Name: %{name}
 Version: %{version}
@@ -34,7 +34,26 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
-Changes from version 3.0.1 to 3.1.1:
+Changes from version 3.1.1 to 3.1.2:
+ * [QOA] Failed to compile on some systems.
+ * [SID] Remove debug messages sent to the console
+ * [FontSize control logic]
+   * Was not the consistent between SDL and X11 driver.
+   * Was not possible to change away from 8x16 if window could not grow and fit 16x32.
+   * Help screen would reset font-size on X11. Now help screen follow to global selected font size instead.
+ * [Windows]
+   * OCP.INI update Messages: Do not use escape codes, use correct wide-char path and refer to `del` instead of `rm`.
+   * Debug messages with paths for HomePath etc, now use wide-char paths.
+   * Use wide-char version of fopen() when opening OCP.INI (support international user-names)
+ * [MIDI]
+   * Font-browser dialog had minor hickup in scrolling, and incorrect highlight for "No soundfont found".
+   * When file wraps, do no free data and reload the file - reuse the already loaded data.
+   * Remove double free() when attempting to load an invalid MIDI fil
+ * [CURL]
+   * Mention CURL in README.md and ocp.spec
+   * Improve errors-messages if unable to launch the helper program
+
+Changes from version 3.1.0 to 3.1.1:
  * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg not present
  * Avoid using extended SED syntax in stuff/Makefile
 

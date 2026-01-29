@@ -1,3 +1,25 @@
+Version 3.1.2
+=============
+Bugfix release
+
+ * [QOA] Failed to compile on some systems.
+ * [SID] Remove debug messages sent to the console
+ * [FontSize control logic]
+   * Was not the consistent between SDL and X11 driver.
+   * Was not possible to change away from 8x16 if window could not grow and fit 16x32.
+   * Help screen would reset font-size on X11. Now help screen follow to global selected font size instead.
+ * [Windows]
+   * OCP.INI update Messages: Do not use escape codes, use correct wide-char path and refer to `del` instead of `rm`.
+   * Debug messages with paths for HomePath etc, now use wide-char paths.
+   * Use wide-char version of fopen() when opening OCP.INI (support international user-names)
+ * [MIDI]
+   * Font-browser dialog had minor hickup in scrolling, and incorrect highlight for "No soundfont found".
+   * When file wraps, do no free data and reload the file - reuse the already loaded data.
+   * Remove double free() when attempting to load an invalid MIDI fil
+ * [CURL]
+   * Mention CURL in README.md and ocp.spec
+   * Improve errors-messages if unable to launch the helper program
+
 Version 3.1.1
 =============
 Bugfix release
