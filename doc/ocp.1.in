@@ -10,7 +10,7 @@ This manual page documents briefly the
 command.
 .PP
 \fBocp\fP is a music player which can play music modules (ahx, mdl, it, s3m,
-xm, mod), wave, audio CD, sid, midi, mp3, adlib, flac, ym, and ogg vorbis.
+xm, mod), wave, audio CD, qoa, sid, midi, mp3, adlib, flac, ym, and ogg vorbis.
 .PP
 The player has a built\-in file selector which can be configured using alt\-c.
 .PP
@@ -52,5 +52,5 @@ http://www.cubic.org/player/opencp.pdf .
 Open Cubic Player was written by Niklas Beisert and ported to Linux
 by Stian Sebastian Skjelstad.
 .PP
-This manual page was written by G\[:u]rkan Myczko <tar@debian.org>,
+This manual page was written by Alex Myczko <tar@debian.org>,
 for the Debian project (but may be used by others).
