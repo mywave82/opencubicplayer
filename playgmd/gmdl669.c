@@ -159,7 +159,7 @@ OCP_INTERNAL int Load669 (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 
 		sins.length = uint32_little (sins.length);
-		sins.loopstart = uint32_little (sins.length);
+		sins.loopstart = uint32_little (sins.loopstart);
 		sins.loopend = uint32_little (sins.loopend);
 
 		ip=&m->instruments[i];
