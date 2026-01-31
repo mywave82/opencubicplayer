@@ -74,7 +74,7 @@ static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *bu
 
 	if (st)
 	{
-		cpifaceSession->console->WriteString (buf, 9-v, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", v);
+		cpifaceSession->console->WriteString (buf, 10-v, 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", v);
 //		cpifaceSession->console->WriteString (buf, 9  , 0x08, "\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe\xfe", r);
 	} else {
 		const uint16_t left[] =  {0x0ffe, 0x0bfe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe};
