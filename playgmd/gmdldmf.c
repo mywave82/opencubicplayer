@@ -99,24 +99,35 @@ static void readtree (struct cpifaceSessionAPI_t *cpifaceSession)
 		(*node)[1]=-1;
 }
 
-static void unpack0 (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *ob, uint8_t *ib, uint32_t len)
+static void unpack0 (struct cpifaceSessionAPI_t *cpifaceSession, uint8_t *ob, uint32_t olen, uint8_t *ib, uint32_t ilen)
 {
 	uint32_t i;
 
 	ibuf=ib;
 	bitnum=8;
-	bitlen = len;
+	bitlen = ilen;
 
+	memset (huff, 0, sizeof (huff));
 	nodenum=lastnode=0;
 	readtree (cpifaceSession);
+	if ((huff[0][0] < 0) || (huff[0][1] < 0))
+	{ /* is the tree valid */
+		return;
+	}
 
-	for (i=0; i<len; i++)
+	for (i=0; i<olen; i++)
 	{
 		uint8_t sign = readbitsdmf (cpifaceSession, 1) ? 0xFF : 0;
 		uint16_t pos=0;
-		while ((huff[pos][0]!=-1)&&(huff[pos][1]!=-1))
+		do
+		{
 			pos=huff[pos][readbitsdmf (cpifaceSession, 1)];
-		*ob++=huff[pos][2]^sign;
+			if (pos > 255)
+			{
+				break;
+			}
+		} while ((huff[pos][0]!=-1)&&(huff[pos][1]!=-1));
+		*ob++ = (huff[pos][2] ^ sign);
 	}
 }
 
@@ -162,8 +173,6 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	uint_fast32_t i;
 
 	uint16_t nordnum;
-
-	uint16_t curord;
 
 	uint8_t speed;
 	uint8_t ttype;
@@ -354,31 +363,72 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 	}
 
 /* get the pattern start adresses */
-	curadr=patbuf; /* this part can easy crash if values are fucked in buffer we just red, TODO */
+	curadr=patbuf; /* 4 bytes into each pattern, there is a uint32_t with PATTERNLENGTH, so build up the patadr table to point into each one */
 	for (i=0; i<patnum; i++)
 	{
+		if (curadr < patbuf)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] error, pattern data length overflow #1\n");
+			retval = errFormStruc;
+			goto safeout;
+		}
+		if (curadr >= (patbuf + (next - 3)))
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] error, pattern data length overflow #1\n");
+			retval = errFormStruc;
+		}
 		patadr[i]=curadr;
-		curadr += 8 + uint32_little (*(uint32_t *)(curadr+4));
+		curadr += 8 + uint32_little (*(uint32_t *)(curadr+4)); /* 8 is the size of the pattern page header, and the PATTERNLENGTH */
 	}
 
 /* get the new order number */
 	nordnum=0;
 	for (i=0; i<ordnum; i++)
-		nordnum+=(uint16_little(*(uint16_t *)((patadr[orders[i]])+2))>256)?2:1;
-
-/* relocate orders */
-	curord=nordnum;
-	for (i=ordnum-1; (signed)i>=0; i--)
 	{
-		if (uint16_little(*(uint16_t *)(patadr[orders[i]]+2))>256)
+		uint16_t ticks = uint16_little(*(uint16_t *)((patadr[orders[i]])+2));
+		if (ticks > 512)
 		{
-			curord-=2;
-			orders[curord]=orders[i];
-			orders[curord+1]=orders[i]|0x8000;
-		} else
-			orders[--curord]=orders[i];
-		if (i==ordloop)
-			ordloop=curord;
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Pattern %d has more than 512 ticks (%"PRIu16")\n", i, ticks);
+			retval = errFormStruc;
+			goto safeout;
+		}
+		/* for patterns that are longer than 256 ticks (rows), count them as TWO pattern pages instead of just one, DMF supports up to 512 ticks (rows) */
+		nordnum += (ticks > 256) ? 2 : 1;
+	}
+
+/* relocate orders, if any patterns had more than 256 rows */
+	if (ordnum != nordnum)
+	{
+		uint16_t curord = nordnum;
+		uint16_t *neworders = malloc (sizeof (uint16_t) * nordnum);
+
+/*
+		fprintf (stderr, "Expand %d patterns/orders into %d instead\n", ordnum, nordnum);
+*/
+
+		if (!neworders)
+		{
+			retval = errAllocMem;
+			goto safeout;
+		}
+		for (i=ordnum-1; (signed)i>=0; i--)
+		{
+			uint16_t ticks = uint16_little(*(uint16_t *)((patadr[orders[i]])+2));
+			if (ticks > 256)
+			{
+				curord-=2;
+				neworders[curord]   = orders[i];
+				neworders[curord+1] = orders[i]|0x8000;
+			} else {
+				neworders[--curord] = orders[i];
+			}
+			if (i==ordloop)
+			{
+				ordloop=curord;
+			}
+		}
+		free (orders);
+		orders = neworders;
 	}
 	ordnum=nordnum;
 
@@ -429,8 +479,9 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 				rownum=256;
 			else
 				rownum=len;
-		} else
+		} else {
 			rownum=len-256;
+		}
 
 		m->patterns[i].patlen=rownum;
 
@@ -739,7 +790,6 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 			instnum = 0;
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #19\n");
 		}
-		m->instnum = instnum;
 		m->modsampnum=m->sampnum=m->instnum = instnum;
 	}
 
@@ -751,23 +801,18 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		struct gmdinstrument *ip=&m->instruments[i];
 		struct gmdsample *sp=&m->modsamples[i];
 		struct sampleinfo *sip=&m->samples[i];
-
-		uint8_t namelen;
-
-		struct __attribute__((packed)) {
-			uint32_t length;
-			uint32_t loopstart;
-			uint32_t loopend;
-			uint16_t freq;
-			uint8_t vol;
-			uint8_t type;
-			uint8_t filler[10];
-			uint32_t crc32;
-		} smp;
+		int j;
 		uint8_t bit16;
 
-		int j;
+		uint32_t length;
+		uint32_t loopstart;
+		uint32_t loopend;
+		uint32_t freq;
+		/* uint32_t crc32; */
+		uint8_t vol;
+		uint8_t type;
 
+		uint8_t namelen;
 		if (ocpfilehandle_read_uint8 (file, &namelen))
 		{
 			namelen = 0;
@@ -792,40 +837,85 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 		ip->name[namelen]=0;
 
-		if (file->read (file, &smp, sizeof (smp)) != sizeof (smp))
+		if (hdr.ver < 8)
 		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #23\n");
-		}
-		smp.length = uint32_little (smp.length);
-		smp.loopstart = uint32_little (smp.loopstart);
-		smp.loopend = uint32_little (smp.loopend);
-		smp.freq = uint16_little (smp.freq);
-		smp.crc32 = uint32_little (smp.crc32);
+			struct __attribute__((packed)) {
+				uint32_t length;
+				uint32_t loopstart;
+				uint32_t loopend;
+				uint16_t freq;
+				uint8_t vol;
+				uint8_t type;
+				uint8_t filler[2];
+				uint32_t crc32;
+			} smp;
 
-		smppack[i]=!!(smp.type&0x04);
-		bit16=!!(smp.type&0x02);
-		if (smp.type&0x08)
-		{
-			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Compressed samples are not supported\n");
+			if (file->read (file, &smp, sizeof (smp)) != sizeof (smp))
+			{
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #23a\n");
+			}
+			length = uint32_little (smp.length);
+			loopstart = uint32_little (smp.loopstart);
+			loopend = uint32_little (smp.loopend);
+			freq = uint16_little (smp.freq);
+			/* crc32 = uint32_little (smp.crc32); */
+			vol = smp.vol;
+			type = smp.type;
+		} else {
+			struct __attribute__((packed)) {
+				uint32_t length;
+				uint32_t loopstart;
+				uint32_t loopend;
+				uint16_t freq;
+				uint8_t vol;
+				uint8_t type;
+				uint8_t libraryname[8];
+				uint8_t filler[2];
+				uint32_t crc32;
+			} smp;
+
+			if (file->read (file, &smp, sizeof (smp)) != sizeof (smp))
+			{
+				cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] warning, read failed #23b\n");
+			}
+			length = uint32_little (smp.length);
+			loopstart = uint32_little (smp.loopstart);
+			loopend = uint32_little (smp.loopend);
+			freq = uint16_little (smp.freq);
+			/* crc32 = uint32_little (smp.crc32); */
+			vol = smp.vol;
+			type = smp.type;
 		}
-		if (smp.type&0x80)
+
+		smppack[i] = !! (type & 0x04);
+		bit16 = !! (type & 0x02);
+		if (type & 0x08)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Compressed type1/2 samples are not supported\n"); /* only PCM, and Compressed type0 */
+		}
+		if (type & 0x80)
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] Sample data is stored in a library, not in this file\n");
 		}
-		if (smp.type&0x88)
+		if (type & 0x88)
+		{
 			return errFormSupp; /* can't do this */
-		if (bit16&&smppack[i])
+		}
+		if (bit16 && smppack[i])
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[GMD/DMF] 16bit packed samples are not supported\n");
 			return errFormSupp; /* don't want 16 bit packed samples.. */
 		}
-		sip->length=smp.length>>bit16;
-		sip->loopstart=smp.loopstart>>bit16;
-		sip->loopend=smp.loopend>>bit16;
-		sip->samprate=smp.freq;
-		sip->type=((smp.type&4)?mcpSampDelta:0)|(bit16?mcpSamp16Bit:0)|((smp.type&1)?mcpSampLoop:0);
 
-		if (!smp.length)
+		sip->type=((type & 4) ? mcpSampDelta : 0) | (bit16 ? mcpSamp16Bit : 0) |
+		          ((type & 1) ? mcpSampLoop : 0);
+
+		sip->length    = length>>bit16;
+		sip->loopstart = loopstart>>bit16;
+		sip->loopend   = loopend>>bit16;
+		sip->samprate  = freq;
+
+		if (!length)
 			continue;
 
 		for (j=0; j<128; j++)
@@ -833,7 +923,7 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		*sp->name=0;
 		sp->handle=i;
 		sp->normnote=0;
-		sp->stdvol=smp.vol?smp.vol:-1;
+		sp->stdvol = vol ? vol : -1;
 		sp->stdpan=-1;
 		sp->opt=bit16?MP_OFFSETDIV2:0;
 	}
@@ -885,13 +975,13 @@ OCP_INTERNAL int LoadDMF (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 		if (smppack[i])
 		{
-			uint8_t *dbuf=malloc(sizeof(unsigned char)*(sip->length+16));
+			uint8_t *dbuf = calloc (1, sizeof(unsigned char)*(sip->length+16));
 			if (!dbuf)
 			{
 				free(smpp);
 				return errAllocMem;
 			}
-			unpack0 (cpifaceSession, dbuf, smpp, sip->length);
+			unpack0 (cpifaceSession, dbuf, sip->length, smpp, len);
 			free(smpp);
 			smpp=dbuf;
 		}
