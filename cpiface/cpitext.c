@@ -147,9 +147,9 @@ void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	unsigned int i;
 	int winfirst=5;
-	int winheight=plScrHeight-winfirst;
+	int winheight= (plScrHeight > winfirst) ? plScrHeight - winfirst : 0;
 	int sidefirst=5;
-	int sideheight=plScrHeight-sidefirst;
+	int sideheight=(plScrHeight > sidefirst) ? plScrHeight - sidefirst : 0;
 	struct cpitextmodequerystruct win[10];
 	unsigned int nwin=0;
 	struct cpitextmoderegstruct *mode;
@@ -176,7 +176,7 @@ void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 
 #ifdef CPIFACE_DEBUG
 	fprintf (stderr, "cpiTextRecalc\n");
-	fprintf (stderr, "plScrWidth=%d plScrHeight=%d\n", plScrWidth, plScrHeight);
+	fprintf (stderr, "plScrWidth=%d plScrHeight=%d winheight=%d sideheight=%d\n", plScrWidth, plScrHeight, winheight, sideheight);
 	fprintf (stderr, "step 1, found all active modes\n");
 	for (i=0; i<nwin; i++)
 	{
@@ -221,29 +221,53 @@ void cpiTextRecalc (struct cpifaceSessionAPI_t *cpifaceSession)
 				sidesize+=win[i].size;
 			}
 		}
+#ifdef CPIFACE_DEBUG
+		fprintf (stderr, "winmin=%d winheight=%d sidemin=%d sideheight=%d\n", winmin, winheight, sidemin, sideheight);
+#endif
 		if ((winmin<=winheight)&&(sidemin<=sideheight))
 			break;
 		/* if we were too heigh, hide windows by setting the xmode to 0 */
 		if (sidemin>sideheight)
 		{
-			int worst=0;
+			int worst = -1;
+			int killprio = -1;
 			for (i=0; i<nwin; i++)
 				if (win[i].xmode&2)
-					if (win[i].killprio>win[worst].killprio)
-						worst=i;
-			win[i].xmode=0;
-			continue;
+					if (win[i].killprio > killprio)
+					{
+						worst = i;
+						killprio = win[i].killprio;
+					}
+			if (worst >= 0)
+			{
+#ifdef CPIFACE_DEBUG
+				fprintf (stderr, "Hiding side window window %-8s\n", win[worst].owner->handle);
+#endif
+				win[worst].xmode = 0;
+				continue;
+			}
 		}
 		if (winmin>winheight)
 		{
-			int worst=0;
+			int worst = -1;
+			int killprio = -1;
 			for (i=0; i<nwin; i++)
 				if (win[i].xmode&1)
-					if (win[i].killprio>win[worst].killprio)
-						worst=i;
-			win[i].xmode=0;
-			continue;
+					if (win[i].killprio > killprio)
+					{
+						worst = i;
+						killprio = win[i].killprio;
+					}
+			if (worst >= 0)
+			{
+#ifdef CPIFACE_DEBUG
+				fprintf (stderr, "Hiding window window %-8s\n", win[worst].owner->handle);
+#endif
+				win[worst].xmode = 0;
+				continue;
+			}
 		}
+		break; /* nothing left to remove */
 	}
 
 	/* Disable all windows. We are about to actually pick out one and one window until the screen is full */
