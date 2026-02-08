@@ -770,12 +770,18 @@ static void do_resize (void)
 		wrefresh(curscr);
 
 		Height = Console.TextHeight = size.ws_row;
-		if ((Width = Console.TextWidth = size.ws_col) > CONSOLE_MAX_X)
+		if (Height < CONSOLE_MIN_Y)
+		{
+			Height = Console.TextHeight = CONSOLE_MIN_Y;
+		}
+
+		Width = Console.TextWidth = size.ws_col;
+		if (Width > CONSOLE_MAX_X)
 		{
 			Width = Console.TextWidth = CONSOLE_MAX_X;
-		} else if (Console.TextWidth < 80)
+		} else if (Console.TextWidth < CONSOLE_MIN_X)
 		{
-			Width = Console.TextWidth = 80; /* If a console gets smaller than THIS, we are doomed */
+			Width = Console.TextWidth = CONSOLE_MIN_X; /* If a console gets smaller than THIS, we are doomed */
 		}
 		___push_key(VIRT_KEY_RESIZE);
 	}

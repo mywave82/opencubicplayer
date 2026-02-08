@@ -899,6 +899,10 @@ static void musicbrainzSetupDialogDraw (struct console_t *console, struct musicb
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 
+#if (CONSOLE_MIN_Y < 7)
+# error musicbrainzSetupDialogDraw() requires CONSOLE_MIN_Y >= 7
+#endif
+
 	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "MusicBrainz Cache DataBase", 0, 0, 0);
 	mlWidth -= 2;
 	mlHeight -= 2;
@@ -944,6 +948,10 @@ static void musicbrainzSetupDraw (struct console_t *console, const char *title, 
 
 	int albumwidth;
 	int artistwidth;
+
+#if (CONSOLE_MIN_Y < 20)
+# error musicbrainzSetupDraw() requires CONSOLE_MIN_Y >= 20
+#endif
 
 	/* SETUP the framesize */
 	mlHeight = plScrHeight - MIN_HEIGHT;
@@ -1244,7 +1252,9 @@ static void musicbrainzSetupRun (void **token, const struct DevInterfaceAPI_t *A
 									int mlHeight = 7;
 									int mlTop = (plScrHeight - mlHeight) / 2 ;
 									int mlLeft = (plScrWidth - mlWidth) / 2;
-
+#if (CONSOLE_MIN_Y < 7)
+# error musicbrainzSetupRun() requires CONSOLE_MIN_Y >= 18
+#endif
 									API->fsDraw();
 
 									API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "MusicBrainz", 0, 0, 0);

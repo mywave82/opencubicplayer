@@ -425,6 +425,13 @@ static void WindowResized_Graphmode(unsigned int width, unsigned int height)
 
 static void WindowResized_Textmode(unsigned int width, unsigned int height)
 {
+	const int minwidth  = CONSOLE_MIN_X * 8;
+	const int minheight = CONSOLE_MIN_Y * 8;
+
+	/* Fake a bigger console, if XSetWMNormalHints does not take effect (Hyprland) */
+	if (width  < minwidth)  width  = minwidth;
+	if (height < minheight) height = minheight;
+
 	Console.GraphBytesPerLine = width;
 	Console.GraphLines = height;
 
@@ -432,12 +439,12 @@ static void WindowResized_Textmode(unsigned int width, unsigned int height)
 
 	if (Console.CurrentFont >= _16x32)
 	{
-		if ( ( Console.GraphBytesPerLine < ( 16 * 80 ) ) || ( Console.GraphLines < ( 32 * 25 ) ) )
+		if ( ( Console.GraphBytesPerLine < ( 16 * CONSOLE_MIN_X ) ) || ( Console.GraphLines < ( 32 * CONSOLE_MIN_Y ) ) )
 			Console.CurrentFont = _8x16;
 	}
 	if (Console.CurrentFont >= _8x16)
 	{
-		if ( ( Console.GraphBytesPerLine < ( 8 * 80 ) ) || ( Console.GraphLines < ( 16 * 25 ) ) )
+		if ( ( Console.GraphBytesPerLine < ( 8 * CONSOLE_MIN_X ) ) || ( Console.GraphLines < ( 16 * CONSOLE_MIN_Y ) ) )
 			Console.CurrentFont = _8x8;
 	}
 
@@ -626,20 +633,20 @@ static void TextModeSetState(FontSizeEnum FontSize, int FullScreen)
 	{
 		/* find the min value, if screen is too small, force smaller font */
 		case _16x32:
-			Textmode_SizeHints.min_width = 16 * 80;
-			Textmode_SizeHints.min_height = 32 * 25;
+			Textmode_SizeHints.min_width = 16 * CONSOLE_MIN_X;
+			Textmode_SizeHints.min_height = 32 * CONSOLE_MIN_Y;
 			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
 				break;
 			FontSize = _8x16; /* drop through */
 		case _8x16:
-			Textmode_SizeHints.min_width = 8 * 80;
-			Textmode_SizeHints.min_height = 16 * 25;
+			Textmode_SizeHints.min_width = 8 * CONSOLE_MIN_X;
+			Textmode_SizeHints.min_height = 16 * CONSOLE_MIN_Y;
 			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
 				break;
 			FontSize = _8x8; /* drop through */
 		case _8x8:
-			Textmode_SizeHints.min_width = 8 * 80;
-			Textmode_SizeHints.min_height = 8 * 25;
+			Textmode_SizeHints.min_width = 8 * CONSOLE_MIN_X;
+			Textmode_SizeHints.min_height = 8 * CONSOLE_MIN_Y;
 			if ( (Textmode_SizeHints.min_width <= Textmode_SizeHints.max_width) && (Textmode_SizeHints.min_height <= Textmode_SizeHints.max_height) )
 				break;
 			/* unless font has became this small, force bigger window */
@@ -1510,7 +1517,7 @@ static void x11_SetTextMode (unsigned char x)
 		x=8;
 		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _16x32 ) ? 32 : (x11_CurrentFontWanted == _8x16) ? 16 : 8;
 		Console.TextWidth = Textmode_Window_Width / (x11_CurrentFontWanted == _16x32 ? 16 : 8);
-;
+
 		Console.GraphBytesPerLine = Textmode_Window_Width;
 		Console.GraphLines = Textmode_Window_Height;
 	} else {

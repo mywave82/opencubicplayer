@@ -74,7 +74,7 @@ static snd_mixer_t *mixer = NULL;
 
 static snd_pcm_status_t *alsa_pcm_status=NULL;
 #if SND_LIB_VERSION < 0x01000e
-#error Minimum version of libasound2 is 1.0.14
+# error Minimum version of libasound2 is 1.0.14
 #endif
 
 static snd_pcm_hw_params_t *hwparams = NULL;
@@ -405,6 +405,9 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 	{
 		const int mlWidth = 78;
 		const int mlHeight = 18;
+#if (CONSOLE_MIN_Y < 18)
+# error alsaSetupRun() requires CONSOLE_MIN_Y >= 18
+#endif
 		int mlTop = (API->console->TextHeight - mlHeight) / 2;
 		int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 

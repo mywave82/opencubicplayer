@@ -61,6 +61,10 @@ static void modland_com_setup_Draw
 	int mlHeight = 20;
 	int mlWidth = 74;
 
+#if (CONSOLE_MIN_Y < 20)
+# error modland_com_setup_Draw() requires CONSOLE_MIN_Y >= 20
+#endif
+
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
 

@@ -105,6 +105,10 @@ static void oplConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
 	int mlWidth, mlHeight, mlTop, mlLeft;
 
+#if (CONSOLE_MIN_Y < 19)
+# error oplConfigDraw() requires CONSOLE_MIN_Y >= 19
+#endif
+
 	mlHeight = 19;
 	mlWidth = 60;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
@@ -251,6 +255,10 @@ static void oplRetroTestDraw (const struct DevInterfaceAPI_t *API)
 {
 	int mlWidth, mlHeight, mlTop, mlLeft, i;
 
+#if (CONSOLE_MIN_Y < 19)
+# error oplRetroTestDraw() requires CONSOLE_MIN_Y >= 19
+#endif
+
 	mlHeight = 19;
 	mlWidth = 60;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
@@ -389,6 +397,10 @@ static void oplRetroDraw (const struct DevInterfaceAPI_t *API, int esel, int *st
 	mlWidth = 60;
 	mlTop = (API->console->TextHeight - mlHeight) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
+
+#if (CONSOLE_MIN_Y < 19)
+# error oplRetroDraw() requires CONSOLE_MIN_Y >= 19
+#endif
 
 	contentheight = oplRetroDeviceEntries + 2;
 	half = HEIGHT / 2;

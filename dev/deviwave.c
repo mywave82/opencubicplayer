@@ -401,6 +401,10 @@ static void setup_devw_draw (const struct DevInterfaceAPI_t *API, const char *ti
 
 	unsigned int i, skip, half, dot, fit;
 
+#if (CONSOLE_MIN_Y < 10)
+# error setup_devw_draw() requires CONSOLE_MIN_Y >= 10
+#endif
+
 	/* SETUP the framesize */
 	if (mcpDriverListEntries < 3)
 	{

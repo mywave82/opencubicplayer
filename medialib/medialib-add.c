@@ -56,6 +56,10 @@ static void mlAddDraw(const char *title, const char *utf8_path, int dsel)
 
 	unsigned int i, skip, half, dot;
 
+#if (CONSOLE_MIN_Y < 20)
+# error mlAddDraw() requires CONSOLE_MIN_Y >= 20
+#endif
+
 	/* SETUP the framesize */
 	mlHeight = plScrHeight - 20;
 	if (mlHeight < 20)

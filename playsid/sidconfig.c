@@ -326,6 +326,10 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	int skip;
 	int dot;
 
+#if (CONSOLE_MIN_Y < 8)
+# error sidConfigDraw() requires CONSOLE_MIN_Y >= 8
+#endif
+
 	half = contentheight / 2;
 	if (contentheight >= maxcontentheight)
 	{ /* all entries can fit */
@@ -671,10 +675,14 @@ static void sidDrawDir (const int esel, const int expect, const struct DevInterf
 	const char *title;
 
 	const int LINES_NOT_AVAILABLE = 4;
-	int mlHeight = 24;
+	int mlHeight = MIN(API->console->TextHeight, 24);
 	int mlTop = (API->console->TextHeight - mlHeight) / 2;
 	int mlWidth = MIN (78 + (API->console->TextWidth - 80) * 2 / 3, 120);
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
+
+#if (CONSOLE_MIN_Y < 7)
+# error sidDrawDir() requires CONSOLE_MIN_Y >= 7
+#endif
 
 	switch (expect)
 	{

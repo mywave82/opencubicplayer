@@ -41,6 +41,10 @@ static void mlScanDraw(const char *title, struct scanlist_t *token)
 
 	int i, lineno = 0;
 
+#if (CONSOLE_MIN_Y < 20)
+# error mlScanDraw() requires CONSOLE_MIN_Y >= 20
+#endif
+
 	/* SETUP the framesize */
 	mlHeight = plScrHeight - 20;
 	if (mlHeight < 20)

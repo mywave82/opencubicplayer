@@ -1919,6 +1919,10 @@ void cpiDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
 {
 	struct cpifaceSessionPrivate_t *f = (struct cpifaceSessionPrivate_t *)cpifaceSession;
 
+#if (CONSOLE_MIN_Y < 5)
+# error cpiDrawGStrings() requires CONSOLE_MIN_Y >= 5
+#endif
+
 	make_title (curplayer ? curplayer->playername : "", plEscTick);
 
 	cpiDrawG1String (f);
@@ -2842,6 +2846,10 @@ static void cpiDebugRun (void)
 		{
 			cpiDebugRecalcLines(mlWidth - 2);
 		}
+
+#if (CONSOLE_MIN_Y < 10)
+# error cpiDebugRun() requires CONSOLE_MIN_Y >= 10
+#endif
 
 		mlHeight = MAX ( MIN ( cpifaceSessionAPI.Public.console->TextHeight - 2,
 				       cpifaceSessionAPI.cpiDebug_lines + 2 ), 10);

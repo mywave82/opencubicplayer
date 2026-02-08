@@ -161,6 +161,10 @@ static int mlSearchDraw(const char *title)
 
 	int i;
 
+#if (CONSOLE_MIN_Y < 20)
+# error mlSearchDraw() requires CONSOLE_MIN_Y >= 20
+#endif
+
 	/* SETUP the framesize */
 	mlHeight = plScrHeight - 20;
 	if (mlHeight < 20)

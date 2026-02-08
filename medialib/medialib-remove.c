@@ -33,6 +33,10 @@ static void mlRemoveDraw(const char *title)
 
 	unsigned int i, skip, half, dot;
 
+#if (CONSOLE_MIN_Y < 20)
+# error mlRemoveDraw() requires CONSOLE_MIN_Y >= 20
+#endif
+
 	/* SETUP the framesize */
 	mlHeight = plScrHeight - 20;
 	if (mlHeight < 20)

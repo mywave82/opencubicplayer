@@ -737,7 +737,7 @@ other_global:
 static void timidityBrowseSF2Draw (int contentsel, const char *path, const struct DevInterfaceAPI_t *API)
 {
 	int mlWidth = MAX(75, API->console->TextWidth * 3 / 4);
-	int mlHeight = (API->console->TextHeight >= 35) ? 33 : 23;
+	int mlHeight = MIN((API->console->TextHeight >= 35) ? 33 : 23, API->console->TextHeight);
 	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 	int skip;
@@ -747,6 +747,10 @@ static void timidityBrowseSF2Draw (int contentsel, const char *path, const struc
 	int contentheight = mlHeight - LINES_NOT_AVAILABLE;
 	int half = (contentheight) / 2;
 	int masterindex;
+
+#if (CONSOLE_MIN_Y < 7)
+# error timidityBrowseSF2Draw() requires CONSOLE_MIN_Y >= 7
+#endif
 
 	if (maxcontentheight <= contentheight)
 	{ /* all entries can fit */
@@ -804,7 +808,7 @@ static void timidityBrowseSF2Draw (int contentsel, const char *path, const struc
 static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI_t *API)
 {
 	int mlWidth = MAX(75, API->console->TextWidth * 3 / 4);
-	int mlHeight = (API->console->TextHeight >= 35) ? 33 : 23;
+	int mlHeight = MIN((API->console->TextHeight >= 35) ? 33 : 23, API->console->TextHeight);
 	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 	int mlLine;
@@ -821,6 +825,10 @@ static void timidityConfigFileSelectDraw (int dsel, const struct DevInterfaceAPI
 	int attempts_height_max = MAX (config_attempt_height, MAX (global_configs_attempt_height, global_sf2_attempt_height ) );
 
 	int contentheight = mlHeight - LINES_NOT_AVAILABLE - attempts_height_max;
+
+#if (CONSOLE_MIN_Y < 12)
+# error timidityConfigFileSelectDraw() requires CONSOLE_MIN_Y >= 12
+#endif
 
 	half = (mlHeight - LINES_NOT_AVAILABLE - attempts_height_max) / 2;
 
@@ -1027,30 +1035,63 @@ static int DefaultChorus;
 static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 {
 	int large;
-	int mlWidth, mlHeight, mlTop, mlLeft;
+	int mlWidth, mlHeight, mlTop = 0, mlLeft;
+	int entry = 0;
+	int heightavailable;
+	int dot = 0;
 	const char *configfile = API->configAPI->GetProfileString ("timidity", "configfile", "");
 	const char *reverbs[] = {"disable", "original", "global-original", "freeverb", "global-freeverb"};
 	const char *effect_lr_modes[] = {"disable", "left", "right", "both"};
 	const char *disable_enable[] = {"disable", "enable"};
 
+#if (CONSOLE_MIN_Y < 8)
+# error timidityConfigDraw() requires CONSOLE_MIN_Y >= 8
+#endif
+
 	if (API->console->TextHeight >= 45)
 	{
 		large = 2;
 		mlHeight = 43;
+		heightavailable = 37;
 	} else if (API->console->TextHeight >= 37)
 	{
 		large = 1;
 		mlHeight = 35;
-	} else {
+		heightavailable = 29;
+	} else if (API->console->TextHeight > 23)
+	{
 		large = 0;
 		mlHeight = 23;
+		heightavailable = 19;
+	} else {
+		large = 0;
+		mlHeight = API->console->TextHeight - 1;
+		mlTop = 1;
+		heightavailable = mlHeight - 4;
+		const int maxcontentheight = 19;
+		int contentsel = EditPos * 2 + !!EditPos; // first entry occupies 3 lines, all the others 1
+		int half = heightavailable / 2;
+		if (maxcontentheight <= heightavailable)
+		{ /* all entries can fit */
+			/* should not be reachable, due to   if (API->console->TextHeight > 23) */
+		} else if (contentsel < half)
+		{ /* we are in the top part */
+			dot = 3;
+		} else if (contentsel >= (heightavailable - half))
+		{ /* we are at the bottom part */
+			entry = maxcontentheight - heightavailable;
+			dot = mlHeight - 2;
+		} else {
+			entry = contentsel - half;
+			dot = entry * heightavailable / (maxcontentheight - heightavailable) + 3;
+		}
 	}
 
 	mlWidth = 70;
-	mlTop = (API->console->TextHeight - mlHeight) / 2;
+	mlTop = mlTop ? mlTop : (API->console->TextHeight - mlHeight + 1) / 2;
 	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
-	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "TiMidity++ configuration", 0, (!!large) + 2 + (!!large), 0);
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "TiMidity++ configuration", dot, (!!large) + 2 + (!!large), 0);
 	mlWidth -= 2;
 	mlHeight -= 2;
 
@@ -1062,89 +1103,140 @@ static void timidityConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API
 
 	mlTop++; // 1 or 3: horizontal bar
 
-	if (large) mlTop++;
+	if (large) { mlTop++; heightavailable--;}
 
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 1. TiMdity+ Configfile/Soundfont: %.15o<ENTER>%.7o to change");
-
-	if (!configfile[0])
+	while (heightavailable > 0)
 	{
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Global default)");
-		API->console->DisplayPrintf (mlTop++, mlLeft, (EditPos==0)?0x87:0x07, mlWidth, "    Select another file");
-	} else {
-		if ((strlen(configfile) > 4) && !strcasecmp (configfile + strlen (configfile) - 4, ".sf2"))
+		switch (entry++)
 		{
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (SF2 sound font)");
-		} else {
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Specific config file)");
+			case 0:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 1. TiMdity+ Configfile/Soundfont:");
+				heightavailable--;
+				break;
+
+			case 1:
+				if (!configfile[0])
+				{
+					API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Global default)");
+				} else {
+					if ((strlen(configfile) > 4) && !strcasecmp (configfile + strlen (configfile) - 4, ".sf2"))
+					{
+						API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (SF2 sound font)");
+					} else {
+						API->console->DisplayPrintf (mlTop++, mlLeft, 0x03, mlWidth, "    (Specific config file)");
+					}
+				}
+				heightavailable--;
+				break;
+
+			case 2:
+				if (!configfile[0])
+				{
+					API->console->DisplayPrintf (mlTop++, mlLeft, (EditPos==0)?0x87:0x07, mlWidth, "    Select another file.%s%.15o%s%.7o%s", (EditPos==0)?" Press":"", (EditPos==0)?" <ENTER>":"", (EditPos==0)?" to change.":"");
+				} else {
+					API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "    %*o%*S%0.9o ",(EditPos==0)?8:0, mlWidth - 5, configfile);
+				}
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 3:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 2. Default Reverb Mode:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 4:
+				ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, reverbs, 5, DefaultReverbMode, EditPos==1, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 5:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 3. Default Reverb Level:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 6:
+				ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultReverbLevel, 127, EditPos==2, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 7:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 4. Default Scale Room:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 8:
+				ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultScaleRoom, 1000, EditPos==3, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 9:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 5. Default Offset Room:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 10:
+				ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultOffsetRoom, 1000, EditPos==4, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 11:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 6. Default Predelay Factor:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 12:
+				ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultPredelayFactor, 1000, EditPos==5, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 13:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 7. Default Delay Mode:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 14:
+				ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, effect_lr_modes, 4, DefaultDelayMode, EditPos==6, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 15:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 8. Default Delay (ms):");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 16:
+				ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultDelay, 1000, EditPos==7, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
+
+			case 17:
+				API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 9. Default Chorus:");
+				heightavailable--;
+				if (large >= 2) { mlTop++; heightavailable--; }
+				break;
+
+			case 18:
+				ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, disable_enable, 2, DefaultChorus, EditPos==8, API);
+				heightavailable--;
+				if (large) { mlTop++; heightavailable--; }
+				break;
 		}
-		API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "    %*o%*S%0.9o ",(EditPos==0)?8:0, mlWidth - 5, configfile);
 	}
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 2. Default Reverb Mode:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, reverbs, 5, DefaultReverbMode, EditPos==1, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 3. Default Reverb Level:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultReverbLevel, 127, EditPos==2, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 4. Default Scale Room:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultScaleRoom, 1000, EditPos==3, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 5. Default Offset Room:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultOffsetRoom, 1000, EditPos==4, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 6. Default Predelay Factor:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultPredelayFactor, 1000, EditPos==5, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 7. Default Delay Mode:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, effect_lr_modes, 4, DefaultDelayMode, EditPos==6, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 8. Default Delay (ms):");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawBar (mlTop++, mlLeft + 4, mlWidth - 4, DefaultDelay, 1000, EditPos==7, API);
-
-	if (large) mlTop++;
-
-	API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 9. Default Chorus:");
-
-	if (large >= 2) mlTop++;
-
-	ConfigDrawItems (mlTop++, mlLeft + 3, mlWidth - 3, disable_enable, 2, DefaultChorus, EditPos==8, API);
-
-	if (large) mlTop++;
 }
 
 static int BrowseSF2_entries_append (void)

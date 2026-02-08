@@ -60,6 +60,10 @@ static void modland_com_wipecache_Draw (
 	const int display_recycle
 )
 {
+#if (CONSOLE_MIN_Y < 13)
+# error modland_com_wipecache_Draw() requires CONSOLE_MIN_Y >= 13
+#endif
+
 	int mlHeight = 13;
 	int mlWidth = 74;
 
@@ -130,6 +134,10 @@ static void modland_com_dowipecache_Draw (
 	const int stillremoving
 )
 {
+#if (CONSOLE_MIN_Y < 13)
+# error modland_com_dowipecache_Draw() requires CONSOLE_MIN_Y >= 13
+#endif
+
 	int mlHeight = 13;
 	int mlWidth = 74;
 

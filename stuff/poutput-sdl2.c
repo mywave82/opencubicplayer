@@ -388,12 +388,12 @@ static void set_state_textmode (const int fullscreen, int width, int height, con
 
 	SDL_GetWindowSize (current_window, &width, &height);
 
-	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < 80) || ((height/FontSizeInfo[Console.CurrentFont].h) < 25))
+	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < CONSOLE_MIN_X) || ((height/FontSizeInfo[Console.CurrentFont].h) < CONSOLE_MIN_Y))
 	{
 #ifdef SDL2_DEBUG
-		fprintf (stderr, "             find a smaller font, since (%d/%d)=%d < 80   or   (%d/%d)=%d < 25\n",
-				width,  FontSizeInfo[Console.CurrentFont].w, width/FontSizeInfo[Console.CurrentFont].w,
-				height, FontSizeInfo[Console.CurrentFont].h, width/FontSizeInfo[Console.CurrentFont].h);
+		fprintf (stderr, "             find a smaller font, since (%d/%d)=%d < %d   or   (%d/%d)=%d < %d\n",
+				width,  FontSizeInfo[Console.CurrentFont].w, width/FontSizeInfo[Console.CurrentFont].w, CONSOLE_MIN_X,
+				height, FontSizeInfo[Console.CurrentFont].h, width/FontSizeInfo[Console.CurrentFont].h, CONSOLE_MIN_Y);
 #endif
 		switch (Console.CurrentFont)
 		{
@@ -410,8 +410,8 @@ static void set_state_textmode (const int fullscreen, int width, int height, con
 #ifdef SDL2_DEBUG
 					fprintf(stderr, "             unable to find a small enough font for %d x %d, increasing window size\n", width, height);
 #endif
-					width  = FontSizeInfo[Console.CurrentFont].w * 80;
-					height = FontSizeInfo[Console.CurrentFont].h * 25;
+					width  = FontSizeInfo[Console.CurrentFont].w * CONSOLE_MIN_X;
+					height = FontSizeInfo[Console.CurrentFont].h * CONSOLE_MIN_Y;
 					SDL_SetWindowSize (current_window, width, height);
 				} else {
 					fprintf(stderr, "             unable to find a small enough font for %d x %d\n", width, height);
@@ -442,7 +442,7 @@ static void set_state_textmode (const int fullscreen, int width, int height, con
 		}
 
 		/* This call does nothing until we have a renderer, so that is why we waited until now */
-		SDL_SetWindowMinimumSize (current_window, FontSizeInfo[0].w * 80, FontSizeInfo[0].h * 25);
+		SDL_SetWindowMinimumSize (current_window, FontSizeInfo[0].w * CONSOLE_MIN_X, FontSizeInfo[0].h * CONSOLE_MIN_Y);
 	}
 
 	if (!current_texture)

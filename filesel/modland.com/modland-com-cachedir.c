@@ -68,10 +68,15 @@ static void modland_com_cachedir_Draw (
 *   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   *
 *                                                                        *
 **************************************************************************/
-	int mlHeight = 23;
+	int compact = plScrHeight < 23;
+	int mlHeight = compact ? 19 : 23;
 	int mlWidth = MAX(74, plScrWidth - 30);
 	int mlTop = (plScrHeight - mlHeight) / 2;
 	int mlLeft = (plScrWidth - mlWidth) / 2;
+
+#if (CONSOLE_MIN_Y < 19)
+# error alsaSetupRun() requires CONSOLE_MIN_Y >= 19
+#endif
 
 	console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "modland.com: select cachedir ", 0, 5, 0);
 	mlHeight -= 2;
@@ -94,7 +99,7 @@ static void modland_com_cachedir_Draw (
 		(0==selected) ? 1 : 3);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, ocpdatahome_modland_com);
 
-	mlTop++;
+	if (!compact) mlTop++;
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$HOME" DIRSEPARATOR "modland.com%0.7o",
 		(1==origselected) ? '*' : ' ',
@@ -102,7 +107,7 @@ static void modland_com_cachedir_Draw (
 		(1==selected) ? 1 : 3);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, home_modland_com);
 
-	mlTop++;
+	if (!compact) mlTop++;
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$OCPDATA" DIRSEPARATOR "modland.com" "%0.7o (might not be writable)",
 		(2==origselected) ? '*' : ' ',
@@ -110,7 +115,7 @@ static void modland_com_cachedir_Draw (
 		(2==selected) ? 1 : 3);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, ocpdata_modland_com);
 
-	mlTop++;
+	if (!compact) mlTop++;
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x09, mlWidth, " (%.2o%c%.9o) " "%*.*o" "$TEMP" DIRSEPARATOR "modland.com" "%0.7o (might not be system uniqe and writable)",
 		(3==origselected) ? '*' : ' ',
@@ -118,7 +123,7 @@ static void modland_com_cachedir_Draw (
 		(3==selected) ? 1 : 3);
 	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, "     => %*S", mlWidth - 8, temp_modland_com);
 
-	mlTop++;
+	if (!compact) mlTop++;
 
 	console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " custom:");
 

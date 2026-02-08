@@ -155,6 +155,8 @@
  0x2000  cdapplay.c
 */
 
+#define CONSOLE_MIN_X 80
+#define CONSOLE_MIN_Y 20
 #define CONSOLE_MAX_X 1024
 
 #undef HAVE_RESIZE_TERM

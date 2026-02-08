@@ -128,6 +128,9 @@ static const struct consoleDriver_t sdlConsoleDriver;
 
 static void set_state_textmode(int fullscreen, int width, int height)
 {
+#ifdef SDL_DEBUG
+	fprintf (stderr, "[SDL-video] set_state_textmode (fullscreen=%d, width=%d, height=%d)\n", fullscreen, width, height);
+#endif
 	if (current_surface)
 	{
 		/* This surface belongs to SDL internals */
@@ -143,13 +146,22 @@ static void set_state_textmode(int fullscreen, int width, int height)
 
 	if (fullscreen != do_fullscreen)
 	{
+#ifdef SDL_DEBUG
+		fprintf (stderr, "             fullscreen =! current_fullsceen\n");
+#endif
 		if (fullscreen)
 		{
 			last_text_width  = Console.GraphBytesPerLine;
 			last_text_height = Console.GraphLines;
+#ifdef SDL_DEBUG
+			fprintf (stderr, "             store previous resolution into last_text_width and last_text_height\n");
+#endif
 		} else {
 			width = last_text_width;
 			height = last_text_height;
+#ifdef SDL_DEBUG
+			fprintf (stderr, "             restore and override width and height\n");
+#endif
 		}
 	}
 	do_fullscreen = fullscreen;
@@ -169,7 +181,7 @@ again:
 	}
 	Console.TextGUIOverlay = current_surface->format->BytesPerPixel != 1;
 
-	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < 80) || ((height/FontSizeInfo[Console.CurrentFont].h) < 25))
+	while ( ((width/FontSizeInfo[Console.CurrentFont].w) < CONSOLE_MIN_X) || ((height/FontSizeInfo[Console.CurrentFont].h) < CONSOLE_MIN_Y))
 	{
 		switch (Console.CurrentFont)
 		{
@@ -184,8 +196,8 @@ again:
 				if (!fullscreen)
 				{
 					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d, increasing window size\n", width, height);
-					width  = FontSizeInfo[Console.CurrentFont].w * 80;
-					height = FontSizeInfo[Console.CurrentFont].h * 25;
+					width  = FontSizeInfo[Console.CurrentFont].w * CONSOLE_MIN_X;
+					height = FontSizeInfo[Console.CurrentFont].h * CONSOLE_MIN_Y;
 					goto again;
 				} else {
 					fprintf(stderr, "[SDL-video] unable to find a small enough font for %d x %d\n", width, height);

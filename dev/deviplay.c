@@ -382,6 +382,10 @@ static void setup_devp_draw (const struct DevInterfaceAPI_t *API, const char *ti
 
 	unsigned int i, skip, half, dot, fit;
 
+#if (CONSOLE_MIN_Y < 10)
+# error setup_devp_draw() requires CONSOLE_MIN_Y >= 10
+#endif
+
 	/* SETUP the framesize */
 	if (plrDriverListEntries < 3)
 	{

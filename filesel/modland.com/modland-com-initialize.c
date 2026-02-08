@@ -71,6 +71,9 @@ static void modland_com_initialize_Draw (
 	int cancel, int ok
 )
 {
+#if (CONSOLE_MIN_Y < 15)
+# error modland_com_initialize_Draw() requires CONSOLE_MIN_Y >= 15
+#endif
 	int mlHeight = 15;
 	int mlWidth  = 74;
 
