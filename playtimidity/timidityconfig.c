@@ -56,6 +56,9 @@
 #ifndef MAX
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
 
 static char *user_timidity_path;
 static int   have_user_timidity;
