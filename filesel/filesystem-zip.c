@@ -718,8 +718,6 @@ again:
 		slash = strchr (ptr, '/');
 		if (slash)
 		{
-			uint32_t dirdb_ref = UINT32_MAX;
-
 			*slash = 0;
 			if (strcmp (ptr, ".") && strcmp (ptr, "..") && strlen (ptr)) /* we ignore these entries */
 			{
@@ -732,7 +730,6 @@ again:
 						*slash = '/';
 						ptr = slash + 1;
 						iter = search;
-						dirdbUnref (dirdb_ref, dirdb_use_dir);
 						goto again; /* we need a break + continue; */
 					}
 				}
