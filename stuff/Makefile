@@ -311,7 +311,7 @@ utf-16-test$(EXE_SUFFIX): utf-16-test.c \
 	$(CC) utf-8.o $< -o $@
 
 CaseFolding.txt:
-	curl https://www.unicode.org/Public/16.0.0/ucd/CaseFolding.txt -o $@
+	curl https://www.unicode.org/Public/17.0.0/ucd/CaseFolding.txt -o $@
 
 CaseFoldingTable-1.c: CaseFolding.txt
 	cat CaseFolding.txt |grep "^[0-9A-F]*; C; [0-9A-F]*;"|sed -e 's/; C;//' -e 's/; #.*//' -e 's/ /, 0x/g' -e 's/^/{0x/' -e 's/$$/},/' >$@
