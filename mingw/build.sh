@@ -99,7 +99,7 @@ test -f libdiscid-$LIBDISCID_VERSION-win.zip        || $WGET https://github.com/
 test -f cJSON-$CJSON_VERSION.tar.gz                 || $WGET https://github.com/DaveGamble/cJSON/archive/refs/tags/v$CJSON_VERSION.tar.gz -O cJSON-$CJSON_VERSION.tar.gz                                                                     || rm cJSON-$CJSON_VERSION.tar.gz                 || false
 test -f ancient-$ANCIENT_VERSION.tar.gz             || $WGET https://github.com/temisu/ancient/archive/refs/tags/v$ANCIENT_VERSION.tar.gz -O ancient-$ANCIENT_VERSION.tar.gz                                                                 || rm ancient-$ANCIENT_VERSION.tar.gz             || false
 test -f libiconv-$LIBICONV_VERSION.tar.gz           || $WGET https://ftp.gnu.org/pub/gnu/libiconv/libiconv-$LIBICONV_VERSION.tar.gz -O libiconv-$LIBICONV_VERSION.tar.gz                                                                     || rm libiconv-$LIBICONV_VERSION.tar.gz           || false
-test -f game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || $WGET https://bitbucket.org/mpyne/game-music-emu/downloads/game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz -O game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz                                 || rm game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || false
+test -f game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || $WGET https://github.com/libgme/game-music-emu/archive/refs/tags/$GAMEMUSICEMU_VERSION.tar.gz -O game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz                                 || rm game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || false
 # Future releases will be here https://github.com/libgme/game-music-emu/tags
 test -f unifont-$UNIFONT_VERSION.otf                || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont-$UNIFONT_VERSION.otf       -O unifont-$UNIFONT_VERSION.otf                                      || rm unifont-$UNIFONT_VERSION.otf                || false
 test -f unifont_csur-$UNIFONT_VERSION.otf           || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_csur-$UNIFONT_VERSION.otf  -O unifont_csur-$UNIFONT_VERSION.otf                                 || rm unifont_csur-$UNIFONT_VERSION.otf           || false
@@ -320,7 +320,7 @@ sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/bi
 sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2.la
 sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2main.la
 sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2_test.la
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/pkgconfig/sdl2.pc
+sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw../$prefix2\//" -i $prefix/lib/pkgconfig/sdl2.pc
 sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/cmake/SDL2/sdl2-config.cmake
 cd ..
 
@@ -367,7 +367,7 @@ includedir=
 Name: libdiscid
 Description: The MusicBrainz DiscID Library.
 URL: http://musicbrainz.org/products/libdiscid/
-Version: 0.6.4
+Version: 0.6.5
 Requires:
 Libs: -ldiscid
 Cflags:
