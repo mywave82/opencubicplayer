@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.1.2
+%define version 3.1.3
 
 Name: %{name}
 Version: %{version}
@@ -34,27 +34,60 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
+Changes from version 3.1.2 to 3.1.3:
+ * [Windows] Update build dependencies to latest available releases
+ * utf8_casefold()
+   * Table for single- to single-point lookup is now done with a binarysearch,
+     increasing the speed a lot when there are many files to add in the
+     filebrowser view.
+   * Update tables to Unicode 17
+ * [zip] Remove void call to dirdbUnref()
+ * [X11,SDL,SDL2,curses]
+   * Unify the minimum text resolution to 80x20 (some had 80x25)
+   * Gracefully ignore the physical size can know achieve the text resolution,
+     and use virtual resolution of 80x20
+   * Some few dialogs required 80x25, add scrolling
+ * [Textlayout] Do not lock-up if window grows to smaller size than supported
+   (easily happens when running in ncurses)
+ * [DMF]
+   * Support sample-header for both file-version <8 and >=8
+   * Use correct buffer-size for input data if decompressing sample-data.
+   * Reject patterns with more than 512 rows (not valid in the read editor)
+   * When resizing order-list (splitting patterns with more than 256 rows into
+     2), malloc() a buffer that is larger. (Old code performed buffer overflow)
+   * Protect against buffer over/underflow when building the initial pattern-list
+ * [HVL] Muting single channels, while displaying channel information caused crash
+ * [669] Sample-looping did not work. Minor copy-paste error when the code was
+   made endian-neutral.
+
 Changes from version 3.1.1 to 3.1.2:
  * [QOA] Failed to compile on some systems.
  * [SID] Remove debug messages sent to the console
  * [FontSize control logic]
-   * Was not the consistent between SDL and X11 driver.
-   * Was not possible to change away from 8x16 if window could not grow and fit 16x32.
-   * Help screen would reset font-size on X11. Now help screen follow to global selected font size instead.
+   * Was not consistent between SDL and X11 driver.
+   * Was not possible to change away from 8x16 if window could not grow and fit
+     16x32.
+   * Help screen would reset font-size on X11. Now help screen follow to global
+     selected font size instead.
  * [Windows]
-   * OCP.INI update Messages: Do not use escape codes, use correct wide-char path and refer to `del` instead of `rm`.
+   * OCP.INI update Messages: Do not use escape codes, use correct wide-char
+     path and refer to `del` instead of `rm`.
    * Debug messages with paths for HomePath etc, now use wide-char paths.
-   * Use wide-char version of fopen() when opening OCP.INI (support international user-names)
+   * Use wide-char version of fopen() when opening OCP.INI (support international
+     user-names)
  * [MIDI]
-   * Font-browser dialog had minor hickup in scrolling, and incorrect highlight for "No soundfont found".
-   * When file wraps, do no free data and reload the file - reuse the already loaded data.
+   * Font-browser dialog had minor hickup in scrolling, and incorrect highlight
+     for "No soundfont found".
+   * When file wraps, do no free data and reload the file - reuse the already
+     loaded data.
    * Remove double free() when attempting to load an invalid MIDI fil
  * [CURL]
    * Mention CURL in README.md and ocp.spec
    * Improve errors-messages if unable to launch the helper program
 
 Changes from version 3.1.0 to 3.1.1:
- * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg not present
+ * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg
+   not present
  * Avoid using extended SED syntax in stuff/Makefile
 
 Changes from version 3.0.1 to 3.1.0:

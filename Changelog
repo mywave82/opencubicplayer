@@ -1,3 +1,26 @@
+Version 3.1.3
+=============
+Bugfix release, and speed-up reading directories with many files
+
+ * [Windows] Update build dependencies to latest available releases
+ * utf8_casefold()
+   * Table for single- to single-point lookup is now done with a binarysearch, increasing the speed a lot when there are many files to add in the filebrowser view.
+   * Update tables to Unicode 17
+ * [zip] Remove void call to dirdbUnref()
+ * [X11,SDL,SDL2,curses]
+   * Unify the minimum text resolution to 80x20 (some had 80x25)
+   * Gracefully ignore the physical size can know achieve the text resolution, and use virtual resolution of 80x20
+   * Some few dialogs required 80x25, add scrolling
+ * [Textlayout] Do not lock-up if window grows to smaller size than supported (easily happens when running in ncurses)
+ * [DMF]
+   * Support sample-header for both file-version <8 and >=8
+   * Use correct buffer-size for input data if decompressing sample-data.
+   * Reject patterns with more than 512 rows (not valid in the read editor)
+   * When resizing order-list (splitting patterns with more than 256 rows into 2), malloc() a buffer that is larger. (Old code performed buffer overflow)
+   * Protect against buffer over/underflow when building the initial pattern-list
+ * [HVL] Muting single channels, while displaying channel information caused crash
+ * [669] Sample-looping did not work. Minor copy-paste error when the code was made endian-neutral.
+
 Version 3.1.2
 =============
 Bugfix release
@@ -5,7 +28,7 @@ Bugfix release
  * [QOA] Failed to compile on some systems.
  * [SID] Remove debug messages sent to the console
  * [FontSize control logic]
-   * Was not the consistent between SDL and X11 driver.
+   * Was not consistent between SDL and X11 driver.
    * Was not possible to change away from 8x16 if window could not grow and fit 16x32.
    * Help screen would reset font-size on X11. Now help screen follow to global selected font size instead.
  * [Windows]
