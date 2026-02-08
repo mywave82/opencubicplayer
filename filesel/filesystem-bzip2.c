@@ -864,6 +864,7 @@ static struct ocpdir_t *bzip2_check (const struct ocpdirdecompressor_t *ref, str
 	if (!strcasecmp (filetype, ".bz"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[BZIP2 bzip2_check]: %s\n", newname);
 		l = strlen (newname);
 		newname[l-3] = 0;
 		retval = bzip2_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
@@ -874,6 +875,7 @@ static struct ocpdir_t *bzip2_check (const struct ocpdirdecompressor_t *ref, str
 	if (!strcasecmp (filetype, ".bz2"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[BZIP2 bzip2_check]: %s\n", newname);
 		l = strlen (newname);
 		newname[l-4] = 0;
 		retval = bzip2_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
@@ -885,6 +887,7 @@ static struct ocpdir_t *bzip2_check (const struct ocpdirdecompressor_t *ref, str
 	if (!strcasecmp (filetype, ".tbz"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[BZIP2 bzip2_check]: %s\n", newname);
 		l = strlen (newname);
 		strcpy (newname + l - 4, ".tar");
 		retval = bzip2_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
@@ -895,6 +898,7 @@ static struct ocpdir_t *bzip2_check (const struct ocpdirdecompressor_t *ref, str
 	if (!strcasecmp (filetype, ".tbz2"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[BZIP2 bzip2_check]: %s\n", newname);
 		l = strlen (newname);
 		strcpy (newname + l - 5, ".tar");
 		retval = bzip2_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));

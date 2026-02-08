@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zlib.h>
@@ -893,6 +894,7 @@ static struct ocpdir_t *gzip_check_steal (struct ocpfile_t *s, const uint32_t di
 			free (metadata);
 			metadata = 0;
 		}
+		DEBUG_PRINT ("[GZIP gzip_check_steal]: no hit\n");
 	}
 
 	return &retval->head;
@@ -907,6 +909,7 @@ static struct ocpdir_t *gzip_check (const struct ocpdirdecompressor_t *ref, stru
 	if (!strcasecmp (filetype, ".gz"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[GZIP gzip_check]: %s\n", newname);
 		l = strlen (newname);
 		newname[l-3] = 0;
 		retval = gzip_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
@@ -917,6 +920,7 @@ static struct ocpdir_t *gzip_check (const struct ocpdirdecompressor_t *ref, stru
 	if (!strcasecmp (filetype, ".tgz"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[GZIP gzip_check]: %s\n", newname);
 		l = strlen (newname);
 		strcpy (newname + l - 4, ".tar");
 		retval = gzip_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
@@ -927,6 +931,7 @@ static struct ocpdir_t *gzip_check (const struct ocpdirdecompressor_t *ref, stru
 	if (!strcasecmp (filetype, ".vgz"))
 	{
 		dirdbGetName_malloc (s->dirdb_ref, &newname);
+		DEBUG_PRINT ("[GZIP gzip_check]: %s\n", newname);
 		l = strlen (newname);
 		strcpy (newname + l - 4, ".vgm");
 		retval = gzip_check_steal (s, dirdbFindAndRef (s->dirdb_ref, newname, dirdb_use_file));
