@@ -755,6 +755,7 @@ char *utf8_casefold (const char *src)
 	char *retval, *retvalnext;
 
 	int newlen = 0;
+	int hit = 0;
 
 	iter = src;
 	remaining = len;
@@ -764,18 +765,49 @@ char *utf8_casefold (const char *src)
 		int inc;
 		uint32_t codepoint = utf8_decode(iter, remaining, &inc);
 
+#if 0
 		for (i = 0; i < (sizeof (Table_Single) / sizeof (Table_Single[0])); i++)
 		{
 			if (Table_Single[i].Src == codepoint)
 			{
+				hit = 1;
 				newlen += utf8_encoded_length (Table_Single[i].Dst1);
 				goto prescan_next;
 			}
 		}
+#else
+		{ /* binary search, Table_Single is shy of 2000 entries */
+			int start = 0;
+			int length = (sizeof (Table_Single) / sizeof (Table_Single[0]));
+			while (length)
+			{
+				int half = length / 2;
+				int diff = (int)Table_Single[start + half].Src - (int)codepoint;
+				if (diff == 0)
+				{
+					hit = 1;
+					newlen += utf8_encoded_length (Table_Single[start + half].Dst1);
+					goto prescan_next;
+				}
+				if (!half)
+				{
+					break;
+				}
+				if (diff > 0)
+				{
+					length -= half;
+				} else {
+					start += half + 1;
+					length -= half + 1;
+				}
+			}
+		}
+#endif
 		for (i = 0; i < (sizeof (Table_Double) / sizeof (Table_Double[0])); i++)
 		{
 			if (Table_Double[i].Src == codepoint)
 			{
+				hit = 1;
 				newlen += utf8_encoded_length (Table_Double[i].Dst1) +
 				          utf8_encoded_length (Table_Double[i].Dst2);
 				goto prescan_next;
@@ -785,6 +817,7 @@ char *utf8_casefold (const char *src)
 		{
 			if (Table_Triple[i].Src == codepoint)
 			{
+				hit = 1;
 				newlen += utf8_encoded_length (Table_Triple[i].Dst1) +
 				          utf8_encoded_length (Table_Triple[i].Dst2) +
 				          utf8_encoded_length (Table_Triple[i].Dst3);
@@ -796,6 +829,11 @@ prescan_next:
 
 		remaining -= inc;
 		iter += inc;
+	}
+
+	if (!hit)
+	{
+		return strdup (src);
 	}
 
 	retvalnext = retval = malloc (newlen + 1);
@@ -812,6 +850,7 @@ prescan_next:
 		int inc;
 		uint32_t codepoint = utf8_decode(iter, remaining, &inc);
 
+#if 0
 		for (i = 0; i < (sizeof (Table_Single) / sizeof (Table_Single[0])); i++)
 		{
 			if (Table_Single[i].Src == codepoint)
@@ -820,6 +859,33 @@ prescan_next:
 				goto rebuild_next;
 			}
 		}
+#else
+		{ /* binary search, Table_Single is shy of 2000 entries */
+			int start = 0;
+			int length = (sizeof (Table_Single) / sizeof (Table_Single[0]));
+			while (length)
+			{
+				int half = length / 2;
+				int diff = (int)Table_Single[start + half].Src - (int)codepoint;
+				if (diff == 0)
+				{
+					retvalnext += utf8_encode (retvalnext, Table_Single[start + half].Dst1);
+					goto rebuild_next;
+				}
+				if (!half)
+				{
+					break;
+				}
+				if (diff > 0)
+				{
+					length -= half;
+				} else {
+					start += half + 1;
+					length -= half + 1;
+				}
+			}
+		}
+#endif
 		for (i = 0; i < (sizeof (Table_Double) / sizeof (Table_Double[0])); i++)
 		{
 			if (Table_Double[i].Src == codepoint)
