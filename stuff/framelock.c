@@ -106,6 +106,7 @@ rerun:
 	Current++;
 }
 
+/* caller can not paint, but we can push audio */
 void preemptive_framelock (void)
 {
 	struct timeval curr;
@@ -118,7 +119,7 @@ void preemptive_framelock (void)
 	}
 
 	if (curr.tv_sec!=targetFPS.tv_sec)
-	{
+	{ /* seconds has rolled, new frame for sure */
 		fsFPSCurrent=Current;
 		Current=1;
 		targetFPS.tv_sec=curr.tv_sec;
@@ -126,9 +127,10 @@ void preemptive_framelock (void)
 		PendingPoll = 1;
 		return;
 	} else if (curr.tv_usec<targetFPS.tv_usec)
-	{
+	{ /* next frame not reached yet */
 		return; /* we were suppose to sleep */
 	}
+	/* next frame hit */
 	targetFPS.tv_usec+=1000000/fsFPS;
 	//if (fsFPS >= 50)
 	{
@@ -150,7 +152,7 @@ int poll_framelock(void)
 	}
 
 	if (curr.tv_sec!=targetFPS.tv_sec)
-	{
+	{ /* seconds has rolled over, so new frame for sure */
 		fsFPSCurrent=Current;
 		Current=1;
 		targetFPS.tv_sec=curr.tv_sec;
@@ -158,14 +160,15 @@ int poll_framelock(void)
 		PendingPoll = 0;
 		return 1;
 	} else if (curr.tv_usec<targetFPS.tv_usec)
-	{
+	{ /* we have not reached the next frame yet */
 		if (PendingPoll)
-		{
+		{ /* but we did hit it with a non-painting event, only audio was handled */
 			PendingPoll = 0;
 			return 1;
 		}
 		return 0; /* we were suppose to sleep */
 	}
+	/* next frame has been reached */
 	targetFPS.tv_usec+=1000000/fsFPS;
 
 	//if (fsFPS >= 50)
