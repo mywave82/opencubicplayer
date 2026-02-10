@@ -1057,9 +1057,15 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	if (config_filtercurve8580 < 0) config_filtercurve8580 = 0;
 	if (config_filtercurve8580 > 100) config_filtercurve8580 = 100;
 
-	entry_kernal.dirdb_ref  = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_kernal,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
-	entry_basic.dirdb_ref   = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_basic,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
-	entry_chargen.dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_chargen, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+#ifdef _WIN32
+	entry_kernal.dirdb_ref  = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_kernal,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+	entry_basic.dirdb_ref   = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_basic,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+	entry_chargen.dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_chargen, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
+#else
+	entry_kernal.dirdb_ref  = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_kernal,  DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+	entry_basic.dirdb_ref   = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_basic,   DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+	entry_chargen.dirdb_ref = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_chargen, DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
+#endif
 
 	rom_md5s (entry_kernal .hash_4096, entry_kernal .hash_8192, entry_kernal .dirdb_ref, API);
 	rom_md5s (entry_basic  .hash_4096, entry_basic  .hash_8192, entry_basic  .dirdb_ref, API);
@@ -1197,8 +1203,13 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 											char *newpath = 0;
 											char *config = 0;
 											char *path = 0;
+#ifdef _WIN32
+											API->dirdb->GetFullname_malloc (entries_data[dsel].dirdb_ref, &path, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
+											API->dirdb->GetFullname_malloc (dirdb_base, &config, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_ENDSLASH | DIRDB_FULLNAME_BACKSLASH);
+#else
 											API->dirdb->GetFullname_malloc (entries_data[dsel].dirdb_ref, &path, DIRDB_FULLNAME_NODRIVE);
 											API->dirdb->GetFullname_malloc (dirdb_base, &config, DIRDB_FULLNAME_NODRIVE | DIRDB_FULLNAME_ENDSLASH);
+#endif
 											if (!strncmp (path, config, strlen (config)))
 											{
 												newpath = malloc (1 + strlen (path) - strlen (config));
@@ -1215,7 +1226,11 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 												newpath = malloc (3 + strlen (path) - strlen (API->configAPI->HomePath));
 												if (newpath)
 												{
+#ifdef _WIN32
+													sprintf (newpath, "~\%s", path + strlen (API->configAPI->HomePath));
+#else
 													sprintf (newpath, "~/%s", path + strlen (API->configAPI->HomePath));
+#endif
 												}
 											} else {
 												newpath = path;

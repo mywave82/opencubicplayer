@@ -19,8 +19,6 @@
  */
 
 #include "libsidplayfp-api.h"
-#include <iostream>
-#include <fstream>
 #include <vector>
 #include "sidplayfp/sidbuilder.h"
 #include "sidplayfp/SidInfo.h"
@@ -47,6 +45,7 @@ extern "C"
 #include <unistd.h>
 #include "types.h"
 #include "boot/psetting.h"
+#include "cpiface/cpiface.h"
 #include "filesel/dirdb.h"
 #include "filesel/filesystem-drive.h"
 #include "filesel/filesystem.h"
@@ -139,12 +138,15 @@ namespace libsidplayfp
 		}
 	}
 
-	ConsolePlayer::ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI, struct dmDrive *dmFile) :
+	ConsolePlayer::ConsolePlayer (const unsigned int rate, struct cpifaceSessionAPI_t *cpifaceSession) :
 		m_tune(nullptr),
 		m_state(playerStopped),
 		selected_track(0),
 		sidplayer(*(new libsidplayfp::Player))
 	{
+		const struct configAPI_t *configAPI = cpifaceSession->configAPI;
+		const struct dirdbAPI_t *dirdbAPI = cpifaceSession->dirdb;
+		struct dmDrive *dmFile = cpifaceSession->dmFile;
 		char *endptr;
 
 		m_engCfg = sidplayer.config();
@@ -306,9 +308,9 @@ namespace libsidplayfp
 		basic_ref   = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, basic_string,   DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 		chargen_ref = dirdbAPI->ResolvePathWithBaseAndRef (dirdb_base, chargen_string, DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME, dirdb_use_file);
 #endif
-		uint8_t *kernalRom  = loadRom ( kernal_ref, 8192, dirdbAPI);
-		uint8_t *basicRom   = loadRom (  basic_ref, 8192, dirdbAPI);
-		uint8_t *chargenRom = loadRom (chargen_ref, 4096, dirdbAPI);
+		uint8_t *kernalRom  = loadRom ( kernal_ref, 8192, cpifaceSession);
+		uint8_t *basicRom   = loadRom (  basic_ref, 8192, cpifaceSession);
+		uint8_t *chargenRom = loadRom (chargen_ref, 4096, cpifaceSession);
 
 		dirdbAPI->Unref ( kernal_ref, dirdb_use_file);
 		dirdbAPI->Unref (  basic_ref, dirdb_use_file);
@@ -329,36 +331,48 @@ namespace libsidplayfp
 		delete &sidplayer;
 	}
 
-	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size, const struct dirdbAPI_t *dirdbAPI)
+	uint8_t* ConsolePlayer::loadRom(uint32_t dirdb_ref, const int size, struct cpifaceSessionAPI_t *cpifaceSession)
 	{
 		char *romPath = 0;
 #ifdef _WIN32
-		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
+		cpifaceSession->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH);
 #else
-		dirdbAPI->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
+		cpifaceSession->dirdb->GetFullname_malloc (dirdb_ref, &romPath, DIRDB_FULLNAME_NODRIVE);
 #endif
-		std::ifstream is(romPath, std::ios::binary);
-
-		if (is.is_open())
+		FILE *f;
+#ifdef _WIN32
+		uint16_t *name = cpifaceSession->utf8_to_utf16_LFN (romPath, 0);
+		if (!name)
 		{
-			try
-			{
-				uint8_t *buffer = new uint8_t[size];
-
-				is.read((char*)buffer, size);
-				if (!is.fail())
-				{
-					is.close();
-					return buffer;
-				}
-				delete [] buffer;
-			}
-			catch (std::bad_alloc const &ba) {}
+			cpifaceSession->cpiDebug (cpifaceSession, "ConsolePlayer::loadRom: utf8_to_utf16_LFN(\"%s\") failed\n", romPath);
+			free (romPath);
+			return nullptr;
+		}
+		f = _wfopen ((wchar_t *)name, L"rb");
+		free (name);
+#else
+		f = fopen (romPath, "rb");
+#endif
+		if (!f)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "ConsolePlayer::loadRom: fopen(\"%s\") failed\n", romPath);
+			free (romPath);
+			return nullptr;
 		}
 
-		free (romPath);
+		uint8_t *buffer = new uint8_t[size];
+		if (fread (buffer, 1, size, f) != size)
+		{
+			fclose (f);
+			delete [] buffer;
+			cpifaceSession->cpiDebug (cpifaceSession, "ConsolePlayer::loadRom: fread (\"%s\", %d) failed\n", romPath, (int)size);
+			free (romPath);
+			return nullptr;
+		}
 
-		return nullptr;
+		fclose (f);
+		free (romPath);
+		return buffer;
 	}
 
 	void ConsolePlayer::clearSidEmu (void)

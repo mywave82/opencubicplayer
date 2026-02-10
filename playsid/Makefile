@@ -333,6 +333,7 @@ libsidplayfp-api.o: \
 	./libsidplayfp-git/src/builders/residfp-builder/residfp.h \
 	./libsidplayfp-git/src/builders/residfpII-builder/residfpII.h \
 	../boot/psetting.h \
+	../cpiface/cpiface.h \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h

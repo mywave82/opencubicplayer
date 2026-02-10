@@ -941,7 +941,7 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 		goto error_out_buf;
 	}
 
-	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate, cpifaceSession->configAPI, cpifaceSession->dirdb, cpifaceSession->dmFile);
+	mySidPlayer = new libsidplayfp::ConsolePlayer(sidRate, cpifaceSession);
 	if (!mySidPlayer->load (buf, length))
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[SID] loading file failed\n");

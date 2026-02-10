@@ -6,6 +6,7 @@ extern "C"
 struct dmDrive;
 struct dirdbAPI_t;
 struct configAPI_t;
+struct cpifaceSessionAPI_t;
 }
 
 #include <sidplayfp/SidTune.h>
@@ -32,7 +33,7 @@ namespace libsidplayfp
 			playerRunning,
 		} player_state_t;
 
-		ConsolePlayer (const unsigned int rate, const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdbAPI, struct dmDrive *dmFile);
+		ConsolePlayer (const unsigned int rate, struct cpifaceSessionAPI_t *cpifaceSession);
 		virtual ~ConsolePlayer (void);
 
 		bool load (const uint_least8_t* sourceBuffer, uint_least32_t bufferLen);
@@ -105,7 +106,7 @@ namespace libsidplayfp
 
 		bool open (void);
 
-		uint8_t* loadRom(uint32_t dirdb_ref, const int size, const struct dirdbAPI_t *dirdbAPI);
+		uint8_t* loadRom(uint32_t dirdb_ref, const int size, cpifaceSessionAPI_t *cpifaceSession);
 	};
 }
 
