@@ -55,6 +55,7 @@ struct tar_instance_dir_t
 {
 	struct ocpdir_t        head;
 	struct tar_instance_t *owner;
+	uint32_t               dir_index;
 	uint32_t               dir_parent; /* used for making blob */
 	uint32_t               dir_next;
 	uint32_t               dir_child;
@@ -90,6 +91,7 @@ struct tar_instance_t
 	int                          ready; /* a complete scan has been performed, use cache instead of file-read */
 
 	struct tar_instance_dir_t  **dirs;
+	struct tar_instance_dir_t  **dirs_sorted;
 	struct tar_instance_dir_t    dir0;
 	int                          dir_fill;
 	int                          dir_size;
@@ -316,8 +318,93 @@ static void tar_io_unref (struct tar_instance_t *self)
 	}
 }
 
+static uint32_t tar_instance_find_dir (struct tar_instance_t *self, const char *Dirpath, int *hit)
+{
+	uint_fast32_t searchbase = 1, searchlen = self->dir_fill - 1; /* do not include root node */
+
+	*hit = 0;
+
+	if (!searchlen)
+	{
+		return searchbase;
+	}
+
+	while (searchlen > 1)
+	{
+		uint_fast32_t halfmark;
+		int result;
+
+		halfmark = searchlen >> 1;
+
+		result = strcmp (Dirpath, self->dirs_sorted[searchbase + halfmark]->orig_full_dirpath);
+
+		if (!result)
+		{
+			*hit = 1;
+			return searchbase + halfmark;
+		} else if (result > 0)
+		{
+			searchbase += halfmark;
+			searchlen -= halfmark;
+		} else {
+			searchlen = halfmark;
+		}
+	}
+
+	/* fine-tune the position */
+	if (searchbase < self->dir_fill)
+	{
+		int result = strcmp (Dirpath, self->dirs_sorted[searchbase]->orig_full_dirpath);
+		if (!result)
+		{
+			*hit = 1;
+		} else {
+			if (result > 0)
+			{
+				searchbase++;
+			}
+		}
+	}
+
+	return searchbase;
+}
+
+#ifdef TAR_DEBUG
+static void tar_dumpdir (struct tar_instance_t *self, struct tar_instance_dir_t *dir, int indent)
+{
+	int i;
+
+	for (;dir; dir = (dir->dir_next != UINT32_MAX) ? self->dirs[dir->dir_next] : 0)
+	{
+		for (i=0; i < indent; i++) fprintf(stderr, " ");
+		fprintf (stderr, "DIR 0x%"PRIx32" \"%s\"\n", dir->head.dirdb_ref, dir->orig_full_dirpath);
+
+		if (dir->file_child != UINT32_MAX)
+		{
+			struct tar_instance_file_t *currf;
+			for (currf = self->files[dir->file_child]; currf; currf = (currf->file_next != UINT32_MAX) ? self->files[currf->file_next] : 0)
+			{
+				for (i=0; i < indent; i++) fprintf(stderr, " ");
+				fprintf (stderr, "FILE 0x%"PRIx32" \"%s\"\n", currf->head.dirdb_ref, currf->orig_full_filepath);
+			}
+		}
+
+		if (dir->dir_child != UINT32_MAX)
+		{
+			tar_dumpdir (self, self->dirs[dir->dir_child], indent + 1);
+		}
+	}
+}
+
+static void tar_dumptree (struct tar_instance_t *self)
+{
+	tar_dumpdir (self, &self->dir0, 0);
+}
+#endif
+
 static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
                                              const uint32_t         dir_parent,
+                                             const uint32_t         dir_sorted_insert_index,
                                              char                  *Dirpath,
                                              char                  *Dirname)
 {
@@ -337,20 +424,34 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 
 	if (self->dir_fill == self->dir_size)
 	{
-		int size = self->dir_size + 16;
-		struct tar_instance_dir_t **dirs = realloc (self->dirs, size * sizeof (self->dirs[0]));
+		int size = self->dir_size + 64;
+		struct tar_instance_dir_t **dirs;
 
+		dirs = realloc (self->dirs, size * sizeof (self->dirs[0]));
 		if (!dirs)
 		{ /* out of memory */
 			dirdbUnref (dirdb_ref, dirdb_use_dir);
 			return 0;
 		}
-
 		self->dirs = dirs;
+
+		dirs = realloc (self->dirs_sorted, size * sizeof (self->dirs[0]));
+		if (!dirs)
+		{ /* out of memory */
+			dirdbUnref (dirdb_ref, dirdb_use_dir);
+			return 0;
+		}
+		self->dirs_sorted = dirs;
+
 		self->dir_size = size;
 	}
 
 	self->dirs[self->dir_fill] = malloc (sizeof(self->dirs[self->dir_fill][0]));
+	memmove (self->dirs_sorted + dir_sorted_insert_index + 1,
+	         self->dirs_sorted + dir_sorted_insert_index,
+	         sizeof (self->dirs_sorted[0]) * (self->dir_fill - dir_sorted_insert_index));
+	self->dirs_sorted[dir_sorted_insert_index] = self->dirs[self->dir_fill];
+
 	if (!self->dirs[self->dir_fill])
 	{ /* out of memory */
 		dirdbUnref (dirdb_ref, dirdb_use_dir);
@@ -375,6 +476,7 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 	                self->archive_file->compression);
 
 	self->dirs[self->dir_fill]->owner = self;
+	self->dirs[self->dir_fill]->dir_index = self->dir_fill;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent;
 	self->dirs[self->dir_fill]->dir_next = UINT32_MAX;
 	self->dirs[self->dir_fill]->dir_child = UINT32_MAX;
@@ -389,6 +491,10 @@ static uint32_t tar_instance_add_create_dir (struct tar_instance_t *self,
 	*prev = self->dir_fill;
 
 	self->dir_fill++;
+
+#ifdef TAR_DEBUG
+	tar_dumptree (self);
+#endif
 
 	return *prev;
 }
@@ -424,6 +530,7 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 		int templen = 0;
 
 		tar_translate (self, Filename, &temp, &templen);
+
 		dirdb_ref = dirdbFindAndRef (self->dirs[dir_parent]->head.dirdb_ref, temp ? temp : "???", dirdb_use_file);
 		free (temp); temp = 0;
 	}
@@ -464,6 +571,10 @@ static uint32_t tar_instance_add_file (struct tar_instance_t *self,
 
 	self->file_fill++;
 
+#ifdef TAR_DEBUG
+	tar_dumptree (self);
+#endif
+
 	return *prev;
 }
 
@@ -477,8 +588,6 @@ static uint32_t tar_instance_add (struct tar_instance_t *self,
 	while (1)
 	{
 		char *slash;
-		uint32_t search;
-again:
 		if (*ptr == '/')
 		{
 			ptr++;
@@ -494,21 +603,16 @@ again:
 			*slash = 0;
 			if (strcmp (ptr, ".") && strcmp (ptr, "..") && strlen (ptr)) /* we ignore these entries */
 			{
+				uint32_t search;
+				int hit;
 				/* check if we already have this node */
-				for (search = 1; search < self->dir_fill; search++)
+				search = tar_instance_find_dir (self, Filepath, &hit);
+				if (hit)
 				{
-					if ( (self->dirs[search]->dir_parent == iter) &&
-					     (!strcmp (self->dirs[search]->orig_full_dirpath, Filepath)) )
-					{
-						*slash = '/';
-						ptr = slash + 1;
-						iter = search;
-						goto again; /* we need a break + continue; */
-					}
+					iter = self->dirs_sorted[search]->dir_index;
+				} else {
+					iter = tar_instance_add_create_dir (self, iter, search, Filepath, ptr);
 				}
-
-				/* no hit, create one */
-				iter = tar_instance_add_create_dir (self, iter, Filepath, ptr);
 				*slash = '/';
 				ptr = slash + 1;
 				if (iter == 0)
@@ -552,12 +656,14 @@ struct ocpdir_t *tar_check (const struct ocpdirdecompressor_t *self, struct ocpf
 
 	iter = calloc (sizeof (*iter), 1);
 	iter->dir_size = 16;
-	iter->dirs = malloc (iter->dir_size * sizeof (iter->dirs[0]));
+	iter->dirs        = malloc (iter->dir_size * sizeof (iter->dirs[0]));
+	iter->dirs_sorted = malloc (iter->dir_size * sizeof (iter->dirs[0]));
 
 	DEBUG_PRINT( "[TAR] creating a DIR using the same parent dirdb_ref\n");
 
 	dirdbRef (file->dirdb_ref, dirdb_use_dir);
-	iter->dirs[0] = &iter->dir0;
+	iter->dirs[0]        = &iter->dir0;
+	iter->dirs_sorted[0] = &iter->dir0;
 	ocpdir_t_fill (&iter->dirs[0]->head,
 	                tar_dir_ref,
 	                tar_dir_unref,
@@ -663,6 +769,7 @@ static void tar_instance_unref (struct tar_instance_t *self)
 	}
 
 	free (self->dirs);
+	free (self->dirs_sorted);
 	free (self->files);
 
 	if (self->archive_file)
@@ -1265,7 +1372,7 @@ static void tar_translate (struct tar_instance_t *self, char *src, char **buffer
 	char *dst = *buffer;
 	size_t dstlen = *buffersize;
 
-	DEBUG_PRINT ("tar_translate %s =>", src);
+	DEBUG_PRINT ("tar_translate %s => ", src);
 
 	temp = strrchr (src, '/');
 	if (temp)
@@ -1274,8 +1381,24 @@ static void tar_translate (struct tar_instance_t *self, char *src, char **buffer
 	}
 	srclen = strlen (src);
 
+	if (!self->charset_override)
+	{ /* check for ascii */
+		char *iter;
+		for (iter = src; *iter; iter++)
+		{
+			if ((*iter < 32) || (*iter > 126))
+				break;
+		}
+		if (!*iter)
+		{
+			DEBUG_PRINT ("ASCII, no translate needed\n");
+			goto ascii_no_translate;
+		}
+	}
+
 	if (!self->iconv_handle)
 	{
+ascii_no_translate:
 		*buffer = strdup (src);
 		*buffersize = *buffer ? strlen (*buffer) : 0;
 		return;

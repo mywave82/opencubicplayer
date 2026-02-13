@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <iconv.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "types.h"
 #include "adbmeta.h"
@@ -63,6 +64,7 @@ struct zip_instance_dir_t
 {
 	struct ocpdir_t              head;
 	struct zip_instance_t       *owner;
+	uint32_t                     dir_index;
 	uint32_t                     dir_parent; /* used for making blob */
 	uint32_t                     dir_next;
 	uint32_t                     dir_child;
@@ -128,6 +130,7 @@ struct zip_instance_t
 	int                          ready; /* a complete scan has been performed, use cache instead of file-read */
 
 	struct zip_instance_dir_t  **dirs;
+	struct zip_instance_dir_t  **dirs_sorted;
 	struct zip_instance_dir_t    dir0;
 	int                          dir_fill;
 	int                          dir_size;
@@ -531,14 +534,66 @@ static void zip_io_unref (struct zip_instance_t *self)
 	self->Number_of_this_disk = UINT32_MAX;
 }
 
+static uint32_t zip_instance_find_dir (struct zip_instance_t *self, const char *Dirpath, int *hit)
+{
+	uint_fast32_t searchbase = 1, searchlen = self->dir_fill - 1; /* do not include root node */
+
+	*hit = 0;
+
+	if (!searchlen)
+	{
+		return searchbase;
+	}
+
+	while (searchlen > 1)
+	{
+		uint_fast32_t halfmark;
+		int result;
+
+		halfmark = searchlen >> 1;
+
+		result = strcmp (Dirpath, self->dirs_sorted[searchbase + halfmark]->orig_full_dirpath);
+		if (!result)
+		{
+			*hit = 1;
+			return searchbase + halfmark;
+		} else if (result > 0)
+		{
+			searchbase += halfmark;
+			searchlen -= halfmark;
+		} else {
+			searchlen = halfmark;
+		}
+	}
+
+	/* fine-tune the position */
+	if (searchbase < self->dir_fill)
+	{
+		int result = strcmp (Dirpath, self->dirs_sorted[searchbase]->orig_full_dirpath);
+		if (!result)
+		{
+			*hit = 1;
+		} else {
+			if (result > 0)
+			{
+				searchbase++;
+			}
+		}
+	}
+
+	return searchbase;
+}
+
 static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
                                              const uint32_t         dir_parent,
+                                             const uint32_t         dir_sorted_insert_index,
                                              char                  *Dirpath,
                                              char                  *Dirname,
                                              int                    Filename_FlaggedUTF8)
 {
 	uint32_t *prev, iter;
 	uint32_t dirdb_ref;
+
 	DEBUG_PRINT ("[ZIP] create_dir: \"%s\" \"%s\" %d\n", Dirpath, Dirname, Filename_FlaggedUTF8);
 
 	if (!Filename_FlaggedUTF8)
@@ -555,20 +610,35 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 
 	if (self->dir_fill == self->dir_size)
 	{
-		int size = self->dir_size + 16;
-		struct zip_instance_dir_t **dirs = realloc (self->dirs, size * sizeof (self->dirs[0]));
+		int size = self->dir_size + 64;
 
+		struct zip_instance_dir_t **dirs;
+
+		dirs = realloc (self->dirs, size * sizeof (self->dirs[0]));
 		if (!dirs)
 		{ /* out of memory */
 			dirdbUnref (dirdb_ref, dirdb_use_dir);
 			return 0;
 		}
-
 		self->dirs = dirs;
+
+		dirs = realloc (self->dirs_sorted, size * sizeof (self->dirs[0]));
+		if (!dirs)
+		{ /* out of memory */
+			dirdbUnref (dirdb_ref, dirdb_use_dir);
+			return 0;
+		}
+		self->dirs_sorted = dirs;
+
 		self->dir_size = size;
 	}
 
 	self->dirs[self->dir_fill] = malloc (sizeof (*self->dirs[self->dir_fill]));
+	memmove (self->dirs_sorted + dir_sorted_insert_index + 1,
+	         self->dirs_sorted + dir_sorted_insert_index,
+	         sizeof (self->dirs_sorted[0]) * (self->dir_fill - dir_sorted_insert_index));
+	self->dirs_sorted[dir_sorted_insert_index] = self->dirs[self->dir_fill];
+
 	if (!self->dirs[self->dir_fill])
 	{ /* out of memory */
 		dirdbUnref (dirdb_ref, dirdb_use_dir);
@@ -593,6 +663,7 @@ static uint32_t zip_instance_add_create_dir (struct zip_instance_t *self,
 	                self->archive_file->compression);
 
 	self->dirs[self->dir_fill]->owner = self;
+	self->dirs[self->dir_fill]->dir_index = self->dir_fill;
 	self->dirs[self->dir_fill]->dir_parent = dir_parent;
 	self->dirs[self->dir_fill]->dir_next = UINT32_MAX;
 	self->dirs[self->dir_fill]->dir_child = UINT32_MAX;
@@ -704,8 +775,6 @@ static uint32_t zip_instance_add (struct zip_instance_t *self,
 	while (1)
 	{
 		char *slash;
-		uint32_t search;
-again:
 		if (*ptr == '/')
 		{
 			ptr++;
@@ -721,21 +790,16 @@ again:
 			*slash = 0;
 			if (strcmp (ptr, ".") && strcmp (ptr, "..") && strlen (ptr)) /* we ignore these entries */
 			{
+				uint32_t search;
+				int hit;
 				/* check if we already have this node */
-				for (search = 1; search < self->dir_fill; search++)
+				search = zip_instance_find_dir (self, Filepath, &hit);
+				if (hit)
 				{
-					if (!strcmp (self->dirs[search]->orig_full_dirpath, Filepath))
-					{
-						iter = search;
-						*slash = '/';
-						ptr = slash + 1;
-						iter = search;
-						goto again; /* we need a break + continue; */
-					}
+					iter = self->dirs_sorted[search]->dir_index;
+				} else {
+					iter = zip_instance_add_create_dir (self, iter, search, Filepath, ptr, Filepath_FlaggedUTF8);
 				}
-
-				/* no hit, create one */
-				iter = zip_instance_add_create_dir (self, iter, Filepath, ptr, Filepath_FlaggedUTF8);
 				*slash = '/';
 				ptr = slash + 1;
 				if (iter == 0)
@@ -1065,8 +1129,10 @@ static struct ocpdir_t *zip_check (const struct ocpdirdecompressor_t *self, stru
 
 	iter = calloc (sizeof (*iter), 1);
 	iter->dir_size = 16;
-	iter->dirs = malloc (iter->dir_size * sizeof (iter->dirs[0]));
-	iter->dirs[0] = &iter->dir0;
+	iter->dirs        = malloc (iter->dir_size * sizeof (iter->dirs[0]));
+	iter->dirs_sorted = malloc (iter->dir_size * sizeof (iter->dirs[0]));
+	iter->dirs[0]        = &iter->dir0;
+	iter->dirs_sorted[0] = &iter->dir0;
 
 	DEBUG_PRINT( "[ZIP] creating a DIR using the same parent dirdb_ref\n");
 
@@ -1205,6 +1271,7 @@ static void zip_instance_unref (struct zip_instance_t *self)
 	}
 
 	free (self->dirs);
+	free (self->dirs_sorted);
 	free (self->files);
 
 	if (self->archive_file)
@@ -2341,7 +2408,7 @@ static void zip_translate (struct zip_instance_t *self, char *src, char **buffer
 	char *dst = *buffer;
 	size_t dstlen = *buffersize;
 
-	DEBUG_PRINT ("zip_translate %s =>", src);
+	DEBUG_PRINT ("zip_translate %s => ", src);
 
 	temp = strrchr (src, '/');
 	if (temp)
@@ -2350,8 +2417,24 @@ static void zip_translate (struct zip_instance_t *self, char *src, char **buffer
 	}
 	srclen = strlen (src);
 
+	if (!self->charset_override)
+	{ /* check for ascii */
+		char *iter;
+		for (iter = src; *iter; iter++)
+		{
+			if ((*iter < 32) || (*iter > 126))
+				break;
+		}
+		if (!*iter)
+		{
+			DEBUG_PRINT ("ASCII, no translate needed\n");
+			goto ascii_no_translate;
+		}
+	}
+
 	if (!self->iconv_handle)
 	{
+ascii_no_translate:
 		*buffer = strdup (src);
 		*buffersize = *buffer ? strlen (*buffer) : 0;
 		return;
