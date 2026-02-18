@@ -52,7 +52,7 @@ Changes from version 3.1.2 to 3.1.3:
  * [DMF]
    * Support sample-header for both file-version <8 and >=8
    * Use correct buffer-size for input data if decompressing sample-data.
-   * Reject patterns with more than 512 rows (not valid in the read editor)
+   * Reject patterns with more than 512 rows (not valid in the real editor)
    * When resizing order-list (splitting patterns with more than 256 rows into
      2), malloc() a buffer that is larger. (Old code performed buffer overflow)
    * Protect against buffer over/underflow when building the initial pattern-list
