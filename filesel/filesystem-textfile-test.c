@@ -82,6 +82,18 @@ const char *ocpfilehandle_t_fill_default_filename_override (struct ocpfilehandle
 	return 0;
 }
 
+struct ocpdir_t *ocpdir_t_fill_default_readdir_dir  (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	fprintf (stderr, "Dummy symbol ocpdir_t_fill_default_readdir_dir called?\n");
+	_exit(1);
+}
+
+struct ocpfile_t *ocpdir_t_fill_default_readdir_file (struct ocpdir_t *_self, uint32_t dirdb_ref)
+{
+	fprintf (stderr, "Dummy symbol ocpdir_t_fill_default_readdir_file called?\n");
+	_exit(1);
+}
+
 static int textfile_test (const char *title, char *src, const long srclen, const char **dst, const long dstlen)
 {
 	struct ocpdir_t *root_dir;

@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define FILEHANDLE_CACHE_DISABLE
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
