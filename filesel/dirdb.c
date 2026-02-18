@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#warning ADB_REF is outdated, should no longer be included
 
+#warning ADB_REF is outdated, should no longer be included
 
 #include "config.h"
 #include <assert.h>
@@ -65,8 +65,9 @@ struct dirdbEntry
 {
 	uint32_t parent;
 
-	uint32_t next;
-	uint32_t child;
+	uint32_t *children;
+	uint32_t  children_fill;
+	uint32_t  children_size;
 
 	uint32_t mdb_ref;
 	char *name; /* we pollute malloc a lot with this */
@@ -91,28 +92,37 @@ struct __attribute__((packed)) dirdbheader
 	char sig[60];
 	uint32_t entries;
 };
-const char dirdbsigv1[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
-const char dirdbsigv2[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01";
+const char dirdbsigv1[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const char dirdbsigv2[60] = "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00";
 
 static osfile            *dirdbFile;
 static struct dirdbEntry *dirdbData = 0;
 static uint32_t dirdbNum = 0;
 static int dirdbDirty = 0;
 
-static uint32_t dirdbRootChild = DIRDB_NOPARENT;
-static uint32_t dirdbFreeChild = DIRDB_NOPARENT;
+static uint32_t *dirdbRootChildren = 0;
+static uint32_t  dirdbRootChildren_fill = 0;
+static uint32_t  dirdbRootChildren_size = 0;
+static uint32_t *dirdbFreeChildren = 0;
+static uint32_t  dirdbFreeChildren_fill = 0;
+static uint32_t  dirdbFreeChildren_size = 0;
+
+#define FREE_MINSIZE 128
+#define GROW_CHILDREN_0 64
+#define GROW_CHILDREN_N 256
 
 #ifdef DIRDB_DEBUG
-static void dumpdb_parent(uint32_t firstchild, int ident)
+static void dumpdb_parent(const uint32_t * const children, const uint32_t children_fill, int ident)
 {
-	uint32_t iter;
+	uint32_t i;
 
-	for (iter = firstchild; iter != DIRDB_NOPARENT; iter = dirdbData[iter].next)
+	for (i = 0; i < children_fill; i++)
 	{
+		uint32_t iter = children[i];
 		int j;
-		assert (dirdbData[iter].name);
 
 		fprintf(stderr, "0x%08x ", iter);
+		assert (dirdbData[iter].name);
 		for (j=0;j<ident;j++)
 		{
 			fprintf(stderr, " ");
@@ -160,35 +170,48 @@ static void dumpdb_parent(uint32_t firstchild, int ident)
 		}
 		fprintf (stderr, ")\n");
 
-		if (dirdbData[iter].child != DIRDB_NOPARENT) /* nothing bad happens without this if, just  slows things down a bit */
+		if (dirdbData[iter].children_fill) /* nothing bad happens without this if, just  slows things down a bit */
 		{
-			dumpdb_parent(dirdbData[iter].child, ident+1);
+			dumpdb_parent(dirdbData[iter].children, dirdbData[iter].children_fill, ident+1);
 		}
 	}
 }
 
 static void dumpdirdb(void)
 {
-	dumpdb_parent(dirdbRootChild, 0);
+	dumpdb_parent(dirdbRootChildren, dirdbRootChildren_fill, 0);
 }
 #endif
+
+static int dirdbChildren_cmp (const void *a, const void *b)
+{
+	const uint32_t *index1 = (const uint32_t *)a;
+	const uint32_t *index2 = (const uint32_t *)b;
+
+	return strcmp (dirdbData[*index1].name, dirdbData[*index2].name);
+}
 
 int dirdbInit (const struct configAPI_t *configAPI)
 {
 	struct dirdbheader header;
 	uint32_t i;
-	int retval;
 	int version;
 	char *dirdbPath;
 
-	dirdbRootChild = DIRDB_NOPARENT;
-	dirdbFreeChild = DIRDB_NOPARENT;
+	dirdbFreeChildren_size = FREE_MINSIZE;
+	dirdbFreeChildren_fill = 0;
+	dirdbFreeChildren = malloc (sizeof (dirdbFreeChildren[0]) * dirdbFreeChildren_size);
+	if (!dirdbFreeChildren)
+	{
+		fprintf(stderr, "dirdbInit: malloc() failed\n");
+		return 0;
+	}
 
 	dirdbPath = malloc ( strlen(CFDATAHOMEDIR) + 11 + 1);
 	if (!dirdbPath)
 	{
 		fprintf(stderr, "dirdbInit: malloc() failed\n");
-		return 1;
+		return 0;
 	}
 	sprintf (dirdbPath, "%sCPDIRDB.DAT", CFDATAHOMEDIR);
 #ifdef _WIN32
@@ -209,7 +232,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 
 	if ( osfile_read (dirdbFile, &header, sizeof(header)) != sizeof(header) )
 	{
-		fprintf(stderr, "No header\n");
+		fprintf(stderr, "Empty\n");
 		return 1;
 	}
 	if (memcmp(header.sig, dirdbsigv1, 60))
@@ -237,6 +260,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	for (i=0; i<dirdbNum; i++)
 	{
 		uint16_t len;
+
 		if ( osfile_read(dirdbFile, &len, sizeof(uint16_t)) != sizeof(uint16_t) )
 		{
 			goto endoffile;
@@ -268,6 +292,7 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			if ( osfile_read (dirdbFile, dirdbData[i].name, len) != len)
 			{
 				free(dirdbData[i].name);
+				dirdbData[i].name = 0;
 				goto endoffile;
 			}
 			dirdbData[i].name[len]=0; /* terminate the string */
@@ -285,47 +310,156 @@ int dirdbInit (const struct configAPI_t *configAPI)
 			/* name is already NULL due to calloc() */
 		}
 	}
+
+	if (0)
+	{
+endoffile:
+		fprintf(stderr, "premature EOF\n");
+		for (; i<dirdbNum; i++)
+		{
+			dirdbData[i].parent = DIRDB_NOPARENT;
+			dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
+			dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+		}
+	}
+
+	/* Search for orphaned entries (invalid parent), recursive until database appears healthy */
+	while (1)
+	{
+		int changed = 0;
+		for (i=0; i<dirdbNum; i++)
+		{
+			if (dirdbData[i].parent != DIRDB_NOPARENT)
+			{
+				if (dirdbData[i].parent >= dirdbNum)
+				{
+					fprintf(stderr, "Invalid parent in a node .. (out of range)\n");
+					dirdbData[i].parent = DIRDB_NOPARENT;
+					free (dirdbData[i].name);
+					dirdbData[i].name = 0;
+					changed = 1;
+				} else if (!dirdbData[dirdbData[i].parent].name)
+				{
+					fprintf(stderr, "Invalid parent in a node .. (not in use)\n");
+					dirdbData[i].parent = DIRDB_NOPARENT;
+					dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
+					dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+					free (dirdbData[i].name);
+					dirdbData[i].name = 0;
+					changed = 1;
+				}
+			}
+		}
+		if (!changed)
+		{
+			break;
+		}
+	}
+
+	/* Reference the parents */
 	for (i=0; i<dirdbNum; i++)
 	{
 		if (dirdbData[i].parent != DIRDB_NOPARENT)
 		{
-			if (dirdbData[i].parent >= dirdbNum)
-			{
-				fprintf(stderr, "Invalid parent in a node .. (out of range)\n");
-				dirdbData[i].parent = DIRDB_NOPARENT;
-				free (dirdbData[i].name);
-				dirdbData[i].name = 0;
-			} else if (!dirdbData[dirdbData[i].parent].name)
-			{
-				fprintf(stderr, "Invalid parent in a node .. (not in use)\n");
-				dirdbData[i].parent = DIRDB_NOPARENT;
-			}
-
 			dirdbData[dirdbData[i].parent].refcount++;
 #ifdef DIRDB_DEBUG
 			dirdbData[dirdbData[i].parent].refcount_children++;
 #endif
 		}
-		dirdbData[i].child = DIRDB_NOPARENT;
-		dirdbData[i].next = DIRDB_NOPARENT;
 	}
 
+
+	/* collect all the holes into the free area */
 	for (i=0; i<dirdbNum; i++)
 	{
 		if (!dirdbData[i].name)
 		{
-			dirdbData[i].next = dirdbFreeChild;
-			dirdbFreeChild = i;
-		} else {
-			uint32_t *parent;
+			dirdbFreeChildren_fill++;
+		}
+	}
+	if (dirdbFreeChildren_fill)
+	{
+		dirdbFreeChildren_size = (dirdbFreeChildren_fill + (FREE_MINSIZE - 1)) & ~(FREE_MINSIZE - 1);
+		dirdbFreeChildren_fill = 0;
+		dirdbFreeChildren = malloc (sizeof (dirdbFreeChildren[0]) * dirdbFreeChildren_size);
+		if (!dirdbFreeChildren)
+		{
+			dirdbFreeChildren_size = 0;
+			goto outofmemory;
+		}
+		for (i=0; i<dirdbNum; i++)
+		{
+			if (!dirdbData[i].name)
+			{
+				dirdbFreeChildren[dirdbFreeChildren_fill++] = i;
+			}
+		}
+	}
+
+	/* build the children lists
+	    step one: count children */
+	for (i=0; i<dirdbNum; i++)
+	{
+		if (dirdbData[i].name)
+		{
 			if (dirdbData[i].parent == DIRDB_NOPARENT)
 			{
-				parent = &dirdbRootChild;
+				dirdbRootChildren_fill++;
 			} else {
-				parent = &dirdbData[dirdbData[i].parent].child;
+				dirdbData[dirdbData[i].parent].children_fill++;
 			}
-			dirdbData[i].next = *parent;
-			*parent = i;
+		}
+	}
+	/* step two: allocate */
+	if (dirdbRootChildren_fill)
+	{
+		dirdbRootChildren_size = (dirdbRootChildren_fill + 127) & ~127;
+		dirdbRootChildren_fill = 0;
+		dirdbRootChildren = malloc (sizeof (dirdbRootChildren[0]) * dirdbRootChildren_size);
+		if (!dirdbRootChildren)
+		{
+			dirdbRootChildren_size = 0;
+			goto outofmemory;
+		}
+	}
+	for (i=0; i<dirdbNum; i++)
+	{
+		if (dirdbData[i].children_fill)
+		{
+			dirdbData[i].children_size = (dirdbData[i].children_fill + 63) & ~63;
+			dirdbData[i].children_fill = 0;
+			dirdbData[i].children = malloc (sizeof (dirdbData[0]) * dirdbData[i].children_size);
+			if (!dirdbData[i].children)
+			{
+				dirdbData[i].children_size = 0;
+				goto outofmemory;
+			}
+		}
+	}
+	/* step three: add children */
+	for (i=0; i<dirdbNum; i++)
+	{
+		if (dirdbData[i].name)
+		{
+			if (dirdbData[i].parent == DIRDB_NOPARENT)
+			{
+				dirdbRootChildren[dirdbRootChildren_fill++] = i;
+			} else {
+				uint32_t parent = dirdbData[i].parent;
+				dirdbData[parent].children[dirdbData[parent].children_fill++] = i;
+			}
+		}
+	}
+	/* step four: sort */
+	if (dirdbRootChildren_fill > 1)
+	{
+		qsort (dirdbRootChildren, dirdbRootChildren_fill, sizeof (dirdbRootChildren[0]), dirdbChildren_cmp);
+	}
+	for (i=0; i<dirdbNum; i++)
+	{
+		if (dirdbData[i].children_fill > 1)
+		{
+			qsort (dirdbData[i].children, dirdbData[i].children_fill, sizeof (dirdbData[i].children[0]), dirdbChildren_cmp);
 		}
 	}
 
@@ -337,27 +471,30 @@ int dirdbInit (const struct configAPI_t *configAPI)
 
 	fprintf(stderr, "Done\n");
 	return 1;
-endoffile:
-	fprintf(stderr, "EOF\n");
-	retval=1;
-	goto unload;
 outofmemory:
 	fprintf(stderr, "out of memory\n");
-	retval=0;
-unload:
+/*unload:*/
 	for (i=0; i<dirdbNum; i++)
 	{
-		if (dirdbData[i].name)
-		{
-			free(dirdbData[i].name);
-			dirdbData[i].name=0;
-		}
-		dirdbData[i].parent = DIRDB_NOPARENT;
-		dirdbData[i].next = dirdbFreeChild;
-		dirdbFreeChild = i;
+		free (dirdbData[i].name);
+		free (dirdbData[i].children);
 	}
+	free (dirdbData);
+	dirdbData = 0;
+	dirdbNum = 0;
+
+	free (dirdbRootChildren);
+	dirdbRootChildren = 0;
+	dirdbRootChildren_fill = 0;
+	dirdbRootChildren_size = 0;
+
+	free (dirdbFreeChildren);
+	dirdbFreeChildren = 0;
+	dirdbFreeChildren_fill = 0;
+	dirdbFreeChildren_size = 0;
+
 	osfile_purge_readahead_cache (dirdbFile);
-	return retval;
+	return 0;
 }
 
 void dirdbClose(void)
@@ -375,18 +512,78 @@ void dirdbClose(void)
 	for (i=0; i<dirdbNum; i++)
 	{
 		free (dirdbData[i].name);
+		free (dirdbData[i].children);
 	}
 	free (dirdbData);
 	dirdbData = 0;
 	dirdbNum = 0;
-	dirdbRootChild = DIRDB_NOPARENT;
-	dirdbFreeChild = DIRDB_NOPARENT;
+	free (dirdbRootChildren);
+	free (dirdbFreeChildren);
+	dirdbRootChildren = 0;
+	dirdbRootChildren_fill = 0;
+	dirdbRootChildren_size = 0;
+	dirdbFreeChildren = 0;
+	dirdbFreeChildren_fill = 0;
+	dirdbFreeChildren_size = 0;
+}
+
+static uint32_t dirdbBinarySearchName (const uint32_t *children, const uint32_t children_fill, const char *name, int *hit)
+{
+	uint_fast32_t searchbase = 0, searchlen = children_fill;
+
+	*hit = 0;
+
+	if (!children_fill)
+	{
+		return 0;
+	}
+
+	while (searchlen > 1)
+	{
+		uint_fast32_t halfmark;
+		int result;
+
+		halfmark = searchlen >> 1;
+
+		result = strcmp (name, dirdbData[children[searchbase + halfmark]].name);
+		if (!result)
+		{
+			*hit = 1;
+			return searchbase + halfmark;
+		} else if (result > 0)
+		{
+			searchbase += halfmark;
+			searchlen -= halfmark;
+		} else {
+			searchlen = halfmark;
+		}
+	}
+
+	/* fine-tune the position */
+	if (searchbase < children_fill)
+	{
+		int result = strcmp (name, dirdbData[children[searchbase]].name);
+		if (!result)
+		{
+			*hit = 1;
+		} else {
+			if (result > 0)
+			{
+				searchbase++;
+			}
+		}
+	}
+
+	return searchbase;
 }
 
 uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 {
-	uint32_t i, *prev;
-	struct dirdbEntry *new;
+	int duplicate;
+	uint32_t i, node;
+	uint32_t **children;
+	uint32_t *children_fill;
+	uint32_t *children_size;
 
 #ifdef DIRDB_DEBUG
 	fprintf(stderr, "dirdbFindAndRef(0x%08x, %s%40s%s, use=%d) ", parent, name?"\"":"", name?name:"NULL", name?"\"":"", use);
@@ -431,105 +628,131 @@ uint32_t dirdbFindAndRef(uint32_t parent, char const *name, enum dirdb_use use)
 		return DIRDB_NOPARENT;
 	}
 
-	for (i = (parent != DIRDB_NOPARENT) ? dirdbData[parent].child : dirdbRootChild; i != DIRDB_NOPARENT; i = dirdbData[i].next)
-	{
-		assert (dirdbData[i].name);
-		assert (dirdbData[i].parent == parent);
-		if (!strcmp(name, dirdbData[i].name))
-		{
-			/*fprintf(stderr, " ++ %s (%d p=%d)\n", dirdbData[i].name, i, dirdbData[i].parent);*/
-			dirdbData[i].refcount++;
-#ifdef DIRDB_DEBUG
-			switch (use)
-			{
-				case dirdb_use_children:      dirdbData[i].refcount_children++;      break;
-				case dirdb_use_dir:           dirdbData[i].refcount_directories++;   break;
-				case dirdb_use_file:          dirdbData[i].refcount_files++;         break;
-				case dirdb_use_filehandle:    dirdbData[i].refcount_filehandles++;   break;
-				case dirdb_use_drive_resolve: dirdbData[i].refcount_drive_resolve++; break;
-				case dirdb_use_pfilesel:      dirdbData[i].refcount_pfilesel++;      break;
-				case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
-				case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
-			}
-			fprintf (stderr, "=>0x%08x\n", i);
-#endif
-			return i;
-		}
-	}
-
-	if (dirdbFreeChild == DIRDB_NOPARENT)
-	{
-		uint32_t j;
-
-		new=realloc(dirdbData, (dirdbNum+64)*sizeof(struct dirdbEntry));
-		if (!new)
-		{
-			fprintf(stderr, "dirdbFindAndRef: realloc() failed, out of memory\n");
-			return DIRDB_NOPARENT;
-		}
-		dirdbData=new;
-		memset(dirdbData+dirdbNum, 0, 64*sizeof(struct dirdbEntry));
-		i=dirdbNum;
-		dirdbNum+=64;
-
-		for (j=i;j<dirdbNum;j++)
-		{
-			dirdbData[j].mdb_ref = DIRDB_NO_MDBREF;
-			dirdbData[j].newmdb_ref = DIRDB_NO_MDBREF;
-			dirdbData[j].parent = DIRDB_NOPARENT;
-			dirdbData[j].next = dirdbFreeChild;
-			dirdbData[j].child = DIRDB_NOPARENT;
-			dirdbFreeChild = j;
-		}
-	}
-
 	if (parent == DIRDB_NOPARENT)
 	{
-		prev = &dirdbRootChild;
+		children      = &dirdbRootChildren;
+		children_fill = &dirdbRootChildren_fill;
+		children_size = &dirdbRootChildren_size;
 	} else {
-		prev = &dirdbData[parent].child;
+		children = &dirdbData[parent].children;
+		children_fill = &dirdbData[parent].children_fill;
+		children_size = &dirdbData[parent].children_size;
 	}
+	i = dirdbBinarySearchName (*children, *children_fill, name, &duplicate);
+#ifdef DIRDB_DEBUG
+	fprintf (stderr, " dirdbBinarySearchName => i=%u, duplicate=%d\n", (unsigned)i, duplicate);
+#endif
 
-	dirdbDirty=1;
-
-	/* grab a free entry */
-	i = dirdbFreeChild;
-	dirdbData[i].name=strdup(name);
-	if (!dirdbData[i].name)
+	if (duplicate)
 	{
-		fprintf (stderr, "dirdbFindAndRef: strdup() failed\n");
-		return DIRDB_NOPARENT;
-	}
-	dirdbFreeChild = dirdbData[i].next;
+		node = (*children)[i];
+	} else {
+		/* ensure we can fit a child into the parent */
+		if (*children_fill >= *children_size)
+		{
+#ifdef DIRDB_DEBUG
+			fprintf (stderr, " Grow parent children by 64 entries\n");
+#endif
+			uint32_t grow = (*children_size) ? GROW_CHILDREN_N : GROW_CHILDREN_0;
+			uint32_t *newchildren = realloc (*children, sizeof (**children) * ((*children_size) + grow));
+			if (!newchildren)
+			{
+				fprintf(stderr, "dirdbFindAndRef: realloc() failed, out of memory\n");
+				return DIRDB_NOPARENT;
+			}
+			(*children) = newchildren;
+			(*children_size) += grow;
+		}
 
-	/* and insert it as the parent first child */
-	dirdbData[i].next = *prev; /* take the previous value */
-	*prev = i; /* before we replace it */
-	dirdbData[i].parent=parent;
-	dirdbData[i].refcount++;
+		/* ensure we have a free node available */
+		if (!dirdbFreeChildren_fill)
+		{
+			struct dirdbEntry *new2;
+			int j;
+#ifdef DIRDB_DEBUG
+			fprintf (stderr, " no dirdbFreeChildren, add some\n");
+#endif
+			new2=realloc(dirdbData, (dirdbNum + FREE_MINSIZE) * sizeof(struct dirdbEntry));
+			if (!new2)
+			{
+				fprintf(stderr, "dirdbFindAndRef: realloc() failed, out of memory\n");
+				return DIRDB_NOPARENT;
+			}
+			dirdbData = new2;
+			memset (dirdbData + dirdbNum, 0, FREE_MINSIZE * sizeof (dirdbData[0]));
+			for (j=0;j < FREE_MINSIZE;j++)
+			{
+				dirdbFreeChildren[dirdbFreeChildren_fill++] = dirdbNum + j;
+
+				dirdbData[dirdbNum + j].mdb_ref = DIRDB_NO_MDBREF;
+				dirdbData[dirdbNum + j].newmdb_ref = DIRDB_NO_MDBREF;
+				dirdbData[dirdbNum + j].parent = DIRDB_NOPARENT;
+			}
+			dirdbNum += FREE_MINSIZE;
+
+			/* refresh pointers into dirdbData area */
+			if (parent == DIRDB_NOPARENT)
+			{
+#if 0
+				children      = &dirdbRootChildren;
+				children_fill = &dirdbRootChildren_fill;
+				children_size = &dirdbRootChildren_size;
+#endif
+			} else {
+				children = &dirdbData[parent].children;
+				children_fill = &dirdbData[parent].children_fill;
+				children_size = &dirdbData[parent].children_size;
+			}
+		}
+
+		{
+			char *namedup = strdup (name);
+			if (!namedup)
+			{
+				fprintf(stderr, "dirdbFindAndRef: strdup() failed, out of memory\n");
+				return DIRDB_NOPARENT;
+			}
+
+#ifdef DIRDB_DEBUG
+			assert (i < (*children_size));
+			assert (i <= (*children_fill));
+			fprintf (stderr, " Add space in parent children list, (fill=%u, bytes to move=%u)\n", (unsigned)(*children_fill), (unsigned)(sizeof(uint32_t) * ((*children_fill) - i)));
+#endif
+			memmove ((*children) + i + 1, (*children) + i, sizeof(uint32_t) * ((*children_fill) - i));
+			/* grab a node from the free list, move it to the parent children list and populate it */
+			node = (*children)[i] = dirdbFreeChildren[--dirdbFreeChildren_fill];
+			(*children_fill)++;
+			dirdbData[node].name = namedup;
+			dirdbData[node].parent = parent;
+			dirdbData[node].mdb_ref = DIRDB_NO_MDBREF;
+			dirdbData[node].newmdb_ref = DIRDB_NO_MDBREF;
+			if (parent != DIRDB_NOPARENT)
+			{
+				dirdbRef(parent, dirdb_use_children);
+			}
+			dirdbDirty=1;
+		}
+	}
+	dirdbData[node].refcount++;
 #ifdef DIRDB_DEBUG
 	switch (use)
 	{
-		case dirdb_use_children:      dirdbData[i].refcount_children++;      break;
-		case dirdb_use_dir:           dirdbData[i].refcount_directories++;   break;
-		case dirdb_use_file:          dirdbData[i].refcount_files++;         break;
-		case dirdb_use_filehandle:    dirdbData[i].refcount_filehandles++;   break;
-		case dirdb_use_drive_resolve: dirdbData[i].refcount_drive_resolve++; break;
-		case dirdb_use_pfilesel:      dirdbData[i].refcount_pfilesel++;      break;
-		case dirdb_use_medialib:      dirdbData[i].refcount_medialib++;      break;
-		case dirdb_use_mdb_medialib:  dirdbData[i].refcount_mdb_medialib++;  break;
+		case dirdb_use_children:      dirdbData[node].refcount_children++;      break;
+		case dirdb_use_dir:           dirdbData[node].refcount_directories++;   break;
+		case dirdb_use_file:          dirdbData[node].refcount_files++;         break;
+		case dirdb_use_filehandle:    dirdbData[node].refcount_filehandles++;   break;
+		case dirdb_use_drive_resolve: dirdbData[node].refcount_drive_resolve++; break;
+		case dirdb_use_pfilesel:      dirdbData[node].refcount_pfilesel++;      break;
+		case dirdb_use_medialib:      dirdbData[node].refcount_medialib++;      break;
+		case dirdb_use_mdb_medialib:  dirdbData[node].refcount_mdb_medialib++;  break;
 	}
-	fprintf (stderr, "=> new 0x%08x (add reference parent)\n", i);
-#endif
-	if (parent!=DIRDB_NOPARENT)
+
+	if (!duplicate)
 	{
-		/*fprintf(stderr, "  + %s (%d p=%d)\n", dirdbData[i].name, i, dirdbData[i].parent);*/
-		dirdbRef(parent, dirdb_use_children);
+		dumpdirdb();
 	}
-#ifdef DIRDB_DEBUG
-	dumpdirdb();
 #endif
-	return i;
+	return node;
 }
 
 uint32_t dirdbRef(uint32_t node, enum dirdb_use use)
@@ -994,7 +1217,12 @@ char *dirdbDiffPath(uint32_t base, uint32_t node, const int flags)
 
 void dirdbUnref(uint32_t node, enum dirdb_use use)
 {
-	uint32_t parent, *prev;
+	uint32_t parent, i;
+	int hit;
+
+	uint32_t **children;
+	uint32_t *children_fill;
+
 #ifdef DIRDB_DEBUG
 	fprintf(stderr, "dirdbUnref(0x%08x) ", node);
 	switch (use)
@@ -1074,31 +1302,46 @@ void dirdbUnref(uint32_t node, enum dirdb_use use)
 	}
 	/* fprintf(stderr, "DELETE\n");*/
 	dirdbDirty=1;
-	assert (dirdbData[node].child == DIRDB_NOPARENT);
 	parent = dirdbData[node].parent;
-	dirdbData[node].parent=DIRDB_NOPARENT;
-	free(dirdbData[node].name);
-	dirdbData[node].name=0;
-
-	dirdbData[node].mdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
-	dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
 
 	if (parent == DIRDB_NOPARENT)
 	{
-		prev = &dirdbRootChild;
+		children      = &dirdbRootChildren;
+		children_fill = &dirdbRootChildren_fill;
 	} else {
-		prev = &dirdbData[parent].child;
+		children = &dirdbData[parent].children;
+		children_fill = &dirdbData[parent].children_fill;
 	}
 
-	while (*prev != node)
+	i = dirdbBinarySearchName (*children, *children_fill, dirdbData[node].name, &hit);
+	assert (hit);
+
+	memmove ((*children) + i, (*children) + i + 1, sizeof(uint32_t) * ((*children_fill) - i - 1));
+	(*children_fill)--;
+
+	if (dirdbFreeChildren_fill >= dirdbFreeChildren_size)
 	{
-		assert ((*prev) != DIRDB_NOPARENT);
-		prev = &dirdbData[*prev].next;
+		dirdbFreeChildren_size += 64;
+		dirdbFreeChildren = realloc (dirdbFreeChildren, sizeof (uint32_t) * dirdbFreeChildren_size);
+		if (!dirdbFreeChildren)
+		{
+			fprintf (stderr, "dirdbUnref: realloc(dirdbFreeChildren) failed\n");
+			abort();
+			return;
+		}
 	}
+	dirdbFreeChildren[dirdbFreeChildren_fill++] = node;
 
-	*prev = dirdbData[node].next;
-	dirdbData[node].next = dirdbFreeChild;
-	dirdbFreeChild = node;
+	dirdbData[node].parent=DIRDB_NOPARENT;
+	free(dirdbData[node].name);
+	dirdbData[node].name=0;
+	dirdbData[node].mdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
+	dirdbData[node].newmdb_ref=DIRDB_NO_MDBREF; /* this should not be needed */
+
+	assert (dirdbData[node].children_fill == 0);
+	free (dirdbData[node].children);
+	dirdbData[node].children = 0;
+	dirdbData[node].children_size = 0;
 
 #ifdef DIRDB_DEBUG
 	dumpdirdb();
@@ -1389,68 +1632,68 @@ void dirdbTagCancel(void)
 	tagparentnode=DIRDB_NOPARENT;
 }
 
-static void _dirdbTagRemoveUntaggedAndSubmit(uint32_t node)
+static void _dirdbTagRemoveUntaggedAndSubmit(const uint32_t *nodes, const uint32_t nodecount)
 {
-	uint32_t i, next, child;
+	uint32_t i;
 
 #ifdef DIRDB_DEBUG
-	fprintf (stderr, "_dirdbTagRemoveUntaggedAndSubmit(0x%"PRIx32")\n", node);
+	fprintf (stderr, "_dirdbTagRemoveUntaggedAndSubmit(%p, nodecount=%"PRIu32")\n", nodes, nodecount);
 #endif
 
-	for (i = node; i != DIRDB_NOPARENT; i = next)
+	for (i = 0; i < nodecount; i++)
 	{
-		next = dirdbData[i].next;
-		child = dirdbData[i].child;
-		if (dirdbData[i].newmdb_ref == dirdbData[i].mdb_ref)
+		uint32_t node = nodes[i];
+		if (dirdbData[node].newmdb_ref == dirdbData[node].mdb_ref)
 		{
-			if (dirdbData[i].mdb_ref == DIRDB_NO_MDBREF)
+			if (dirdbData[node].mdb_ref == DIRDB_NO_MDBREF)
 			{
 				/* probably a dir */
 			} else {
-				dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
-				dirdbUnref(i, dirdb_use_mdb_medialib);
+				dirdbData[node].newmdb_ref = DIRDB_NO_MDBREF;
+				dirdbUnref(node, dirdb_use_mdb_medialib);
 			}
 		} else {
-			if (dirdbData[i].mdb_ref == DIRDB_NO_MDBREF)
+			if (dirdbData[node].mdb_ref == DIRDB_NO_MDBREF)
 			{
-				dirdbData[i].mdb_ref = dirdbData[i].newmdb_ref;
-				dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
+				dirdbData[node].mdb_ref = dirdbData[node].newmdb_ref;
+				dirdbData[node].newmdb_ref = DIRDB_NO_MDBREF;
 				/* no need to unref/ref, since we are
 				 * balanced. Since somebody can have
 				 * named a file, the same name
 				 * a directory used to have, we need
 				 * to scan for siblings.
 				 */
-			} else if (dirdbData[i].newmdb_ref == DIRDB_NO_MDBREF)
+			} else if (dirdbData[node].newmdb_ref == DIRDB_NO_MDBREF)
 			{
-				dirdbData[i].mdb_ref = DIRDB_NO_MDBREF;
-				dirdbUnref (i, dirdb_use_mdb_medialib);
+				dirdbData[node].mdb_ref = DIRDB_NO_MDBREF;
+				dirdbUnref (node, dirdb_use_mdb_medialib);
 				/* same as above regarding renaming */
 			} else {
-				dirdbData[i].mdb_ref = dirdbData[i].newmdb_ref;
-				dirdbData[i].newmdb_ref = DIRDB_NO_MDBREF;
-				dirdbUnref(i, dirdb_use_mdb_medialib);
+				dirdbData[node].mdb_ref = dirdbData[node].newmdb_ref;
+				dirdbData[node].newmdb_ref = DIRDB_NO_MDBREF;
+				dirdbUnref(node, dirdb_use_mdb_medialib);
 			}
 		}
-		if (child != DIRDB_NOPARENT)
+		if (dirdbData[node].children_fill)
 		{
-			_dirdbTagRemoveUntaggedAndSubmit(dirdbData[i].child);
+			_dirdbTagRemoveUntaggedAndSubmit(dirdbData[node].children, dirdbData[node].children_fill);
 		}
 	}
 }
 
-static void _dirdbTagPreserveTree(uint32_t node)
+static void _dirdbTagPreserveTree(const uint32_t * const nodes, const uint32_t nodecount)
 {
 	uint32_t i;
 
-	for (i = node; i != DIRDB_NOPARENT; i = dirdbData[i].next)
+	for (i = 0; i < nodecount; i++)
 	{
-		if ((dirdbData[i].newmdb_ref != dirdbData[i].mdb_ref) && (dirdbData[i].newmdb_ref == DIRDB_NOPARENT))
+		uint32_t node = nodes[i];
+		if ((dirdbData[node].newmdb_ref != dirdbData[node].mdb_ref) && (dirdbData[node].newmdb_ref == DIRDB_NOPARENT))
 		{
-			dirdbData[i].newmdb_ref = dirdbData[i].mdb_ref;
-			dirdbRef(i, dirdb_use_mdb_medialib);
+			dirdbData[node].newmdb_ref = dirdbData[node].mdb_ref;
+			dirdbRef(node, dirdb_use_mdb_medialib);
 		}
-		_dirdbTagPreserveTree (dirdbData[i].child);
+		_dirdbTagPreserveTree (dirdbData[node].children, dirdbData[node].children_fill);
 	}
 }
 
@@ -1463,7 +1706,7 @@ void dirdbTagPreserveTree(uint32_t node)
 	{
 		if (iter == node)
 		{
-			_dirdbTagPreserveTree (dirdbData[tagparentnode].child);
+			_dirdbTagPreserveTree (dirdbData[tagparentnode].children, dirdbData[tagparentnode].children_fill);
 			return;
 		}
 	}
@@ -1473,7 +1716,7 @@ void dirdbTagPreserveTree(uint32_t node)
 	{
 		if (iter == tagparentnode)
 		{
-			_dirdbTagPreserveTree (dirdbData[node].child);
+			_dirdbTagPreserveTree (dirdbData[node].children, dirdbData[node].children_fill);
 			return;
 		}
 	}
@@ -1483,9 +1726,9 @@ void dirdbTagRemoveUntaggedAndSubmit(void)
 {
 	if (tagparentnode != DIRDB_NOPARENT)
 	{
-		_dirdbTagRemoveUntaggedAndSubmit (dirdbData[tagparentnode].child);
+		_dirdbTagRemoveUntaggedAndSubmit (dirdbData[tagparentnode].children, dirdbData[tagparentnode].children_fill);
 	} else {
-		_dirdbTagRemoveUntaggedAndSubmit (dirdbRootChild);
+		_dirdbTagRemoveUntaggedAndSubmit (dirdbRootChildren, dirdbRootChildren_fill);
 	}
 	if (tagparentnode != DIRDB_NOPARENT)
 	{

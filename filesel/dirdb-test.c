@@ -19,7 +19,7 @@
  */
 
 //#define DIRDB_DEBUG 1
-#define CFDATAHOMEDIR_OVERRIDE "/foo/home/ocp/.ocp/"
+#define CFDATAHOMEDIR_OVERRIDE "/tmp/"
 #define CFHOMEDIR_OVERRIDE "/foo/home/ocp/"
 #define MEASURESTR_UTF8_OVERRIDE
 
@@ -48,13 +48,32 @@ static void clear_dirdb()
 	for (i=0; i < dirdbNum; i++)
 	{
 		free(dirdbData[i].name);
+		free(dirdbData[i].children);
 	}
 	free (dirdbData);
 	dirdbData=0;
 	dirdbNum=0;
 	dirdbDirty=0;
-	dirdbRootChild = DIRDB_NOPARENT;
-	dirdbFreeChild = DIRDB_NOPARENT;
+
+	free (dirdbRootChildren);
+	free (dirdbFreeChildren);
+
+	dirdbRootChildren = 0;
+	dirdbRootChildren_fill = 0;
+	dirdbRootChildren_size = 0;
+	dirdbFreeChildren = 0;
+	dirdbFreeChildren_fill = 0;
+	dirdbFreeChildren_size = 0;
+
+	dirdbFreeChildren_size = FREE_MINSIZE;
+	dirdbFreeChildren = malloc (sizeof (dirdbFreeChildren[0]) * dirdbFreeChildren_size);
+
+	if (dirdbFile)
+	{
+		osfile_close(dirdbFile);
+		dirdbFile = 0;
+	}
+	unlink (CFDATAHOMEDIR_OVERRIDE "CPDIRDB.DAT");
 }
 
 uint8_t mdbCleanSlate = 0;
@@ -1143,9 +1162,791 @@ static int dirdb_basic_test8(void)
 	return retval;
 }
 
+static int dirdb_basic_test9(void)
+{
+	int retval1 = 0;
+	int retval2 = 0;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing that dirdbFindAndRef() keeps all nodes sorted\n" ANSI_COLOR_RESET);
+
+	uint32_t node0_file = dirdbResolvePathAndRef ("file:/", dirdb_use_dir);
+	uint32_t node0_c = dirdbResolvePathAndRef ("c:/", dirdb_use_dir);
+	uint32_t node0_setup = dirdbResolvePathAndRef ("setup:/", dirdb_use_dir);
+
+	uint32_t node0_file_aab = dirdbResolvePathAndRef ("file:/aab.mod", dirdb_use_file);
+	uint32_t node0_file_baa = dirdbResolvePathAndRef ("file:/baa.mod", dirdb_use_file);
+	uint32_t node0_file_aba = dirdbResolvePathAndRef ("file:/aba.mod", dirdb_use_file);
+	uint32_t node0_file_aaa = dirdbResolvePathAndRef ("file:/aaa.mod", dirdb_use_file);
+	uint32_t node0_file_abb = dirdbResolvePathAndRef ("file:/abb.mod", dirdb_use_file);
+	uint32_t node0_file_cab = dirdbResolvePathAndRef ("file:/cab.mod", dirdb_use_file);
+	uint32_t node0_file_bab = dirdbResolvePathAndRef ("file:/bab.mod", dirdb_use_file);
+	uint32_t node0_file_caa = dirdbResolvePathAndRef ("file:/caa.mod", dirdb_use_file);
+
+	if ((dirdbRootChildren_fill < 1) || (dirdbRootChildren[0] != node0_c    )) { fprintf (stderr, ANSI_COLOR_RED "c: not in position 0 in root\n"); retval1++; }
+	if ((dirdbRootChildren_fill < 2) || (dirdbRootChildren[1] != node0_file )) { fprintf (stderr, ANSI_COLOR_RED "file: not in position 1 in root\n"); retval1++; }
+	if ((dirdbRootChildren_fill < 3) || (dirdbRootChildren[2] != node0_setup)) { fprintf (stderr, ANSI_COLOR_RED "setup: not in position 2 in root\n"); retval1++; }
+
+	if ((dirdbData[node0_file].children_fill < 1) || dirdbData[node0_file].children[0] != node0_file_aaa) { fprintf (stderr, ANSI_COLOR_RED "aaa.mod not in position 0 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 2) || dirdbData[node0_file].children[1] != node0_file_aab) { fprintf (stderr, ANSI_COLOR_RED "aab.mod not in position 1 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 3) || dirdbData[node0_file].children[2] != node0_file_aba) { fprintf (stderr, ANSI_COLOR_RED "aba.mod not in position 2 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 4) || dirdbData[node0_file].children[3] != node0_file_abb) { fprintf (stderr, ANSI_COLOR_RED "abb.mod not in position 3 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 5) || dirdbData[node0_file].children[4] != node0_file_baa) { fprintf (stderr, ANSI_COLOR_RED "baa.mod not in position 4 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 6) || dirdbData[node0_file].children[5] != node0_file_bab) { fprintf (stderr, ANSI_COLOR_RED "bab.mod not in position 5 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 7) || dirdbData[node0_file].children[6] != node0_file_caa) { fprintf (stderr, ANSI_COLOR_RED "caa.mod not in position 6 in c:\n"); retval1++; }
+	if ((dirdbData[node0_file].children_fill < 8) || dirdbData[node0_file].children[7] != node0_file_cab) { fprintf (stderr, ANSI_COLOR_RED "cab.mod not in position 7 in c:\n"); retval1++; }
+
+	if (!retval1)
+	{
+		fprintf (stderr, ANSI_COLOR_GREEN "All good\n");
+	}
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	fprintf (stderr, ANSI_COLOR_CYAN "Testing that dirdbUnref() removes the correct node from the sorted list\n");
+	dirdbUnref (node0_file_aab, dirdb_use_file);
+	if ((dirdbData[node0_file].children_fill < 1) || dirdbData[node0_file].children[0] != node0_file_aaa) { fprintf (stderr, ANSI_COLOR_RED "aaa.mod not in position 0 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 2) || dirdbData[node0_file].children[1] != node0_file_aba) { fprintf (stderr, ANSI_COLOR_RED "aba.mod not in position 1 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 3) || dirdbData[node0_file].children[2] != node0_file_abb) { fprintf (stderr, ANSI_COLOR_RED "abb.mod not in position 2 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 4) || dirdbData[node0_file].children[3] != node0_file_baa) { fprintf (stderr, ANSI_COLOR_RED "baa.mod not in position 3 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 5) || dirdbData[node0_file].children[4] != node0_file_bab) { fprintf (stderr, ANSI_COLOR_RED "bab.mod not in position 4 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 6) || dirdbData[node0_file].children[5] != node0_file_caa) { fprintf (stderr, ANSI_COLOR_RED "caa.mod not in position 5 in c: after removing aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 7) || dirdbData[node0_file].children[6] != node0_file_cab) { fprintf (stderr, ANSI_COLOR_RED "cab.mod not in position 6 in c: after removing aab.mod\n"); retval2++; }
+
+	dirdbUnref (node0_file_aaa, dirdb_use_file);
+	if ((dirdbData[node0_file].children_fill < 1) || dirdbData[node0_file].children[0] != node0_file_aba) { fprintf (stderr, ANSI_COLOR_RED "aba.mod not in position 0 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 2) || dirdbData[node0_file].children[1] != node0_file_abb) { fprintf (stderr, ANSI_COLOR_RED "abb.mod not in position 1 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 3) || dirdbData[node0_file].children[2] != node0_file_baa) { fprintf (stderr, ANSI_COLOR_RED "baa.mod not in position 2 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 4) || dirdbData[node0_file].children[3] != node0_file_bab) { fprintf (stderr, ANSI_COLOR_RED "bab.mod not in position 3 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 5) || dirdbData[node0_file].children[4] != node0_file_caa) { fprintf (stderr, ANSI_COLOR_RED "caa.mod not in position 4 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 6) || dirdbData[node0_file].children[5] != node0_file_cab) { fprintf (stderr, ANSI_COLOR_RED "cab.mod not in position 5 in c: after removing aaa.mod aab.mod\n"); retval2++; }
+
+	dirdbUnref (node0_file_cab, dirdb_use_file);
+	if ((dirdbData[node0_file].children_fill < 1) || dirdbData[node0_file].children[0] != node0_file_aba) { fprintf (stderr, ANSI_COLOR_RED "aba.mod not in position 0 in c: after removing aaa.mod aab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 2) || dirdbData[node0_file].children[1] != node0_file_abb) { fprintf (stderr, ANSI_COLOR_RED "abb.mod not in position 1 in c: after removing aaa.mod aab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 3) || dirdbData[node0_file].children[2] != node0_file_baa) { fprintf (stderr, ANSI_COLOR_RED "baa.mod not in position 2 in c: after removing aaa.mod aab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 4) || dirdbData[node0_file].children[3] != node0_file_bab) { fprintf (stderr, ANSI_COLOR_RED "bab.mod not in position 3 in c: after removing aaa.mod aab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 5) || dirdbData[node0_file].children[4] != node0_file_caa) { fprintf (stderr, ANSI_COLOR_RED "caa.mod not in position 4 in c: after removing aaa.mod aab.mod cab.mod\n"); retval2++; }
+
+	dirdbUnref (node0_file_bab, dirdb_use_file);
+	if ((dirdbData[node0_file].children_fill < 1) || dirdbData[node0_file].children[0] != node0_file_aba) { fprintf (stderr, ANSI_COLOR_RED "aba.mod not in position 0 in c: after removing aaa.mod aab.mod bab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 2) || dirdbData[node0_file].children[1] != node0_file_abb) { fprintf (stderr, ANSI_COLOR_RED "abb.mod not in position 1 in c: after removing aaa.mod aab.mod bab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 3) || dirdbData[node0_file].children[2] != node0_file_baa) { fprintf (stderr, ANSI_COLOR_RED "baa.mod not in position 2 in c: after removing aaa.mod aab.mod bab.mod cab.mod\n"); retval2++; }
+	if ((dirdbData[node0_file].children_fill < 4) || dirdbData[node0_file].children[3] != node0_file_caa) { fprintf (stderr, ANSI_COLOR_RED "caa.mod not in position 3 in c: after removing aaa.mod aab.mod bab.mod cab.mod\n"); retval2++; }
+
+	dirdbUnref (node0_file_aba, dirdb_use_file);
+	dirdbUnref (node0_file_abb, dirdb_use_file);
+	dirdbUnref (node0_file_baa, dirdb_use_file);
+	dirdbUnref (node0_file_caa, dirdb_use_file);
+	if (dirdbData[node0_file].children_fill) { fprintf (stderr, ANSI_COLOR_RED "c: not empty after removing all the children\n"); retval2++; }
+
+	if (!retval2)
+	{
+		fprintf (stderr, ANSI_COLOR_GREEN "All good\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	clear_dirdb();
+
+	return retval1 + retval2;
+}
+
+static int dirdb_basic_test10(void)
+{
+	int retval1 = 0;
+	int retval2 = 0;
+
+	uint32_t node0_z = dirdbResolvePathAndRef ("z:/", dirdb_use_dir);
+	/*uint32_t node0_z_z =*/ dirdbResolvePathAndRef ("z:/z.txt", dirdb_use_dir);
+	uint32_t node = 0, iter;
+	uint32_t orig_size = dirdbRootChildren_size;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbFindAndRef() Growing the root children list\n" ANSI_COLOR_RESET);
+	for (node = 0; dirdbRootChildren_size == orig_size; node++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof(temp), "C_%08u:", (unsigned int)node);
+		dirdbResolvePathAndRef (temp, dirdb_use_dir);
+		if (dirdbRootChildren_fill != (node + 2)) { fprintf (stderr, ANSI_COLOR_RED "dirdbRootChildren_fill has unexpected value (%"PRIu32" vs %"PRIu32")\n", dirdbRootChildren_fill, node + 2); retval1++; }
+		if (dirdbRootChildren_fill > dirdbRootChildren_size) { fprintf (stderr, ANSI_COLOR_RED "dirdbRootChildren_fill (%"PRIu32") > dirdbRootChildren_size %"PRIu32")\n", dirdbRootChildren_fill, dirdbRootChildren_size); retval1++; }
+
+		if (node > 500) { fprintf (stderr, ANSI_COLOR_RED "Giving up waiting for grow\n"); retval1++; break; }
+	}
+	if (node != orig_size)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "List grew at unexpected size %"PRIu32" instead of %"PRIu32"\n", node, orig_size);
+		retval1++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_RESET "List grew at " ANSI_COLOR_GREEN "%"PRIu32" " ANSI_COLOR_RESET "nodes - OK\n", node);
+	}
+
+	for (iter = 0; iter < node; iter++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "C_%08u:", (unsigned int)iter);
+		if (strcmp (dirdbData[dirdbRootChildren[iter]].name, temp))
+		{
+			fprintf (stderr, ANSI_COLOR_RED "Child at offset %"PRIu32" has unexpected name \"%s\" instead of \"%s\"\n", iter, dirdbData[dirdbRootChildren[iter]].name, temp);
+			retval1++;
+		}
+	}
+	if (strcmp (dirdbData[dirdbRootChildren[iter]].name, "z:"))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Child at offset %"PRIu32" has unexpected name \"%s\" instead of \"z:\"\n", iter, dirdbData[dirdbRootChildren[iter]].name);
+		retval1++;
+	}
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbFindAndRef() Growing the non-root children list\n" ANSI_COLOR_RESET);
+	node = 0;
+	orig_size = dirdbData[node0_z].children_size;
+
+	for (node = 0; dirdbData[node0_z].children_size == orig_size; node++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "z:/C_%08u.txt", (unsigned int)node);
+		dirdbResolvePathAndRef (temp, dirdb_use_file);
+		if (dirdbData[node0_z].children_fill != (node + 2)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[node0_z].children_fill has unexpected value (%"PRIu32" vs %"PRIu32")\n", dirdbData[node0_z].children_fill, node + 2); retval2++; }
+		if (dirdbData[node0_z].children_fill > dirdbData[node0_z].children_size) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[node0_z].children_fill (%"PRIu32") > dirdbData[node0_z].children_size %"PRIu32")\n", dirdbData[node0_z].children_fill, dirdbData[node0_z].children_size); retval2++; }
+		if (node > 500) { fprintf (stderr, ANSI_COLOR_RED "Giving up waiting for grow\n"); retval2++; break; }
+	}
+	if (node != orig_size)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "List grew at unexpected size %"PRIu32" instead of %"PRIu32"\n", node, orig_size);
+		retval1++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_RESET "List grew at " ANSI_COLOR_GREEN "%"PRIu32" " ANSI_COLOR_RESET "nodes - OK\n", node);
+	}
+
+	for (iter = 0; iter < node; iter++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "C_%08u.txt", (unsigned int)iter);
+		if (strcmp (dirdbData[dirdbData[node0_z].children[iter]].name, temp))
+		{
+			fprintf (stderr, ANSI_COLOR_RED "Child at offset %"PRIu32" has unexpected name \"%s\" instead of \"%s\"\n", iter, dirdbData[dirdbData[node0_z].children[iter]].name, temp);
+			retval2++;
+		}
+	}
+	if (strcmp (dirdbData[dirdbData[node0_z].children[iter]].name, "z.txt"))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Child at offset %"PRIu32" has unexpected name \"%s\" instead of \"z:\"\n", iter, dirdbData[dirdbData[node0_z].children[iter]].name);
+		retval2++;
+	}
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	clear_dirdb();
+
+	return retval1 + retval2;
+}
+
+static int dirdb_basic_test11(void)
+{
+	int retval = 0;
+	uint32_t node = 0, iter;
+	uint32_t orig_size = 0;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbFindAndRef() Growing the database\n" ANSI_COLOR_RESET);
+
+	for (node = 0; (!orig_size) || (dirdbNum == orig_size); node++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "c_%08u:", (unsigned int)node);
+		dirdbResolvePathAndRef (temp, dirdb_use_dir);
+		if (!orig_size)
+		{
+			orig_size = dirdbNum;
+		}
+		if (node > 500) { fprintf (stderr, ANSI_COLOR_RED "Giving up waiting for grow\n"); retval++; break; }
+	}
+	if ((node - 1) != orig_size)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Database grew at unexpected size %"PRIu32" instead of %"PRIu32"\n", node, orig_size);
+		retval++;
+	} else {
+		fprintf (stderr, ANSI_COLOR_RESET "Database grew at " ANSI_COLOR_GREEN "%"PRIu32" " ANSI_COLOR_RESET "nodes - OK\n", node);
+	}
+
+	for (iter = 0; iter < node; iter++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "c_%08u:", (unsigned int)iter);
+		if (strcmp (dirdbData[dirdbRootChildren[iter]].name, temp))
+		{
+			fprintf (stderr, ANSI_COLOR_RED "Child at offset %"PRIu32" has unexpected name \"%s\" instead of \"%s\"\n", iter, dirdbData[dirdbRootChildren[iter]].name, temp);
+			retval++;
+		}
+	}
+
+	if (!retval)
+	{
+		fprintf (stderr, ANSI_COLOR_GREEN "All good\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	clear_dirdb();
+
+	return retval;
+}
+
+static int dirdb_basic_test12(void)
+{
+	int retval = 0;
+	uint32_t orig_size = dirdbFreeChildren_size;
+	uint32_t iter, node;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbUnref() Growing the freelist\n" ANSI_COLOR_RESET);
+
+	for (iter = 0; iter < (orig_size * 2); iter++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "c_%08u:", (unsigned int)iter);
+		dirdbResolvePathAndRef (temp, dirdb_use_dir);
+	}
+
+	for (iter = 0; iter < (orig_size * 2); iter++)
+	{
+		char temp[20];
+		snprintf (temp, sizeof (temp), "c_%08u:", (unsigned int)iter);
+		node = dirdbResolvePathAndRef (temp, dirdb_use_dir);
+		dirdbUnref (node, dirdb_use_dir);
+		dirdbUnref (node, dirdb_use_dir);
+	}
+
+	if (dirdbFreeChildren_fill != dirdbNum)
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbFreeChildren_fill %"PRIu32" != dirdbNum %"PRIu32"\n", dirdbFreeChildren_fill, dirdbNum);
+		retval++;
+	}
+
+	for (iter = 0; iter < dirdbNum; iter++)
+	{
+		int found = 0;
+		uint32_t iter2;
+		for (iter2 = 0; iter2 < dirdbFreeChildren_fill; iter2++)
+		{
+			if (dirdbFreeChildren[iter2] == iter)
+			{
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+		{
+			fprintf (stderr, ANSI_COLOR_RED "Unable to find node %"PRIu32" in dirdbFreeChildren list\n", iter);
+			retval++;
+		}
+	}
+
+	if (!retval)
+	{
+		fprintf (stderr, ANSI_COLOR_GREEN "All good\n");
+	}
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	clear_dirdb();
+
+	return retval;
+}
+
+const char TestDatabaseHealthy[60+4 + 2*16 + 13*12 + 5+4+3+6*10] =
+/* 60 */ "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00" /* dirdbsigv2 */
+/*  4 */ "\x10\x00\x00\x00" /* 16 entries */
+/*  2 */ "\x00\x00" /* entry 0, not in use */
+/*  2 */ "\x00\x00" /* entry 1, not in use */
+/*  2 */ "\x05\x00" /* entry 2, file: */
+/*  4 */  "\xff\xff\xff\xff" /* parent: NO_PARENT */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  5 */  "file:"
+/*  2 */"\x04\x00" /* entry 3, file:/home */
+/*  4 */  "\x02\x00\x00\x00" /* parent: 2, file: */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  4 */  "home"
+/*  2 */"\x03\x00" /* entry 4, file:/home/foo */
+/*  4 */  "\x03\x00\x00\x00" /* parent: 3, file:/home */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  3 */  "foo"
+/*  2 */"\x06\x00" /* entry 5, file:/home/foo/01.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/01.mod */
+/*  4 */  "\x00\x01\x02\x03" /* mdb:    0x03020100 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "01.mod"
+/*  2 */"\x06\x00" /* entry 6, file:/home/foo/02.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x04\x05\x06\x07" /* mdb:    0x07060504 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "02.mod"
+/*  2 */"\x06\x00" /* entry 7, file:/home/foo/03.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x08\x09\x0a\x0b" /* mdb:    0x0b0a0908 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "03.mod"
+/*  2 */"\x06\x00" /* entry 8, file:/home/foo/04.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x0c\x0d\x0e\x0f" /* mdb:    0x0f0e0d0c */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "04.mod"
+/*  2 */"\x06\x00" /* entry 9, file:/home/foo/05.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x10\x11\x12\x13" /* mdb:    0x13121110 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "05.mod"
+/*  2 */"\x06\x00" /* entry 10, file:/home/foo/06.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x14\x15\x16\x17" /* mdb:    0x17161514 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "06.mod"
+/*  2 */"\x06\x00" /* entry 11, file:/home/foo/07.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x18\x19\x1a\x1b" /* mdb:    0x1b1a1918 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "07.mod"
+/*  2 */"\x06\x00" /* entry 12, file:/home/foo/08.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x1c\x1d\x1e\x1f" /* mdb:    0x1f1e1d1c */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "08.mod"
+/*  2 */"\x06\x00" /* entry 13, file:/home/foo/09.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x20\x21\x22\x23" /* mdb:    0x23222120 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "09.mod"
+/*  2 */"\x06\x00" /* entry 14, file:/home/foo/10.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x24\x25\x26\x27" /* mdb:    0x27262524 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "10.mod"
+/*  2 */"\x00\x00" /* entry 15, not in use */
+;
+
+const char TestDatabasePartial[60+4 + 2*16 + 14*12 +5+4+3+6*9+4+3] =
+/* 60 */ "Cubic Player Directory Data Base\x1B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00" /* dirdbsigv2 */
+/*  4 */ "\x20\x00\x00\x00" /* 32, last 16 entries missing*/
+/*  2 */ "\x00\x00" /* entry 0, not in use */
+/*  2 */ "\x00\x00" /* entry 1, not in use */
+/*  2 */ "\x05\x00" /* entry 2, file: */
+/*  4 */  "\xff\xff\xff\xff" /* parent: NO_PARENT */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  5 */  "file:"
+/*  2 */"\x04\x00" /* entry 3, file:/home */
+/*  4 */  "\x02\x00\x00\x00" /* parent: 2, file: */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  4 */  "home"
+/*  2 */"\x03\x00" /* entry 4, file:/home/foo */
+/*  4 */  "\x03\x00\x00\x00" /* parent: 3, file:/home */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  3 */  "foo"
+/*  2 */"\x06\x00" /* entry 5, file:/home/foo/01.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/01.mod */
+/*  4 */  "\x00\x01\x02\x03" /* mdb:    0x03020100 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "01.mod"
+/*  2 */"\x06\x00" /* entry 6, file:/home/foo/02.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x04\x05\x06\x07" /* mdb:    0x07060504 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "02.mod"
+/*  2 */"\x06\x00" /* entry 7, file:/home/foo/03.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x08\x09\x0a\x0b" /* mdb:    0x0b0a0908 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "03.mod"
+/*  2 */"\x06\x00" /* entry 8, file:/home/foo/04.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x0c\x0d\x0e\x0f" /* mdb:    0x0f0e0d0c */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "04.mod"
+/*  2 */"\x06\x00" /* entry 9, file:/home/foo/05.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x10\x11\x12\x13" /* mdb:    0x13121110 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "05.mod"
+/*  2 */"\x06\x00" /* entry 10, file:/home/foo/06.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x14\x15\x16\x17" /* mdb:    0x17161514 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "06.mod"
+/*  2 */"\x06\x00" /* entry 11, file:/home/foo/07.mod */
+/*  4 */  "\x04\x00\x00\x00" /* parent: 4, file:/home/foo/02.mod */
+/*  4 */  "\x18\x19\x1a\x1b" /* mdb:    0x1b1a1918 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "07.mod"
+/*  2 */"\x04\x00" /* entry 12, ?/test */
+/*  4 */  "\x10\x00\x00\x00" /* parent: 16, missing */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "test"
+/*  2 */"\x03\x00" /* entry 13, ?/test/moo */
+/*  4 */  "\x0c\x00\x00\x00" /* parent: 12, file:/home/foo/02.mod */
+/*  4 */  "\xff\xff\xff\xff" /* mdb:    NO_REFERENCE */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "moo"
+/*  2 */"\x06\x00" /* entry 14, ?/test/moo/10.mod */
+/*  4 */  "\x0d\x00\x00\x00" /* parent: 13 */
+/*  4 */  "\x20\x21\x22\x23" /* mdb:    0x23222120 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "10.mod"
+/*  2 */"\x06\x00" /* entry 15, ?/11.mod */
+/*  4 */  "\x10\x00\x00\x00" /* parent: 16 missing */
+/*  4 */  "\x24\x25\x26\x27" /* mdb:    0x27262524 */
+/*  4 */  "\xff\xff\xff\xff" /* adb:    defunctional NO_REFERENCE */
+/*  6 */  "11.mod"
+;
+
+void InitDummyFileIO (const char * const basedata, const int datalen)
+{
+	dirdbFile = osfile_open_readwrite (CFDATAHOMEDIR_OVERRIDE "CPDIRDB.DAT", 0, 0);
+	if (!dirdbFile)
+	{
+		fprintf(stderr, "InitDummyFileIO() failed, expect failures\n");
+		return;
+	}
+	osfile_write (dirdbFile, basedata, datalen);
+	osfile_close (dirdbFile);
+	dirdbFile = 0;
+}
+
+static int dirdb_basic_test13(void)
+{
+	int retval = 0;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbInit() Parse non-existing file\n" ANSI_COLOR_RESET);
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Failed to run\n");
+		retval++;
+	} else {
+		if (dirdbFreeChildren_size < FREE_MINSIZE) { fprintf (stderr, ANSI_COLOR_RED "dirdbFreeChildren_size < FREE_MINSIZE\n"); retval++; }
+	}
+	clear_dirdb ();
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbInit() Parse empty file\n" ANSI_COLOR_RESET);
+	InitDummyFileIO ("", 0);
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Failed to run\n");
+		retval++;
+	} else {
+		if (dirdbFreeChildren_size < FREE_MINSIZE) { fprintf (stderr, ANSI_COLOR_RED "dirdbFreeChildren_size < FREE_MINSIZE\n"); retval++; }
+	}
+	clear_dirdb ();
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbInit() Parse healty binary file\n" ANSI_COLOR_RESET);
+	InitDummyFileIO (TestDatabaseHealthy, sizeof (TestDatabaseHealthy));
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Failed to run\n");
+		retval++;
+	} else {
+		if (dirdbFreeChildren_size < FREE_MINSIZE) { fprintf (stderr, ANSI_COLOR_RED "dirdbFreeChildren_size < FREE_MINSIZE\n"); retval++; }
+		if (dirdbNum < 16) { fprintf (stderr, ANSI_COLOR_RED "dirdbNum (%"PRIu32") < 16\n", dirdbNum); retval++; }
+
+		if ((dirdbNum <  3) || strcmp (dirdbData[ 2].name, "file:")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[2].name != \"file:\"\n"); retval++; }
+
+		if ((dirdbNum <  4) || strcmp (dirdbData[ 3].name, "home")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[3].name != \"home\"\n"); retval++; }
+		if ((dirdbNum <  4) || (dirdbData[ 3].parent != 2)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[3].parent != 2\n"); retval++; }
+
+		if ((dirdbNum <  5) || strcmp (dirdbData[ 4].name, "foo")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].name != \"foo\"\n"); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[ 4].parent != 3)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].parent != 3\n"); retval++; }
+
+		if ((dirdbNum <  6) || strcmp (dirdbData[ 5].name, "01.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].name != \"01.mod\"\n"); retval++; }
+		if ((dirdbNum <  6) || (dirdbData[ 5].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].parent != 4\n"); retval++; }
+		if ((dirdbNum <  6) || (dirdbData[ 5].mdb_ref != 0x03020100)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].mdb_ref 0x%08"PRIx32" != 0x03020100\n", dirdbData[5].mdb_ref); retval++; }
+
+		if ((dirdbNum <  7) || strcmp (dirdbData[ 6].name, "02.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].name != \"02.mod\"\n"); retval++; }
+		if ((dirdbNum <  7) || (dirdbData[ 6].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].parent != 4\n"); retval++; }
+		if ((dirdbNum <  7) || (dirdbData[ 6].mdb_ref != 0x07060504)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].mdb_ref 0x%08"PRIx32" != 0x07060504\n", dirdbData[6].mdb_ref); retval++; }
+
+		if ((dirdbNum <  8) || strcmp (dirdbData[ 7].name, "03.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].name != \"03.mod\"\n"); retval++; }
+		if ((dirdbNum <  8) || (dirdbData[ 7].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].parent != 4\n"); retval++; }
+		if ((dirdbNum <  8) || (dirdbData[ 7].mdb_ref != 0x0b0a0908)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].mdb_ref 0x%08"PRIx32" != 0x0b0a0906\n", dirdbData[7].mdb_ref); retval++; }
+
+		if ((dirdbNum <  9) || strcmp (dirdbData[ 8].name, "04.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].name != \"04.mod\"\n"); retval++; }
+		if ((dirdbNum <  9) || (dirdbData[ 8].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].parent != 4\n"); retval++; }
+		if ((dirdbNum <  9) || (dirdbData[ 8].mdb_ref != 0x0f0e0d0c)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].mdb_ref 0x%08"PRIx32" != 0x0f0e0d0c\n", dirdbData[8].mdb_ref); retval++; }
+
+		if ((dirdbNum < 10) || strcmp (dirdbData[ 9].name, "05.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].name != \"05.mod\"\n"); retval++; }
+		if ((dirdbNum < 10) || (dirdbData[ 9].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].parent != 4\n"); retval++; }
+		if ((dirdbNum < 10) || (dirdbData[ 9].mdb_ref != 0x13121110)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].mdb_ref 0x%08"PRIx32" != 0x13121110\n", dirdbData[9].mdb_ref); retval++; }
+
+		if ((dirdbNum < 11) || strcmp (dirdbData[10].name, "06.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].name != \"06.mod\"\n"); retval++; }
+		if ((dirdbNum < 11) || (dirdbData[10].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].parent != 4\n"); retval++; }
+		if ((dirdbNum < 11) || (dirdbData[10].mdb_ref != 0x17161514)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].mdb_ref 0x%08"PRIx32" != 0x17161514\n", dirdbData[10].mdb_ref); retval++; }
+
+		if ((dirdbNum < 12) || strcmp (dirdbData[11].name, "07.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].name != \"07.mod\"\n"); retval++; }
+		if ((dirdbNum < 12) || (dirdbData[11].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].parent != 4\n"); retval++; }
+		if ((dirdbNum < 12) || (dirdbData[11].mdb_ref != 0x1b1a1918)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].mdb_ref 0x%08"PRIx32" != 0x1b1a1918\n", dirdbData[11].mdb_ref); retval++; }
+
+		if ((dirdbNum < 13) || strcmp (dirdbData[12].name, "08.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[12].name != \"08.mod\"\n"); retval++; }
+		if ((dirdbNum < 13) || (dirdbData[12].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[12].parent != 4\n"); retval++; }
+		if ((dirdbNum < 13) || (dirdbData[12].mdb_ref != 0x1f1e1d1c)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[12].mdb_ref 0x%08"PRIx32" != 0x1f1e1d1c\n", dirdbData[12].mdb_ref); retval++; }
+
+		if ((dirdbNum < 14) || strcmp (dirdbData[13].name, "09.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[13].name != \"09.mod\"\n"); retval++; }
+		if ((dirdbNum < 14) || (dirdbData[13].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[13].parent != 4\n"); retval++; }
+		if ((dirdbNum < 14) || (dirdbData[13].mdb_ref != 0x23222120)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[13].mdb_ref 0x%08"PRIx32" != 0x23222120\n", dirdbData[13].mdb_ref); retval++; }
+
+		if ((dirdbNum < 15) || strcmp (dirdbData[14].name, "10.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[14].name != \"10.mod\"\n"); retval++; }
+		if ((dirdbNum < 15) || (dirdbData[14].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[14].parent != 4\n"); retval++; }
+		if ((dirdbNum < 15) || (dirdbData[14].mdb_ref != 0x27262524)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[14].mdb_ref 0x%08"PRIx32" != 0x27262524\n", dirdbData[14].mdb_ref); retval++; }
+
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  1) || (dirdbData[4].children[0] !=  5)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[0] %"PRIu32" != 5\n", dirdbData[4].children[0]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  2) || (dirdbData[4].children[1] !=  6)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[1] %"PRIu32" != 6\n", dirdbData[4].children[1]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  3) || (dirdbData[4].children[2] !=  7)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[2] %"PRIu32" != 7\n", dirdbData[4].children[2]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  4) || (dirdbData[4].children[3] !=  8)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[3] %"PRIu32" != 8\n", dirdbData[4].children[3]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  5) || (dirdbData[4].children[4] !=  9)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[4] %"PRIu32" != 9\n", dirdbData[4].children[4]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  6) || (dirdbData[4].children[5] != 10)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[5] %"PRIu32" != 10\n", dirdbData[4].children[5]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  7) || (dirdbData[4].children[6] != 11)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[6] %"PRIu32" != 11\n", dirdbData[4].children[6]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  8) || (dirdbData[4].children[7] != 12)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[7] %"PRIu32" != 12\n", dirdbData[4].children[7]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  9) || (dirdbData[4].children[8] != 13)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[8] %"PRIu32" != 13\n", dirdbData[4].children[8]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill < 10) || (dirdbData[4].children[9] != 14)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[9] %"PRIu32" != 14\n", dirdbData[4].children[9]); retval++; }
+	}
+	clear_dirdb ();
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbInit() Parse partial file\n" ANSI_COLOR_RESET);
+	InitDummyFileIO (TestDatabasePartial, sizeof (TestDatabasePartial));
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "Failed to run\n");
+		retval++;
+	} else {
+		int i;
+		if (dirdbFreeChildren_size < FREE_MINSIZE) { fprintf (stderr, ANSI_COLOR_RED "dirdbFreeChildren_size < FREE_MINSIZE\n"); retval++; }
+		if (dirdbNum < 32) { fprintf (stderr, ANSI_COLOR_RED "dirdbNum (%"PRIu32") < 32\n", dirdbNum); retval++; }
+
+		if ((dirdbNum <  3) || strcmp (dirdbData[ 2].name, "file:")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[2].name != \"file:\"\n"); retval++; }
+
+		if ((dirdbNum <  4) || strcmp (dirdbData[ 3].name, "home")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[3].name != \"home\"\n"); retval++; }
+		if ((dirdbNum <  4) || (dirdbData[ 3].parent != 2)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[3].parent != 2\n"); retval++; }
+
+		if ((dirdbNum <  5) || strcmp (dirdbData[ 4].name, "foo")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].name != \"foo\"\n"); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[ 4].parent != 3)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].parent != 3\n"); retval++; }
+
+		if ((dirdbNum <  6) || strcmp (dirdbData[ 5].name, "01.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].name != \"01.mod\"\n"); retval++; }
+		if ((dirdbNum <  6) || (dirdbData[ 5].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].parent != 4\n"); retval++; }
+		if ((dirdbNum <  6) || (dirdbData[ 5].mdb_ref != 0x03020100)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].mdb_ref 0x%08"PRIx32" != 0x03020100\n", dirdbData[5].mdb_ref); retval++; }
+
+		if ((dirdbNum <  7) || strcmp (dirdbData[ 6].name, "02.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].name != \"02.mod\"\n"); retval++; }
+		if ((dirdbNum <  7) || (dirdbData[ 6].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].parent != 4\n"); retval++; }
+		if ((dirdbNum <  7) || (dirdbData[ 6].mdb_ref != 0x07060504)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[6].mdb_ref 0x%08"PRIx32" != 0x07060504\n", dirdbData[6].mdb_ref); retval++; }
+
+		if ((dirdbNum <  8) || strcmp (dirdbData[ 7].name, "03.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].name != \"03.mod\"\n"); retval++; }
+		if ((dirdbNum <  8) || (dirdbData[ 7].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].parent != 4\n"); retval++; }
+		if ((dirdbNum <  8) || (dirdbData[ 7].mdb_ref != 0x0b0a0908)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[7].mdb_ref 0x%08"PRIx32" != 0x0b0a0908\n", dirdbData[7].mdb_ref); retval++; }
+
+		if ((dirdbNum <  9) || strcmp (dirdbData[ 8].name, "04.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].name != \"04.mod\"\n"); retval++; }
+		if ((dirdbNum <  9) || (dirdbData[ 8].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].parent != 4\n"); retval++; }
+		if ((dirdbNum <  9) || (dirdbData[ 8].mdb_ref != 0x0f0e0d0c)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[8].mdb_ref 0x%08"PRIx32" != 0x0f0e0d0c\n", dirdbData[8].mdb_ref); retval++; }
+
+		if ((dirdbNum < 10) || strcmp (dirdbData[ 9].name, "05.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].name != \"05.mod\"\n"); retval++; }
+		if ((dirdbNum < 10) || (dirdbData[ 9].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].parent != 4\n"); retval++; }
+		if ((dirdbNum < 10) || (dirdbData[ 9].mdb_ref != 0x13121110)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[9].mdb_ref 0x%08"PRIx32" != 0x13121110\n", dirdbData[9].mdb_ref); retval++; }
+
+		if ((dirdbNum < 11) || strcmp (dirdbData[10].name, "06.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].name != \"06.mod\"\n"); retval++; }
+		if ((dirdbNum < 11) || (dirdbData[10].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].parent != 4\n"); retval++; }
+		if ((dirdbNum < 11) || (dirdbData[10].mdb_ref != 0x17161514)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[10].mdb_ref 0x%08"PRIx32" != 0x17161514\n", dirdbData[10].mdb_ref); retval++; }
+
+		if ((dirdbNum < 12) || strcmp (dirdbData[11].name, "07.mod")) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].name != \"07.mod\"\n"); retval++; }
+		if ((dirdbNum < 12) || (dirdbData[11].parent != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].parent != 4\n"); retval++; }
+		if ((dirdbNum < 12) || (dirdbData[11].mdb_ref != 0x1b1a1918)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[11].mdb_ref 0x%08"PRIx32" != 0x1b1a1918\n", dirdbData[11].mdb_ref); retval++; }
+
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  1) || (dirdbData[4].children[0] !=  5)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[0] %"PRIu32" != 5\n", dirdbData[4].children[0]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  2) || (dirdbData[4].children[1] !=  6)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[1] %"PRIu32" != 6\n", dirdbData[4].children[1]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  3) || (dirdbData[4].children[2] !=  7)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[2] %"PRIu32" != 7\n", dirdbData[4].children[2]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  4) || (dirdbData[4].children[3] !=  8)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[3] %"PRIu32" != 8\n", dirdbData[4].children[3]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  5) || (dirdbData[4].children[4] !=  9)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[4] %"PRIu32" != 9\n", dirdbData[4].children[4]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  6) || (dirdbData[4].children[5] != 10)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[5] %"PRIu32" != 10\n", dirdbData[4].children[5]); retval++; }
+		if ((dirdbNum <  5) || (dirdbData[4].children_fill <  7) || (dirdbData[4].children[6] != 11)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].children[6] %"PRIu32" != 11\n", dirdbData[4].children[6]); retval++; }
+
+		for (i = 12; i < dirdbNum; i++)
+		{
+			if (dirdbData[i].name)
+			{
+				fprintf(stderr, "dirdbData[%d] should have been marked as not-in-use\n", i);
+				retval++;
+			}
+		}
+	}
+	clear_dirdb ();
+
+	fprintf (stderr, ANSI_COLOR_RESET "\n");
+
+	return retval;
+}
+
+static int dirdb_basic_test14(void)
+{
+	int retval = 0;
+
+	fprintf (stderr, ANSI_COLOR_CYAN "dirdbFlush()\n" ANSI_COLOR_RESET);
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbInit() failed, expect errors\n");
+	}
+
+	if (dirdbNum < 16)
+	{
+		dirdbData = realloc (dirdbData, sizeof (dirdbData[0]) * 16);
+		memset (dirdbData + dirdbNum, 0, sizeof (dirdbData[0]) * (16 - dirdbNum));
+		dirdbNum = 16;
+	}
+
+	dirdbData[0].parent = DIRDB_NOPARENT;
+	dirdbData[0].name = strdup ("file:");
+	dirdbData[0].mdb_ref = DIRDB_NO_MDBREF;
+	dirdbData[0].children_size = 16;
+	dirdbData[0].children = calloc (sizeof (dirdbData[0].children[0]), dirdbData[0].children_size);
+	dirdbData[0].children_fill = 1;
+	dirdbData[0].children[0] = 1;
+	dirdbData[0].refcount = 1;
+#ifdef DIRDB_DEBUG
+	dirdbData[0].refcount_children = 1;
+#endif
+
+	dirdbData[1].parent = 0;
+	dirdbData[1].name = strdup ("tmp");
+	dirdbData[1].mdb_ref = DIRDB_NO_MDBREF;
+	dirdbData[1].children_size = 16;
+	dirdbData[1].children = calloc (sizeof (dirdbData[1].children[0]), dirdbData[1].children_size);
+	dirdbData[1].children_fill = 4;
+	dirdbData[1].children[0] = 2;
+	dirdbData[1].children[1] = 3;
+	dirdbData[1].children[2] = 4;
+	dirdbData[1].children[3] = 5;
+	dirdbData[1].refcount = 4;
+#ifdef DIRDB_DEBUG
+	dirdbData[1].refcount_children = 4;
+#endif
+
+	dirdbData[2].parent = 1;
+	dirdbData[2].name = strdup ("01.mod");
+	dirdbData[2].mdb_ref = 0x00000001;
+	dirdbData[2].refcount = 1;
+#ifdef DIRDB_DEBUG
+	dirdbData[2].refcount_mdb_medialib = 1;
+#endif
+
+	dirdbData[3].parent = 1;
+	dirdbData[3].name = strdup ("02.mod");
+	dirdbData[3].mdb_ref = 0x00000020;
+	dirdbData[3].refcount = 1;
+#ifdef DIRDB_DEBUG
+	dirdbData[3].refcount_mdb_medialib = 1;
+#endif
+
+	dirdbData[4].parent = 1;
+	dirdbData[4].name = strdup ("03.mod");
+	dirdbData[4].mdb_ref = 0x00000300;
+	dirdbData[4].refcount = 1;
+#ifdef DIRDB_DEBUG
+	dirdbData[4].refcount_mdb_medialib = 1;
+#endif
+
+	dirdbData[5].parent = 1;
+	dirdbData[5].name = strdup ("04.mod");
+	dirdbData[5].mdb_ref = 0x00004000;
+	dirdbData[5].refcount = 1;
+#ifdef DIRDB_DEBUG
+	dirdbData[5].refcount_mdb_medialib = 1;
+#endif
+
+	dirdbDirty = 1;
+
+	dirdbFlush();
+	dirdbClose();
+	if (!dirdbInit (0))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbInit() failed to parse dirdbClose binary block\n");
+		retval++;
+	}
+
+	if ((dirdbNum < 1) || (!dirdbData[0].name) || (strcmp (dirdbData[0].name, "file:" )))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].name %s%s%s != \"file:\"\n",
+			((dirdbNum < 1) || (!dirdbData[0].name)) ? "" : "\"",
+			 (dirdbNum < 1) ? "void" : dirdbData[0].name ? dirdbData[0].name : "NULL",
+			((dirdbNum < 1) || (!dirdbData[0].name)) ? "" : "\"");
+		retval++;
+	}
+	if ((dirdbNum < 2) || (!dirdbData[1].name) || (strcmp (dirdbData[1].name, "tmp"   )))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[1].name %s%s%s != \"tmp\"\n",
+			((dirdbNum < 2) || (!dirdbData[1].name)) ? "" : "\"",
+			 (dirdbNum < 2) ? "void" : dirdbData[1].name ? dirdbData[1].name : "NULL",
+			((dirdbNum < 2) || (!dirdbData[1].name)) ? "" : "\"");
+		retval++;
+	}
+	if ((dirdbNum < 3) || (!dirdbData[2].name) || (strcmp (dirdbData[2].name, "01.mod")))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[2].name %s%s%s != \"01.mod\"\n",
+			((dirdbNum < 3) || (!dirdbData[2].name)) ? "" : "\"",
+			 (dirdbNum < 3) ? "void" : dirdbData[2].name ? dirdbData[2].name : "NULL",
+			((dirdbNum < 3) || (!dirdbData[2].name)) ? "" : "\"");
+		retval++;
+	}
+	if ((dirdbNum < 4) || (!dirdbData[3].name) || (strcmp (dirdbData[3].name, "02.mod")))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[3].name %s%s%s != \"02.mod\"\n",
+			((dirdbNum < 4) || (!dirdbData[3].name)) ? "" : "\"",
+			 (dirdbNum < 4) ? "void" : dirdbData[3].name ? dirdbData[3].name : "NULL",
+			((dirdbNum < 4) || (!dirdbData[3].name)) ? "" : "\"");
+		retval++;
+	}
+	if ((dirdbNum < 5) || (!dirdbData[4].name) || (strcmp (dirdbData[4].name, "03.mod")))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[4].name %s%s%s != \"03.mod\"\n",
+			((dirdbNum < 5) || (!dirdbData[4].name)) ? "" : "\"",
+			 (dirdbNum < 5) ? "void" : dirdbData[4].name ? dirdbData[4].name : "NULL",
+			((dirdbNum < 5) || (!dirdbData[4].name)) ? "" : "\""); 
+		retval++;
+	}
+	if ((dirdbNum < 6) || (!dirdbData[5].name) || (strcmp (dirdbData[5].name, "04.mod")))
+	{
+		fprintf (stderr, ANSI_COLOR_RED "dirdbData[5].name %s%s%s != \"04.mod\"\n",
+			((dirdbNum < 6) || (!dirdbData[5].name)) ? "" : "\"",
+			 (dirdbNum < 6) ? "void" : dirdbData[5].name ? dirdbData[5].name : "NULL",
+			((dirdbNum < 6) || (!dirdbData[5].name)) ? "" : "\"");
+		retval++;
+	}
+
+	if ((dirdbNum < 1) || (dirdbData[0].parent != DIRDB_NOPARENT)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != DIRDB_NOPARENT\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].parent != 0             )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != 0\n");              retval++; }
+	if ((dirdbNum < 3) || (dirdbData[2].parent != 1             )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != 1\n");              retval++; }
+	if ((dirdbNum < 4) || (dirdbData[3].parent != 1             )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != 1\n");              retval++; }
+	if ((dirdbNum < 5) || (dirdbData[4].parent != 1             )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != 1\n");              retval++; }
+	if ((dirdbNum < 6) || (dirdbData[5].parent != 1             )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].parent != 1\n");              retval++; }
+
+	if ((dirdbNum < 1) || (dirdbData[0].mdb_ref != DIRDB_NO_MDBREF)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != DIRDB_NO_MDBREF\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].mdb_ref != DIRDB_NO_MDBREF)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != DIRDB_NO_MDBREF\n"); retval++; }
+	if ((dirdbNum < 3) || (dirdbData[2].mdb_ref != 0x00000001     )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != 0x00000001\n");      retval++; }
+	if ((dirdbNum < 4) || (dirdbData[3].mdb_ref != 0x00000020     )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != 0x00000020\n");      retval++; }
+	if ((dirdbNum < 5) || (dirdbData[4].mdb_ref != 0x00000300     )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != 0x00000300\n");      retval++; }
+	if ((dirdbNum < 6) || (dirdbData[5].mdb_ref != 0x00004000     )) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].mdb_ref != 0x00004000\n");      retval++; }
+
+	if ((dirdbNum < 1) || (dirdbData[0].children_fill < 1) || (dirdbData[0].children[0] != 1)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[0].children[0] != 1\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].children_fill < 1) || (dirdbData[1].children[0] != 2)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[1].children[0] != 2\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].children_fill < 2) || (dirdbData[1].children[1] != 3)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[1].children[1] != 3\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].children_fill < 3) || (dirdbData[1].children[2] != 4)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[1].children[2] != 4\n"); retval++; }
+	if ((dirdbNum < 2) || (dirdbData[1].children_fill < 4) || (dirdbData[1].children[3] != 5)) { fprintf (stderr, ANSI_COLOR_RED "dirdbData[1].children[3] != 5\n"); retval++; }
+
+	clear_dirdb ();
+
+	return retval;
+}
+
 int main(int argc, char *argv[])
 {
 	int retval = 0;
+
+	clear_dirdb ();
 
 	retval |= dirdb_basic_test1(); /* dirdbResolvePathAndRef() */
 
@@ -1162,6 +1963,20 @@ int main(int argc, char *argv[])
 	retval |= dirdb_basic_test8(); /* dirdbDiffPath() */
 
 	retval |= dirdb_basic_test7(); /* dirdbTagSetParent(), dirdbMakeMdbRef(), dirdbTagRemoveUntaggedAndSubmit(), dirdbGetMdb() */
+
+	retval |= dirdb_basic_test8(); /* dirdbDiffPath() */
+
+	retval |= dirdb_basic_test9(); /* dirdbFindAndRef(), sorting, dirdbUnref(), sorting */
+
+	retval |= dirdb_basic_test10(); /* dirdbFindAndRef(), growing the children list */
+
+	retval |= dirdb_basic_test11(); /* dirdbFindAndRef(), growing the database */
+
+	retval |= dirdb_basic_test12(); /* dirdbUnref(), growing the free list */
+
+	retval |= dirdb_basic_test13(); /* dirdbInit(), parsing database */
+
+	retval |= dirdb_basic_test14(); /* dirdbFlush(), writing database */
 
 	return retval;
 }

@@ -110,7 +110,6 @@ dirdb-test$(EXE_SUFFIX): dirdb-test.c \
 	../types.h \
 	../boot/psetting.h \
 	../stuff/compat.h \
-	../stuff/file.h \
 	../stuff/file.h
 	$(CC) $< -o $@
 
