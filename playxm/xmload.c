@@ -312,6 +312,8 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 		int k, j;
 		uint32_t res;
 
+		memset (&ins1, 0, sizeof (ins1));
+		memset (&ins2, 0, sizeof (ins2));
 		if ((res = file->read (file, &ins1, sizeof (ins1.size))) != sizeof (ins1.size))
 		{
 			/*
@@ -321,30 +323,30 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 			*/
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] warning, read failed #5.1: instrument %d/%d size field only read % " PRId32 " of %" PRId32" bytes\n", i + 1, m->ninst, res, sizeof (ins1.size));
 			ins1.size=0;
-			memset(&ins1, 0, sizeof(ins1));
 		} else {
 			ins1.size = uint32_little (ins1.size);
 			/* this next block is a fucking hack to support SMALL files */
 			if (ins1.size<4)
 			{
 				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<4\n");
-				memset(&ins1, 0, sizeof(ins1));
-			} else if (ins1.size < sizeof(ins1))
-			{
-				cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<=sizeof(ins1), reading %d more bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1.size)), (int)(sizeof(ins1)-(ins1.size-sizeof(ins1.size))));
-				if (file->read (file, ins1.name, ins1.size - sizeof (ins1.size)) != (ins1.size - sizeof (ins1.size)))
+				ins1.size = 0;
+			} else {
+				uint64_t result, target;
+				if (ins1.size < sizeof(ins1))
 				{
-					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #5.2\n");
+					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<sizeof(ins1), reading %d more bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1.size)), (int)(sizeof(ins1)-(ins1.size-sizeof(ins1.size))));
+					target = (int)ins1.size - (int)sizeof(ins1.size);
+				} else {
+					target = (int)sizeof(ins1) - (int)sizeof(ins1.size);
+				}
+				result = file->read (file, ins1.name, target);
+				if (result != target)
+				{
+					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, failed to read instrument %d/%d (got %u of %u bytes)\n", i + 1, m->ninst, (unsigned int)result, target);
+					/*
 					FreeResources (&r, head2.ninst);
 					return errFileRead;
-				}
-				memset(ins1.name + ins1.size-sizeof(ins1.size), 0, sizeof(ins1)-(ins1.size-sizeof(ins1.size)));
-			} else {
-				if (file->read (file, ins1.name, sizeof (ins1) - sizeof (ins1.size)) != (sizeof (ins1) - sizeof (ins1.size)))
-				{
-					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] read failed #5.2\n");
-					FreeResources (&r, head2.ninst);
-					return errFormStruc;
+					*/
 				}
 			}
 		}
@@ -363,8 +365,10 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 				if (file->seek_set (file, file->getpos (file) + ins1.size - sizeof(ins1)) < 0)
 				{
 					cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] seek failed #3\n");
+					/*
 					FreeResources (&r, head2.ninst);
 					return errFormStruc;
+					*/
 				}
 			}
 			continue;
@@ -374,7 +378,6 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 		if (ins1.size<=sizeof(ins1))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins1.size<=sizeof(ins1), zeroing ins2\n");
-			memset(&ins2, 0, sizeof(ins2));
 		} else if (ins1.size<=(sizeof(ins1)+sizeof(ins2)))
 		{
 			cpifaceSession->cpiDebug (cpifaceSession, "[XM/XM] Warning, ins2.size<=(sizeof(ins1)+sizeof(ins2)), reading %d bytes and zeroing last %d bytes\n", (int)(ins1.size-(int)sizeof(ins1)), (int)(sizeof(ins2)-(ins1.size-sizeof(ins1))));
@@ -384,7 +387,6 @@ OCP_INTERNAL int xmpLoadModule (struct cpifaceSessionAPI_t *cpifaceSession, stru
 				FreeResources (&r, head2.ninst);
 				return errFormStruc;
 			}
-			memset((char *)(&ins2)+ins1.size-sizeof(ins1), 0, sizeof(ins2)-(ins1.size-sizeof(ins1)));
 		} else {
 			if (file->read (file, &ins2, sizeof (ins2)) != sizeof (ins2))
 			{
