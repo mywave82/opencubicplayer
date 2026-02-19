@@ -428,11 +428,11 @@ static void oplSetSpeed(uint16_t sp)
 
 static void oplSetVolume(void)
 {
-	volr=voll=vol*4;
-	if (bal<0)
-		volr=(volr*(64+bal))>>6;
+	volr = voll = vol * 4;
+	if (bal < 0)
+		voll = (voll * (64 + bal)) >> 6;
 	else
-		voll=(voll*(64-bal))>>6;
+		volr = (volr * (64 - bal)) >> 6;
 }
 
 static void delay_callback_from_devp (void *arg, int samples_ago)

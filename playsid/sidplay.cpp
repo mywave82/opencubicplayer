@@ -531,12 +531,11 @@ static void sidSetPitch (uint32_t sp)
 
 static void sidSetVolume (void)
 {
-	voll=vol*4;
-	volr=vol*4;
-	if (bal<0)
-		volr=(volr*(64+bal))>>6;
+	volr = voll = vol * 4;
+	if (bal < 0)
+		voll = (voll * (64 + bal)) >> 6;
 	else
-		voll=(voll*(64-bal))>>6;
+		volr = (volr * (64 - bal)) >> 6;
 }
 
 static void sidSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)

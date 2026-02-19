@@ -489,11 +489,11 @@ static void hvlSetPitch (uint16_t sp)
 
 static void hvlSetVolume (void)
 {
-	volr=voll=vol*4;
-	if (bal<0)
-		voll=(voll*(64+bal))>>6;
+	volr = voll = vol * 4;
+	if (bal < 0)
+		voll = (voll * (64 + bal)) >> 6;
 	else
-		volr=(volr*(64-bal))>>6;
+		volr = (volr * (64 - bal)) >> 6;
 }
 
 static void hvlSet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt, int val)
