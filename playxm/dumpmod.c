@@ -533,10 +533,11 @@ int preParseMOD15 (unsigned char *mem, int len, int *channels15instruments)
 	uint32_t samplelengths15 = 0;
 	int canbe15instruments = 1;
 	uint8_t highestorder = 0;
+	int retval = 0;
 
 	if (len < (20 + 15*30))
 	{
-		printf ("%sERROR: no space for even 15 instruments, the minimum%s\n", FONT_BRIGHT_RED, FONT_RESET);
+		printf ("[M15] %sERROR: no space for even 15 instruments, the minimum%s\n", FONT_BRIGHT_RED, FONT_RESET);
 		return -2;
 	}
 
@@ -550,89 +551,88 @@ int preParseMOD15 (unsigned char *mem, int len, int *channels15instruments)
 
 		if (finetune & 0xf0)
 		{
-			printf ("%sWARNING: instrument %d have high nibble in finetuning set%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
+			printf ("[M15] %sWARNING: instrument %d have high nibble in finetuning set%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
 		}
 		if (volume > 64)
 		{
-			printf ("%sERROR: instrument %d volume is out of range%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
-			return -2;
+			printf ("[M15] %sERROR: instrument %d volume is out of range%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
+			retval = -2;
 		}
 		if (samplelength <= 1)
 		{
 			if (repeatlen > 1)
 			{
-				printf ("%sERROR: instrument %d looplen is out of range for empty instrument%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
-				return -2;
+				printf ("[M15] %sERROR: instrument %d looplen %u is out of range for empty instrument%s\n", FONT_BRIGHT_RED, i + 1, repeatlen, FONT_RESET);
+				retval = -2;
 			}
 		} else {
 			if (repeatstart >= samplelength)
 			{
-				printf ("%sERROR: instrument %d loopstart is out of range%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
-				return -2;
+				printf ("[M15] %sWARNING: instrument %d loopstart %u is out of range %u%s\n", FONT_BRIGHT_RED, i + 1, repeatstart, samplelength, FONT_RESET);
+				//retval = -2;
 			}
 			if (repeatlen > samplelength)
 			{
-				printf ("%sERROR: instrument %d looplen is out of range%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
-				return -2;
+				printf ("[M15] %sWARNING: instrument %d looplen %u is out of range %u%s\n", FONT_BRIGHT_RED, i + 1, repeatlen, samplelength, FONT_RESET);
+				//retval = -2;
 			}
 			if (((uint32_t)repeatstart + repeatlen) > samplelength)
 			{
-				printf ("%sERROR: instrument %d loopstart + looplen is out of range%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
-				return -2;
+				printf ("[M15] %sWARNING: instrument %d loopstart %u + looplen %u is out of range %u%s\n", FONT_BRIGHT_RED, i + 1, repeatstart, repeatlen, samplelength, FONT_RESET);
+				//retval = -2;
 			}
 			samplelengths15 += samplelength;
 		}
-		//printf ("15.Instrument: len=%04x loopstart=%04x looplen=%04x volume=%02x finetune=%d\n", samplelength, repeatstart, repeatlen, volume, finetune);
+		//printf ("[M15] 15.Instrument: len=%04x loopstart=%04x looplen=%04x volume=%02x finetune=%d\n", samplelength, repeatstart, repeatlen, volume, finetune);
 	}
 
 
-	if (len < (20 + 15*30 + 130))
+	if ((20 + 15*30 + 130) > len)
 	{
-		printf ("%sERROR: No room for order data - can not be 15 instrument format%s\n", FONT_BRIGHT_RED, FONT_RESET);
-		return -2;
-	}
-
-	if ((mem[20+15*30] < 1) || (mem[20+15*30] > 128))
-	{
-		printf ("%sWARNING: Order length (%d) is out of range - can not be 15 instrument format%s\n", FONT_BRIGHT_YELLOW, mem[20+22+15*30], FONT_RESET);
-		return -1;
-	}
-
-	for (i=0; i < 128; i++)
-	{
-		if (mem[20+15*30+2 + i] > highestorder)
+		printf ("[M15] %sERROR: No room for order data (needed %u < actual %u) - can not be 15 instrument format%s\n", FONT_BRIGHT_RED, (20 + 15*30 + 130), len, FONT_RESET);
+		retval = -2;
+	} else {
+		if ((mem[20+15*30] < 1) || (mem[20+15*30] > 128))
 		{
-			highestorder = mem[20+15*30+2 + i];
+			printf ("[M15] %sERROR: Order length (%d) is out of range [1..128] - can not be 15 instrument format%s\n", FONT_BRIGHT_YELLOW, mem[20+22+15*30], FONT_RESET);
+			retval = retval ? retval : -1;
 		}
-	}
-	if (highestorder >= 64)
-	{
-		printf ("%sWARNING: Order > 63 not possible in 15 instrument format - can not be 15 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
-		return -1;
+
+		for (i=0; i < 128; i++)
+		{
+			if (mem[20+15*30+2 + i] > highestorder)
+			{
+				highestorder = mem[20+15*30+2 + i];
+			}
+		}
+		if (highestorder >= 64)
+		{
+			printf ("[M15] %sERROR: Order %u > 63 not possible in 15 instrument format - can not be 15 instrument file%s\n", FONT_BRIGHT_YELLOW, highestorder, FONT_RESET);
+			retval = retval ? retval : -1;
+		}
 	}
 
 	if ((20+15*30+2+128+4 + (highestorder+1)*1024) > len)
 	{
-		printf ("%sERROR: Not enough space for pattern data - can not be a 15 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
-		return -1;
+		printf ("[M15] %sERROR: Not enough space for pattern data (needed %u < actual %u) - can not be a 15 instrument file%s\n", FONT_BRIGHT_RED, (20+15*30+2+128+4 + (highestorder+1)*1024), len, FONT_RESET);
+		retval = retval ? retval : -1;
 	}
 
 	if ((20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)) > len)
 	{
-		printf ("%sERROR: Not enough space for sample data - can not be a 15 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
-		return -1;
-	}
-
-	if ((20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)) != len)
+		printf ("[M15] %sWARNING: Not enough space for sample data (needed %u < actual %u) - should not be a 15 instrument file%s\n", FONT_BRIGHT_RED, (20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)), len, FONT_RESET);
+		//retval = retval ? retval : -1;
+	} else if ((20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)) != len)
 	{
-		printf ("%sWARNING: Got %d bytes extra data for 15 instrument file%s\n", FONT_BRIGHT_YELLOW, len - (20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)), FONT_RESET);
+		printf ("[M15] %sWARNING: Got %d bytes extra data for 15 instrument file%s\n", FONT_BRIGHT_YELLOW, len - (20+15*30+2+128+4 + (highestorder+1)*1024 + (samplelengths15<<1)), FONT_RESET);
 	}
 
-	return canbe15instruments;
+	return retval ? retval : canbe15instruments;
 }
 
 int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 {
+	int retval = 0;
 	int i;
 	uint32_t samplelengths31 = 0;
 	int canbe31instruments = 0;
@@ -654,46 +654,45 @@ int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 
 		if (finetune & 0xf0)
 		{
-			printf ("%sWARNING: instrument %d have high nibble in finetuning set%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
+			printf ("[M31] %sWARNING: instrument %d have high nibble in finetuning set%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
 		}
 		if (volume > 64)
 		{
-			printf ("%sWARNING: instrument %d volume is out of range - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
-			return -1;
+			printf ("[M31] %sERROR: instrument %d volume is out of range - can not be 31 instrument file%s\n", FONT_BRIGHT_RED, i + 1, FONT_RESET);
+			retval = -1;
 		}
 		if (samplelength <= 1)
 		{
 			if (repeatlen > 1)
 			{
-				printf ("%sWARNING: instrument %d looplen is out of range for empty instrument - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
-				return -1;
+				printf ("[M31] %sWARNING: instrument %d looplen is out of range for empty instrument - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
+				//retval = -1;
 			}
 		} else {
 			if (repeatstart >= samplelength)
 			{
-				printf ("%sWARNING: instrument %d loopstart is out of range - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
-				return -1;
+				printf ("[M31] %sWARNING: instrument %d loopstart %u is out of range %u - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, repeatstart, samplelength, FONT_RESET);
+				//retval = -1;
 			}
 			if (repeatlen > samplelength)
 			{
-				printf ("%sWARNING: instrument %d looplen is out of range - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
-				return -1;
+				printf ("[M31] %sWARNING: instrument %d looplen %u is out of range %u - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, repeatlen, samplelength, FONT_RESET);
+				//retval = -1;
 			}
 			if (((uint32_t)repeatstart + repeatlen) > samplelength)
 			{
-				printf ("%sWARNING: instrument %d loopstart + looplen is out of range - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, FONT_RESET);
-				return -1;
+				printf ("[M31] %sWARNING: instrument %d loopstart %u + looplen %u is out of range %u - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, i + 1, repeatstart, repeatlen, samplelength, FONT_RESET);
+				//retval = -1;
 			}
 			samplelengths31 += samplelength;
 		}
-		//printf ("31.Instrument: len=%04x loopstart=%04x looplen=%04x volume=%02x finetune=%d\n", samplelength, repeatstart, repeatlen, volume, finetune);
+		//printf ("[M31] 31.Instrument: len=%04x loopstart=%04x looplen=%04x volume=%02x finetune=%d\n", samplelength, repeatstart, repeatlen, volume, finetune);
 	}
 
 	if ((mem[20+31*30] < 1) || (mem[20+31*30] > 128))
 	{
-		printf ("%sWARNING: Order length (%d) is out of range - can not be 31 instrument format%s\n", FONT_BRIGHT_YELLOW, mem[20+31*30], FONT_RESET);
-
-		return -1;
+		printf ("[M31] %sERROR: Order length (%d) is out of range [1..128] - can not be 31 instrument format%s\n", FONT_BRIGHT_YELLOW, mem[20+31*30], FONT_RESET);
+		retval = -1;
 	}
 	for (i=0; i < 128; i++)
 	{
@@ -705,86 +704,86 @@ int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 
 	if (!memcmp(&mem[20+31*30+2+128], "M.K.", 4))
 	{
-		printf ("%sNOTE: got M.K. signature in 31 instrument format%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
+		printf ("[M31] %sNOTE: got M.K. signature in 31 instrument format%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
 		canbe31instruments = 4;
 		if (highestorder >= 64)
 		{
-			printf ("%sWARNING: Order > 63 not possible in M.K. format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
-			return -1;
+			printf ("[M31] %sERROR: Order > 63 not possible in M.K. format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
+			retval = -1;
 		}
 	} else if (!memcmp(&mem[20+31*30+2+128], "M!K!", 4))
 	{
-		printf ("%sNOTE: got M!K! signature in 31 instrument format%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
+		printf ("[M31] %sNOTE: got M!K! signature in 31 instrument format%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
 		canbe31instruments = 4;
 		if (highestorder < 64)
 		{
-			printf ("%sWARNING: Order < 64 not possible in M!K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
-			return -1;
+			printf ("[M31] %sERROR: Order < 64 not possible in M!K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
+			retval = -1;
 		}
 	} else if (!memcmp(&mem[20+31*30+2+128], "M&K!", 4))
 	{
-		printf ("%sNOTE: got M&K! signature in 31 instrument format (His Master's Noise)%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
+		printf ("[M31] %sNOTE: got M&K! signature in 31 instrument format (His Master's Noise)%s\n", FONT_BRIGHT_GREEN, FONT_RESET);
 		canbe31instruments = 4;
 		if (highestorder >= 64)
 		{
-			printf ("%sWARNING: Order > 63 not possible in M&K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
-			return -1;
+			printf ("[M31] %sERROR: Order > 63 not possible in M&K! format - can not be 31 instrument file%s\n", FONT_BRIGHT_YELLOW, FONT_RESET);
+			retval = -1;
 		}
-	} else if (!memcmp(&mem[20+31*30+2+128], "FLT4", 4)) { printf ("%sNOTE: got FLT4 - probably StarTrekker 4-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 4;
-	} else if (!memcmp(&mem[20+31*30+2+128], "FLT8", 4)) { printf ("%sNOTE: got FLT8 - probably StarTrekker 8-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "CD61", 4)) { printf ("%sNOTE: got CD61 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 6;
-	} else if (!memcmp(&mem[20+31*30+2+128], "CD81", 4)) { printf ("%sNOTE: got CD81 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "OKTA", 4)) { printf ("%sNOTE: got OKTA - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "OCTA", 4)) { printf ("%sNOTE: got OKTA - probably OctaMED%s\n",                     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "FA08", 4)) { printf ("%sNOTE: got FA08 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "FA06", 4)) { printf ("%sNOTE: got FA06 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 6;
-	} else if (!memcmp(&mem[20+31*30+2+128], "FA04", 4)) { printf ("%sNOTE: got FA04 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 4;
+	} else if (!memcmp(&mem[20+31*30+2+128], "FLT4", 4)) { printf ("[M31] %sNOTE: got FLT4 - probably StarTrekker 4-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 4;
+	} else if (!memcmp(&mem[20+31*30+2+128], "FLT8", 4)) { printf ("[M31] %sNOTE: got FLT8 - probably StarTrekker 8-channel MOD%s\n",   FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "CD61", 4)) { printf ("[M31] %sNOTE: got CD61 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 6;
+	} else if (!memcmp(&mem[20+31*30+2+128], "CD81", 4)) { printf ("[M31] %sNOTE: got CD81 - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "OKTA", 4)) { printf ("[M31] %sNOTE: got OKTA - probably Oktalyzer for Atari ST?%s\n",     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "OCTA", 4)) { printf ("[M31] %sNOTE: got OKTA - probably OctaMED%s\n",                     FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "FA08", 4)) { printf ("[M31] %sNOTE: got FA08 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "FA06", 4)) { printf ("[M31] %sNOTE: got FA06 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 6;
+	} else if (!memcmp(&mem[20+31*30+2+128], "FA04", 4)) { printf ("[M31] %sNOTE: got FA04 - probably Digital Tracker (MOD)%s\n",       FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 8 : 0; *channels31instruments = 4;
 
-	} else if (!memcmp(&mem[20+31*30+2+128], "1TDZ", 4)) { printf ("%sNOTE: got 1TDZ - TakeTracker extension for 1 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 1;
-	} else if (!memcmp(&mem[20+31*30+2+128], "2TDZ", 4)) { printf ("%sNOTE: got 2TDZ - TakeTracker extension for 3 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 2;
-	} else if (!memcmp(&mem[20+31*30+2+128], "3TDZ", 4)) { printf ("%sNOTE: got 3TDZ - TakeTracker extension for 3 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 3;
-	} else if (!memcmp(&mem[20+31*30+2+128], "5CHN", 4)) { printf ("%sNOTE: got 5CHN - TakeTracker extension for 5 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 5;
-	} else if (!memcmp(&mem[20+31*30+2+128], "7CHN", 4)) { printf ("%sNOTE: got 7CHN - TakeTracker extension for 7 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 7;
-	} else if (!memcmp(&mem[20+31*30+2+128], "9CHN", 4)) { printf ("%sNOTE: got 9CHN - TakeTracker extension for 9 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 9;
-	} else if (!memcmp(&mem[20+31*30+2+128], "10CN", 4)) { printf ("%sNOTE: got 10CN - TakeTracker extension for 10 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 10;
-	} else if (!memcmp(&mem[20+31*30+2+128], "11CN", 4)) { printf ("%sNOTE: got 11CN - TakeTracker extension for 11 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 11;
-	} else if (!memcmp(&mem[20+31*30+2+128], "12CN", 4)) { printf ("%sNOTE: got 12CN - TakeTracker extension for 12 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 12;
-	} else if (!memcmp(&mem[20+31*30+2+128], "13CN", 4)) { printf ("%sNOTE: got 13CN - TakeTracker extension for 13 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 13;
-	} else if (!memcmp(&mem[20+31*30+2+128], "14CN", 4)) { printf ("%sNOTE: got 14CN - TakeTracker extension for 14 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 14;
-	} else if (!memcmp(&mem[20+31*30+2+128], "15CN", 4)) { printf ("%sNOTE: got 15CN - TakeTracker extension for 15 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 15;
-	} else if (!memcmp(&mem[20+31*30+2+128], "16CN", 4)) { printf ("%sNOTE: got 16CN - TakeTracker extension for 16 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 16;
-	} else if (!memcmp(&mem[20+31*30+2+128], "17CN", 4)) { printf ("%sNOTE: got 17CN - TakeTracker extension for 17 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 17;
-	} else if (!memcmp(&mem[20+31*30+2+128], "18CN", 4)) { printf ("%sNOTE: got 18CN - TakeTracker extension for 18 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 18;
-	} else if (!memcmp(&mem[20+31*30+2+128], "19CN", 4)) { printf ("%sNOTE: got 19CN - TakeTracker extension for 19 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 19;
-	} else if (!memcmp(&mem[20+31*30+2+128], "20CN", 4)) { printf ("%sNOTE: got 20CN - TakeTracker extension for 20 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 20;
-	} else if (!memcmp(&mem[20+31*30+2+128], "21CN", 4)) { printf ("%sNOTE: got 21CN - TakeTracker extension for 21 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 21;
-	} else if (!memcmp(&mem[20+31*30+2+128], "22CN", 4)) { printf ("%sNOTE: got 22CN - TakeTracker extension for 22 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 22;
-	} else if (!memcmp(&mem[20+31*30+2+128], "23CN", 4)) { printf ("%sNOTE: got 23CN - TakeTracker extension for 23 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 23;
-	} else if (!memcmp(&mem[20+31*30+2+128], "24CN", 4)) { printf ("%sNOTE: got 24CN - TakeTracker extension for 24 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 24;
-	} else if (!memcmp(&mem[20+31*30+2+128], "25CN", 4)) { printf ("%sNOTE: got 25CN - TakeTracker extension for 25 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 25;
-	} else if (!memcmp(&mem[20+31*30+2+128], "26CN", 4)) { printf ("%sNOTE: got 26CN - TakeTracker extension for 26 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 26;
-	} else if (!memcmp(&mem[20+31*30+2+128], "27CN", 4)) { printf ("%sNOTE: got 27CN - TakeTracker extension for 27 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 27;
-	} else if (!memcmp(&mem[20+31*30+2+128], "28CN", 4)) { printf ("%sNOTE: got 28CN - TakeTracker extension for 28 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 28;
-	} else if (!memcmp(&mem[20+31*30+2+128], "29CN", 4)) { printf ("%sNOTE: got 29CN - TakeTracker extension for 29 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 29;
-	} else if (!memcmp(&mem[20+31*30+2+128], "30CN", 4)) { printf ("%sNOTE: got 30CN - TakeTracker extension for 30 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 30;
-	} else if (!memcmp(&mem[20+31*30+2+128], "31CN", 4)) { printf ("%sNOTE: got 31CN - TakeTracker extension for 31 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 31;
-	} else if (!memcmp(&mem[20+31*30+2+128], "33CN", 4)) { printf ("%sNOTE: got 32CN - TakeTracker extension for 32 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 32;
+	} else if (!memcmp(&mem[20+31*30+2+128], "1TDZ", 4)) { printf ("[M31] %sNOTE: got 1TDZ - TakeTracker extension for 1 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 1;
+	} else if (!memcmp(&mem[20+31*30+2+128], "2TDZ", 4)) { printf ("[M31] %sNOTE: got 2TDZ - TakeTracker extension for 3 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 2;
+	} else if (!memcmp(&mem[20+31*30+2+128], "3TDZ", 4)) { printf ("[M31] %sNOTE: got 3TDZ - TakeTracker extension for 3 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 3;
+	} else if (!memcmp(&mem[20+31*30+2+128], "5CHN", 4)) { printf ("[M31] %sNOTE: got 5CHN - TakeTracker extension for 5 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 5;
+	} else if (!memcmp(&mem[20+31*30+2+128], "7CHN", 4)) { printf ("[M31] %sNOTE: got 7CHN - TakeTracker extension for 7 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 7;
+	} else if (!memcmp(&mem[20+31*30+2+128], "9CHN", 4)) { printf ("[M31] %sNOTE: got 9CHN - TakeTracker extension for 9 channel%s\n",  FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 9;
+	} else if (!memcmp(&mem[20+31*30+2+128], "10CN", 4)) { printf ("[M31] %sNOTE: got 10CN - TakeTracker extension for 10 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 10;
+	} else if (!memcmp(&mem[20+31*30+2+128], "11CN", 4)) { printf ("[M31] %sNOTE: got 11CN - TakeTracker extension for 11 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 11;
+	} else if (!memcmp(&mem[20+31*30+2+128], "12CN", 4)) { printf ("[M31] %sNOTE: got 12CN - TakeTracker extension for 12 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 12;
+	} else if (!memcmp(&mem[20+31*30+2+128], "13CN", 4)) { printf ("[M31] %sNOTE: got 13CN - TakeTracker extension for 13 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 13;
+	} else if (!memcmp(&mem[20+31*30+2+128], "14CN", 4)) { printf ("[M31] %sNOTE: got 14CN - TakeTracker extension for 14 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 14;
+	} else if (!memcmp(&mem[20+31*30+2+128], "15CN", 4)) { printf ("[M31] %sNOTE: got 15CN - TakeTracker extension for 15 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 15;
+	} else if (!memcmp(&mem[20+31*30+2+128], "16CN", 4)) { printf ("[M31] %sNOTE: got 16CN - TakeTracker extension for 16 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 16;
+	} else if (!memcmp(&mem[20+31*30+2+128], "17CN", 4)) { printf ("[M31] %sNOTE: got 17CN - TakeTracker extension for 17 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 17;
+	} else if (!memcmp(&mem[20+31*30+2+128], "18CN", 4)) { printf ("[M31] %sNOTE: got 18CN - TakeTracker extension for 18 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 18;
+	} else if (!memcmp(&mem[20+31*30+2+128], "19CN", 4)) { printf ("[M31] %sNOTE: got 19CN - TakeTracker extension for 19 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 19;
+	} else if (!memcmp(&mem[20+31*30+2+128], "20CN", 4)) { printf ("[M31] %sNOTE: got 20CN - TakeTracker extension for 20 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 20;
+	} else if (!memcmp(&mem[20+31*30+2+128], "21CN", 4)) { printf ("[M31] %sNOTE: got 21CN - TakeTracker extension for 21 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 21;
+	} else if (!memcmp(&mem[20+31*30+2+128], "22CN", 4)) { printf ("[M31] %sNOTE: got 22CN - TakeTracker extension for 22 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 22;
+	} else if (!memcmp(&mem[20+31*30+2+128], "23CN", 4)) { printf ("[M31] %sNOTE: got 23CN - TakeTracker extension for 23 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 23;
+	} else if (!memcmp(&mem[20+31*30+2+128], "24CN", 4)) { printf ("[M31] %sNOTE: got 24CN - TakeTracker extension for 24 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 24;
+	} else if (!memcmp(&mem[20+31*30+2+128], "25CN", 4)) { printf ("[M31] %sNOTE: got 25CN - TakeTracker extension for 25 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 25;
+	} else if (!memcmp(&mem[20+31*30+2+128], "26CN", 4)) { printf ("[M31] %sNOTE: got 26CN - TakeTracker extension for 26 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 26;
+	} else if (!memcmp(&mem[20+31*30+2+128], "27CN", 4)) { printf ("[M31] %sNOTE: got 27CN - TakeTracker extension for 27 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 27;
+	} else if (!memcmp(&mem[20+31*30+2+128], "28CN", 4)) { printf ("[M31] %sNOTE: got 28CN - TakeTracker extension for 28 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 28;
+	} else if (!memcmp(&mem[20+31*30+2+128], "29CN", 4)) { printf ("[M31] %sNOTE: got 29CN - TakeTracker extension for 29 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 29;
+	} else if (!memcmp(&mem[20+31*30+2+128], "30CN", 4)) { printf ("[M31] %sNOTE: got 30CN - TakeTracker extension for 30 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 30;
+	} else if (!memcmp(&mem[20+31*30+2+128], "31CN", 4)) { printf ("[M31] %sNOTE: got 31CN - TakeTracker extension for 31 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 31;
+	} else if (!memcmp(&mem[20+31*30+2+128], "33CN", 4)) { printf ("[M31] %sNOTE: got 32CN - TakeTracker extension for 32 channel%s\n", FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 32;
 
-	} else if (!memcmp(&mem[20+31*30+2+128], "2CHN", 4)) { printf ("%sNOTE: got 2CHN - uncommon 2 channel format%s\n",            FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 2;
-	} else if (!memcmp(&mem[20+31*30+2+128], "6CHN", 4)) { printf ("%sNOTE: got 6CHN - common 6 channel format%s\n",              FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 6;
-	} else if (!memcmp(&mem[20+31*30+2+128], "8CHN", 4)) { printf ("%sNOTE: got 8CHN - common 8 channel format%s\n",              FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
-	} else if (!memcmp(&mem[20+31*30+2+128], "10CH", 4)) { printf ("%sNOTE: got 10CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 10;
-	} else if (!memcmp(&mem[20+31*30+2+128], "12CH", 4)) { printf ("%sNOTE: got 12CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 12;
-	} else if (!memcmp(&mem[20+31*30+2+128], "14CH", 4)) { printf ("%sNOTE: got 14CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 14;
-	} else if (!memcmp(&mem[20+31*30+2+128], "16CH", 4)) { printf ("%sNOTE: got 16CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 16;
-	} else if (!memcmp(&mem[20+31*30+2+128], "18CH", 4)) { printf ("%sNOTE: got 18CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 18;
-	} else if (!memcmp(&mem[20+31*30+2+128], "20CH", 4)) { printf ("%sNOTE: got 20CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 20;
-	} else if (!memcmp(&mem[20+31*30+2+128], "22CH", 4)) { printf ("%sNOTE: got 22CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 22;
-	} else if (!memcmp(&mem[20+31*30+2+128], "24CH", 4)) { printf ("%sNOTE: got 24CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 24;
-	} else if (!memcmp(&mem[20+31*30+2+128], "26CH", 4)) { printf ("%sNOTE: got 26CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 26;
-	} else if (!memcmp(&mem[20+31*30+2+128], "28CH", 4)) { printf ("%sNOTE: got 28CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 28;
-	} else if (!memcmp(&mem[20+31*30+2+128], "30CH", 4)) { printf ("%sNOTE: got 30CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 30;
-	} else if (!memcmp(&mem[20+31*30+2+128], "32CH", 4)) { printf ("%sNOTE: got 32CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 32;
+	} else if (!memcmp(&mem[20+31*30+2+128], "2CHN", 4)) { printf ("[M31] %sNOTE: got 2CHN - uncommon 2 channel format%s\n",            FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 2;
+	} else if (!memcmp(&mem[20+31*30+2+128], "6CHN", 4)) { printf ("[M31] %sNOTE: got 6CHN - common 6 channel format%s\n",              FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 6;
+	} else if (!memcmp(&mem[20+31*30+2+128], "8CHN", 4)) { printf ("[M31] %sNOTE: got 8CHN - common 8 channel format%s\n",              FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 8;
+	} else if (!memcmp(&mem[20+31*30+2+128], "10CH", 4)) { printf ("[M31] %sNOTE: got 10CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 10;
+	} else if (!memcmp(&mem[20+31*30+2+128], "12CH", 4)) { printf ("[M31] %sNOTE: got 12CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 12;
+	} else if (!memcmp(&mem[20+31*30+2+128], "14CH", 4)) { printf ("[M31] %sNOTE: got 14CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 14;
+	} else if (!memcmp(&mem[20+31*30+2+128], "16CH", 4)) { printf ("[M31] %sNOTE: got 16CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 16;
+	} else if (!memcmp(&mem[20+31*30+2+128], "18CH", 4)) { printf ("[M31] %sNOTE: got 18CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 18;
+	} else if (!memcmp(&mem[20+31*30+2+128], "20CH", 4)) { printf ("[M31] %sNOTE: got 20CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 20;
+	} else if (!memcmp(&mem[20+31*30+2+128], "22CH", 4)) { printf ("[M31] %sNOTE: got 22CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 22;
+	} else if (!memcmp(&mem[20+31*30+2+128], "24CH", 4)) { printf ("[M31] %sNOTE: got 24CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 24;
+	} else if (!memcmp(&mem[20+31*30+2+128], "26CH", 4)) { printf ("[M31] %sNOTE: got 26CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 26;
+	} else if (!memcmp(&mem[20+31*30+2+128], "28CH", 4)) { printf ("[M31] %sNOTE: got 28CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 28;
+	} else if (!memcmp(&mem[20+31*30+2+128], "30CH", 4)) { printf ("[M31] %sNOTE: got 30CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 30;
+	} else if (!memcmp(&mem[20+31*30+2+128], "32CH", 4)) { printf ("[M31] %sNOTE: got 32CH - common 10 channel format%s\n",             FONT_BRIGHT_GREEN, FONT_RESET); canbe31instruments = (highestorder < 64) ? 4 : 0; *channels31instruments = 32;
 	} else {
 		if (
                     (((mem[20+31*30+2+128] >= 'A') && (mem[20+31*30+2+128] <= 'Z')) ||
@@ -808,32 +807,30 @@ int preParseMOD31 (unsigned char *mem, int len, int *channels31instruments)
 		      (mem[20+31*30+2+131] == '!')                                     ||
 		      (mem[20+31*30+2+131] == '#')))
 		{
-			printf ("%sWARNING: Unknown TAG: \"%c%c%c%c\"%s\n", FONT_BRIGHT_YELLOW, mem[20+31*30+2+128], mem[20+31*30+2+129], mem[20+31*30+2+130], mem[20+31*30+2+131], FONT_RESET);
+			printf ("[M31] %sWARNING: Unknown TAG: \"%c%c%c%c\"%s\n", FONT_BRIGHT_YELLOW, mem[20+31*30+2+128], mem[20+31*30+2+129], mem[20+31*30+2+130], mem[20+31*30+2+131], FONT_RESET);
 			*channels31instruments = 4;
 			canbe31instruments = 0;
 		} else {
-			printf ("%sERROR: Illegal TAG - can not be a 31 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
+			printf ("[M31] %sERROR: Illegal TAG - can not be a 31 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
+			retval = -1;
 		}
 	}
 
 	if ((20+31*30+2+128+4+ (highestorder+1)*1024) > len)
 	{
-		printf ("%sERROR: Not enough space for pattern data - can not be a 31 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
-		return -1;
+		printf ("[M31] %sERROR: Not enough space for pattern data (needed %u < actual %u) - can not be a 31 instrument file%s\n", FONT_BRIGHT_RED, (20+31*30+2+128+4+ (highestorder+1)*1024), len, FONT_RESET);
+		retval = -1;
 	}
-
 	if ((20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)) > len)
 	{
-		printf ("%sERROR: Not enough space for sample data - can not be a 31 instrument file%s\n", FONT_BRIGHT_RED, FONT_RESET);
-		return -1;
-	}
-
-	if ((20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)) != len)
+		printf ("[M31] %sWARNING: Not enough space for sample data (needed %u < actual %u) - should not be a 31 instrument file%s\n", FONT_BRIGHT_RED, (20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)), len, FONT_RESET);
+		// retval = -1;
+	} else if ((20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)) != len)
 	{
-		printf ("%sWARNING: Got %d bytes extra data for 31 instrument file%s\n", FONT_BRIGHT_YELLOW, len - (20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)), FONT_RESET);
+		printf ("[M31] %sWARNING: Got %d bytes extra data for 31 instrument file%s\n", FONT_BRIGHT_YELLOW, len - (20+31*30+2+128+4 + (highestorder+1)*1024 + (samplelengths31<<1)), FONT_RESET);
 	}
 
-	return canbe31instruments;
+	return retval ? retval : canbe31instruments;
 }
 
 
