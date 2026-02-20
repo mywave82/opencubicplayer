@@ -116,7 +116,8 @@ cpikube.o: cpikube.c \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../stuff/compat.h \
-	../stuff/poutput.h
+	../stuff/poutput.h \
+	../stuff/utf-16.h
 	$(CC) cpikube.c -o $@ -c
 
 cpilinks.o: cpilinks.c \
@@ -167,7 +168,8 @@ cpipic.o: cpipic.c \
 	../filesel/dirdb.h \
 	../filesel/filesystem.h \
 	../filesel/filesystem-drive.h \
-	../stuff/compat.h
+	../stuff/compat.h \
+	../stuff/utf-16.h
 	$(CC) cpipic.c -o $@ -c
 
 cpiptype.o: cpiptype.c \

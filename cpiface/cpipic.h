@@ -19,6 +19,7 @@ struct dirdbAPI_t;
 
 void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb); /* load a new background picture into *plOpenCPPict and *plOpenCPPal */
 
+void plOpenCPPicInit (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb);
 void plOpenCPPicDone (void);
 
 #endif

@@ -52,6 +52,7 @@
 #include "filesel/filesystem.h"
 #include "filesel/filesystem-drive.h"
 #include "stuff/compat.h"
+#include "stuff/utf-16.h"
 
 #ifdef HAVE_LZW
 #include "gif.h"
@@ -80,7 +81,7 @@ static int match(const char *name)
 	if(l<5)
 		return 0;
 	if(name[l-4]!='.')
-		return 1;
+		return 0;
 #ifdef HAVE_LZW
 	if(tolower(name[l-3])=='g' && tolower(name[l-2])=='i' && tolower(name[l-1])=='f')
 		return 1;
@@ -97,9 +98,43 @@ static void wildcard_file (void *token, struct ocpfile_t *file)
 
 	dirdb->GetName_internalstr (file->dirdb_ref, &name);
 
+	/* support wurfel animation inside ZIP files */
+	if (( strlen (name) >= 5) && (!strcasecmp (name + strlen (name) - 4, ".zip")))
+	{
+		struct ocpdir_t *dir = ocpdirdecompressor_check (file, ".zip");
+		if (dir)
+		{
+			ocpdirhandle_pt dh = dir->readflatdir_start (dir, wildcard_file, token);
+			while (dir->readdir_iterate (dh))
+			{
+			}
+			dir->readdir_cancel (dh);
+			dir->unref (dir);
+		}
+		return;
+	}
+
 	if(match(name))
 	{
 		struct node_t *nd = calloc(1, sizeof(struct node_t));
+		char *fullpath = 0;
+		dirdbGetFullname_malloc (file->dirdb_ref, &fullpath,
+#ifdef _WIN32
+		                         DIRDB_FULLNAME_DRIVE | DIRDB_FULLNAME_BACKSLASH
+#else
+		                         DIRDB_FULLNAME_NODRIVE
+#endif
+		);
+
+#ifdef _WIN32
+		uint16_t *wfullpath = utf8_to_utf16 (fullpath);
+		fwprintf(stderr, L"background: discovered %ls%s\n", wfullpath);
+		free (wfullpath); wfullpath = 0;
+#else
+		fprintf(stderr, "background: discovered %s\n", fullpath);
+#endif
+		free (fullpath); fullpath = 0;
+
 		file->ref (file);
 		nd->file = file;
 		nd->next = files;
@@ -110,6 +145,83 @@ static void wildcard_file (void *token, struct ocpfile_t *file)
 
 static void wildcard_dir (void *token, struct ocpdir_t *dir)
 {
+}
+
+void plOpenCPPicInit (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb)
+{
+	int i;
+	int n;
+
+	/* setup file names */
+
+	int wildcardflag=0;
+	const char *picstr = configAPI->GetProfileString2 (configAPI->ScreenSec, "screen", "usepics", "");
+
+	/* n contains the number of background pictures */
+	n=configAPI->CountSpaceList (picstr, 12);
+	for(i=0; i<n; i++)
+	{
+		char name[128];
+		if(configAPI->GetSpaceListEntry (name, &picstr, sizeof(name)) == 0)
+			break;
+		if(!match(name))
+			continue;
+		/* check for wildcard */
+#ifdef HAVE_LZW
+		if(!strncasecmp(name, "*.gif", 5) || !strncasecmp(name, "*.tga", 5))
+#else
+		if(!strncasecmp(name, "*.tga", 5))
+#endif
+		{
+			ocpdirhandle_pt h;
+
+			if(wildcardflag)
+				continue;
+
+			h = configAPI->DataDir->readdir_start (configAPI->DataDir, wildcard_file, wildcard_dir, (void *)dirdb);
+			if (h)
+			{
+				while (configAPI->DataDir->readdir_iterate (h));
+				configAPI->DataDir->readdir_cancel (h);
+			}
+
+			h = configAPI->DataHomeDir->readdir_start (configAPI->DataHomeDir, wildcard_file, wildcard_dir, (void *)dirdb);
+			if (h)
+			{
+				while (configAPI->DataHomeDir->readdir_iterate (h));
+				configAPI->DataHomeDir->readdir_cancel (h);
+			}
+
+			wildcardflag=1;
+		} else {
+			uint32_t dirdb_ref;
+			struct ocpfile_t *f = 0;
+
+			if (!f)
+			{
+				dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
+				filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
+				dirdb->Unref (dirdb_ref, dirdb_use_file);
+			}
+
+			if (!f)
+			{
+				dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataHomeDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
+				filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
+				dirdb->Unref (dirdb_ref, dirdb_use_file);
+			}
+
+			if (f)
+			{
+				struct node_t *nd = calloc (1, sizeof(struct node_t));
+				nd->file = f;
+				nd->next = files;
+				files = nd;
+				filesCount++;
+			}
+		}
+	}
+
 }
 
 void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI_t *dirdb)
@@ -125,79 +237,6 @@ void plReadOpenCPPic (const struct configAPI_t *configAPI, const struct dirdbAPI
 	int low;
 	int high;
 	int move;
-
-	/* setup file names */
-
-	if(lastN==-1)
-	{
-		int wildcardflag=0;
-		const char *picstr = configAPI->GetProfileString2 (configAPI->ScreenSec, "screen", "usepics", "");
-
-		/* n contains the number of background pictures */
-		n=configAPI->CountSpaceList (picstr, 12);
-		for(i=0; i<n; i++)
-		{
-			char name[128];
-			if(configAPI->GetSpaceListEntry (name, &picstr, sizeof(name)) == 0)
-				break;
-			if(!match(name))
-				continue;
-			/* check for wildcard */
-#ifdef HAVE_LZW
-			if(!strncasecmp(name, "*.gif", 5) || !strncasecmp(name, "*.tga", 5))
-#else
-			if(!strncasecmp(name, "*.tga", 5))
-#endif
-			{
-				ocpdirhandle_pt h;
-
-				if(wildcardflag)
-					continue;
-
-				h = configAPI->DataDir->readdir_start (configAPI->DataDir, wildcard_file, wildcard_dir, (void *)dirdb);
-				if (h)
-				{
-					while (configAPI->DataDir->readdir_iterate (h));
-					configAPI->DataDir->readdir_cancel (h);
-				}
-
-				h = configAPI->DataHomeDir->readdir_start (configAPI->DataHomeDir, wildcard_file, wildcard_dir, (void *)dirdb);
-				if (h)
-				{
-					while (configAPI->DataHomeDir->readdir_iterate (h));
-					configAPI->DataHomeDir->readdir_cancel (h);
-				}
-
-				wildcardflag=1;
-			} else {
-				uint32_t dirdb_ref;
-				struct ocpfile_t *f = 0;
-
-				if (!f)
-				{
-					dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
-					filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
-					dirdb->Unref (dirdb_ref, dirdb_use_file);
-				}
-
-				if (!f)
-				{
-					dirdb_ref = dirdb->ResolvePathWithBaseAndRef (configAPI->DataHomeDir->dirdb_ref, name, DIRDB_RESOLVE_NODRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_TILDE_USER, dirdb_use_file);
-					filesystem_resolve_dirdb_file (dirdb_ref, 0, &f);
-					dirdb->Unref (dirdb_ref, dirdb_use_file);
-				}
-
-				if (f)
-				{
-					struct node_t *nd = calloc (1, sizeof(struct node_t));
-					nd->file = f;
-					nd->next = files;
-					files = nd;
-					filesCount++;
-				}
-			}
-		}
-	}
 
 	/* if there are no background pictures we can skip the rest */
 	if (filesCount<=0)

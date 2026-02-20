@@ -41,6 +41,7 @@
 #include "filesel/filesystem.h"
 #include "stuff/compat.h"
 #include "stuff/poutput.h"
+#include "stuff/utf-16.h"
 
 static unsigned char *plWuerfel=NULL;
 static int plWuerfelDirect;
@@ -584,15 +585,52 @@ static void parse_wurfel_file (void *token, struct ocpfile_t *file)
 
 	dirdbGetName_internalstr (file->dirdb_ref, &name);
 
-	if ( strncasecmp ("CPANI", name, 5) )
+	/* support wurfel animation inside ZIP files */
+	if (( strlen (name) >= 5) && (!strcasecmp (name + strlen (name) - 4, ".zip")))
+	{
+		struct ocpdir_t *dir = ocpdirdecompressor_check (file, ".zip");
+		if (dir)
+		{
+			char *temp = malloc (strlen ((const char *)token) + strlen (name) + 2);
+			if (temp)
+			{
+				sprintf (temp, "%s%s"
+#ifdef _WIN32
+				               "\\"
+#else
+                                               "/"
+#endif
+				               , (const char *)token, name);
+				ocpdirhandle_pt dh = dir->readflatdir_start (dir, parse_wurfel_file, temp);
+				while (dir->readdir_iterate (dh))
+				{
+				}
+				dir->readdir_cancel (dh);
+			}
+			dir->unref (dir);
+		}
 		return;
+	}
+
+	if ( strncasecmp ("CPANI", name, 5) )
+	{
+		return;
+	}
 
 	len = strlen (name);
 	/* Don't bother to check for len > 4 here, since above strncasecmp() will catch that */
-	if ( strcasecmp ( name + len - 4, ".DAT") )
+	if ( strcasecmp ( name + len - 4, ".DAT") &&
+	     strcasecmp ( name + len - 4, ".ANI") )
+	{
 		return;
-
+	}
+#ifdef _WIN32
+	uint16_t *wtoken = utf8_to_utf16 (token);
+	fwprintf(stderr, L"wuerfel mode: discovered %ls%s\n", wtoken, name);
+	free (wtoken); wtoken = 0;
+#else
 	fprintf(stderr, "wuerfel mode: discovered %s%s\n", (const char *)token, name);
+#endif
 	new = realloc (wuerfelFiles, (wuerfelFilesCount + 1) * sizeof (wuerfelFiles[0]) );
 	if (!new)
 	{

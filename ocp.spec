@@ -11,8 +11,8 @@ Group: Applications/Multimedia
 URL: https://stian.cubic.org/coding-ocp.php
 Buildroot: /var/tmp/ocp-buildroot
 Source0: https://stian.cubic.org/ocp/%{name}-%{version}.tar.bz2
-Source1: ftp://ftp.cubic.org/pub/player/gfx/opencp25image1.zip
-Source2: ftp://ftp.cubic.org/pub/player/gfx/opencp25ani1.zip
+Source1: https://stian.cubic.org/mirror/ftp.cubic.org/pub/player/gfx/opencp25image1.zip
+Source2: https://stian.cubic.org/mirror/ftp.cubic.org/pub/player/gfx/opencp25ani1.zip
 License: GPL-2, Creative Commons Attribution 3.0
 # OCP itself is GPL-2
 # The extra data provided is Creative Commons Attribute 3.0

@@ -518,3 +518,5 @@ cp $host-src/unifont-$UNIFONT_VERSION.otf       $install/data/unifont.otf
 cp $host-src/unifont_csur-$UNIFONT_VERSION.otf  $install/data/unifont_csur.otf
 cp $host-src/unifont_upper-$UNIFONT_VERSION.otf $install/data/unifont_upper.otf
 $host-strip $install/*.dll $install/*.exe $install/autoload/*.dll
+wget https://stian.cubic.org/mirror/ftp.cubic.org/pub/player/gfx/opencp25image1.zip -O $install/data/opencp25image1.zip
+wget https://stian.cubic.org/mirror/ftp.cubic.org/pub/player/gfx/opencp25ani1.zip -O $install/data/opencp25ani1.zip

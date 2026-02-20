@@ -2220,6 +2220,8 @@ static void plmpClose (void)
 static int plmpInited = 0;
 static int plmpLateInit(struct PluginInitAPI_t *API)
 {
+	plOpenCPPicInit (API->configAPI, API->dirdb);
+
 	plCompoMode=API->configAPI->GetProfileBool2(cfScreenSec, "screen", "compomode", 0, 0);
 	strncpy(curmodehandle, API->configAPI->GetProfileString2(cfScreenSec, "screen", "startupmode", "text"), 8);
 	curmodehandle[8]=0;
