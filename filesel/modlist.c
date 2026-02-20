@@ -471,18 +471,18 @@ static int mlecmp (const void *a, const void *b)
 
 	/* First compare them as casefolded */
 	{
-		int retval = strcmp (e1->utf8_casefolded, e2->utf8_casefolded);
+		int retval = strverscmp (e1->utf8_casefolded, e2->utf8_casefolded);
 		if (retval != 0)
 		{
 			return retval;
 		}
 	}
 
-	/* If they match after casefolded, seperate base regular strcmp, so we get a difference */
+	/* If they match after casefolded, we repeat it without the casefolded, so we get a difference */
 	dirdbGetName_internalstr (e1->file ? e1->file->dirdb_ref : e1->dir->dirdb_ref, &n1);
 	dirdbGetName_internalstr (e2->file ? e2->file->dirdb_ref : e2->dir->dirdb_ref, &n2);
 
-	return strcmp(n1, n2);
+	return strverscmp(n1, n2);
 }
 
 static int mlecmp_filesonly_groupdir (const void *a, const void *b)

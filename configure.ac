@@ -312,6 +312,7 @@ AC_CHECK_FUNCS([strncasecmp])
 AC_CHECK_FUNCS([mkstemp])
 AC_CHECK_FUNCS([strlcpy])
 AC_CHECK_FUNCS([strlcat])
+AC_CHECK_FUNCS([strverscmp])
 
 AC_SUBST(MATH_LIBS)
 AC_CHECK_FUNCS([sqrt], [MATH_LIBS=], [

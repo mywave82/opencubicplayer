@@ -48,5 +48,8 @@ playqoa/ plugin contains code from QOA project.
     Copyright (c) 2024, Dominic Szablewski
 
 
+stuff/strverscmp.c
+    Copyright (c) 2022 Aymeric Wibo <obiwac@gmail.com>
+
 --
 Stian Skjelstad

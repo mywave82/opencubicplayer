@@ -238,7 +238,8 @@ compat.o: compat.c \
 	../config.h \
 	../types.h \
 	../boot/plinkman.h \
-	compat.h
+	compat.h \
+	strverscmp.c
 	$(CC) compat.c -o $@ -c
 
 pfonts-update: pfonts-update.c

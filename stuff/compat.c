@@ -1256,3 +1256,8 @@ int clock_gettime(clockid_t clk_id, struct timespec *tv)
 }
 # endif
 #endif
+
+
+#ifndef HAVE_STRVERSCMP
+#include "strverscmp.c"
+#endif

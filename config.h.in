@@ -277,6 +277,11 @@
 
 #undef HAVE_STRLCAT
 
+#undef HAVE_STRVERSCMP
+#ifndef HAVE_STRVERSCMP
+int strverscmp(const char *s1, const char *s2);
+#endif
+
 #undef HAVE_GETTIMEOFDAY
 
 #undef HAVE_EFENCE
