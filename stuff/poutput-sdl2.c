@@ -617,6 +617,15 @@ static void set_state_graphmode (const int fullscreen, int width, int height, co
 				SDL_SetWindowFullscreen (current_window, 0);
 				SDL_SetWindowResizable (current_window, SDL_FALSE);
 				SDL_SetWindowSize (current_window, width, height);
+				if ((width == 320) && (height == 200))
+				{ /* Windows atleast really likes to double the horizontal resolution for this one */
+					int resultwidth, resultheight;
+					SDL_GetWindowSize (current_window, &resultwidth, &resultheight);
+					if ((resultwidth == 640) && (resultheight == 200))
+					{
+						SDL_SetWindowSize (current_window, 640, 400);
+					}
+				}
 			}
 		}
 	}
