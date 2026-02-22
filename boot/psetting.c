@@ -57,8 +57,9 @@
 char *cfProgramPath;
 char *cfProgramPathAutoload;
 
+#define LINEBUFFER_LEN 65536
 #define KEYBUF_LEN 105
-#define STRBUF_LEN 405
+#define STRBUF_LEN 65536
 #define COMMENTBUF_LEN 256
 #define COMMENT_INDENT 26
 
@@ -166,11 +167,20 @@ static int cfReadINIFile(int argc, char *argv[])
 	int cfINIApps_index=-1;
 
 	char keybuf[KEYBUF_LEN];
-	char strbuf[STRBUF_LEN];
+	char *strbuf;
 	char commentbuf[COMMENTBUF_LEN];
-
-	char linebuffer[1024];
+	char *linebuffer;
 	/*  int curapp=-1;*/
+
+	strbuf = malloc (STRBUF_LEN);
+	linebuffer = malloc (LINEBUFFER_LEN);
+	if ((!linebuffer) && (!strbuf))
+	{
+		free (strbuf);
+		free (linebuffer);
+		fprintf (stderr, "cfReadINIFile: malloc() failed\n");
+		return 1;
+	}
 
 	path = malloc (strlen (configAPI.ConfigHomePath) + strlen ("ocp.ini") + 1);
 	sprintf (path, "%socp.ini", configAPI.ConfigHomePath);
@@ -185,6 +195,8 @@ static int cfReadINIFile(int argc, char *argv[])
 	if (!wpath)
 	{
 		fprintf (stderr, "cfReadINIFile: utf8_to_utf16_LFN(\"%s\") failed\n", path);
+		free (strbuf);
+		free (linebuffer);
 		return 1;
 	}
 	f=_wfopen(wpath, L"rb");
@@ -196,11 +208,13 @@ static int cfReadINIFile(int argc, char *argv[])
 	{
 		fprintf (stderr, "fopen(\"%s\", \"r\"): %s\n", path, strerror (errno));
 		free (path);
+		free (strbuf);
+		free (linebuffer);
 		return 1;
 	}
 	free (path); path=0;
 
-	while (fgets(linebuffer, sizeof(linebuffer), f))
+	while (fgets(linebuffer, LINEBUFFER_LEN, f))
 	{
 		linenum++;
 		{
@@ -429,6 +443,8 @@ static int cfReadINIFile(int argc, char *argv[])
 		}
 	}
 	fclose(f);
+	free (strbuf);
+	free (linebuffer);
 	return 0;
 }
 
