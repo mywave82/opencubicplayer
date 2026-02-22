@@ -901,6 +901,7 @@ static void ncurses_consoleSave (void)
 	keypad(stdscr, TRUE);
 	idlok(stdscr, FALSE);
 	start_color();
+	curs_set(0);
 	conactive=1;
 }
 
