@@ -41,6 +41,8 @@
 
 static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 {
+	int i,j;
+
 	if ((strlen(filename)>4) &&
 	    (!strcasecmp(filename + strlen (filename) - 4,".WOW")) &&
 	    (*(uint32_t *)(buf+1080)==int32_little(0x2E4B2E4D))) /* "M.K." */
@@ -83,48 +85,82 @@ static uint32_t xmpGetModuleType(const char *buf, int len, const char *filename)
 		return MODULETYPE("MXM");
 	}
 
-	if ((strlen(filename)>4) &&
-	    (!strcasecmp(filename + strlen (filename) - 4,".MOD")))
+	if (len < 20)
 	{
-		int i,j;
+		return 0;
+	}
 
-		/* Check title for ASCII */
-		for (i=0; i<20; i++)
+	/* Check title for ASCII */
+	for (i=0; i<20; i++)
+	{
+		if (buf[i]) /* string is zero-terminated */
 		{
-			if (buf[i]) /* string is zero-terminated */
+			break;
+		} else {
+			if (buf[i]<0x20) /* non-ASCII?, can not be mtM15/mtM31 */
 			{
-				break;
-			} else {
-				if (buf[i]<0x20) /* non-ASCII?, can not be mtM15/mtM31 */
-				{
-					return 0;
-				}
+				return 0;
 			}
 		}
+	}
+
+	for (i=0; i<31; i++)
+	{
 		/* Check instruments for ASCII*/
-		for (i=0; i<31; i++)
+		for (j=0; j<21; j++)
 		{
-			for (j=0; j<21; j++)
+			if ((20+i*30+j) >= len)
 			{
-				if ((20+i*30+j) >= len)
-				{
-					//fprintf (stderr, "buffer too small");
-					return 0;
-				}
-				if (!(buf[20+i*30+j]))
-				{
-					break;
-				}
-				if (((signed char *)buf)[20+i*30+j]<0x20) /* non-ASCII? */
-				{
+				//fprintf (stderr, "buffer too small");
+				return 0;
+			}
+			if (!(buf[20+i*30+j]))
+			{
+				break;
+			}
+			if (((signed char *)buf)[20+i*30+j]<0x20) /* non-ASCII? */
+			{
 					//fprintf (stderr, "instrument %d has problem at character %d\n", i, j);
 					goto out;
 				}
 			}
+			/* check volume */
+			if (((unsigned char *)buf)[20+i*30+25] > 64)
+			{
+				goto out;
+			}
 		}
 out:
-		if (i >= 31) return MODULETYPE("M31");
-		if (i >= 15) return MODULETYPE("M15");
+	if (i >= 31)
+	{
+		/* Order-Length valid */
+		if ((len > (20 + 31 * 30)) &&
+		    (((unsigned char *)buf)[20+31*30] >= 1) && (((unsigned char *)buf)[20+31*30] <= 128))
+		{
+			return MODULETYPE("M31");
+		}
+	}
+
+	if (i >= 15)
+	{
+		/* Order-Length valid */
+		if ((len > (20 + 15 * 30 + 2 + 128)) &&
+		    (((unsigned char *)buf)[20+15*30] >= 1) && (((unsigned char *)buf)[20+15*30] <= 128))
+		{
+			uint8_t highestorder = 0;
+			for (i=0; i < 128; i++)
+			{
+				if (((unsigned char *)buf)[20+15*30+2 + i] > highestorder)
+				{
+					highestorder = ((unsigned char *)buf)[20+15*30+2 + i];
+				}
+			}
+			/* M15 files never have orders above 63 */
+			if (highestorder < 64)
+			{
+				return MODULETYPE("M15");
+			}
+		}
 	}
 	return 0;
 }
