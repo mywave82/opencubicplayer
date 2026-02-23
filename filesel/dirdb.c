@@ -249,7 +249,10 @@ int dirdbInit (const struct configAPI_t *configAPI)
 	}
 	dirdbNum=uint32_little(header.entries);
 	if (!dirdbNum)
+	{
+		i = 0;
 		goto endoffile;
+	}
 	dirdbData = calloc (dirdbNum, sizeof(struct dirdbEntry));
 	if (!dirdbData)
 	{
