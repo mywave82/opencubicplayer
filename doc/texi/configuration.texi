@@ -342,9 +342,7 @@ runtime by pressing @key{ALT}+@key{z} in the fileselector.
 
 @example
 [fileselector] ; default fileselector section
-  modextensions=MOD S3M XM IT MDL DMF ULT AMS MTM 669 NST WOW \
-                OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID \
-		DAT AY  YM  HVL AHX PLS M3U PLT OGG
+  modextensions=M15 M31
   movepath=  ; default path to move files
   screentype=2
   typecolors=on
@@ -365,9 +363,11 @@ runtime by pressing @key{ALT}+@key{z} in the fileselector.
 modextensions
 @tab
 files containing these extensions will be scanned by the
-fileselector. Only those files will be shown. If you want to load
-files with different extensions you have to specify them at the
-command line.@footnote{however files with different extensions are
+fileselector in addition to those automatically added by
+the playback plugins. Only these files will be shown. If
+you want to load files with different extensions you have
+to specify them at the command line.
+@footnote{however files with different extensions are
 likely to be no valid module format, so they will be refused to load}
 @item movepath @tab
 the standard path to move files into. This is describend in

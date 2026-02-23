@@ -753,7 +753,7 @@ static int init_modules(int argc, char *argv[]
 			cfRemoveProfile("filetype 254");
 
 			printf("ocp.ini update (0.2.91) Removed modextensions\n"); /* each plugin registers this */
-			cfRemoveEntry("screen", "modextensions");
+			cfRemoveEntry("fileselector", "modextensions");
 		}
 
 		if (epoch < 20211102)
@@ -1061,9 +1061,15 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileInt ("fscolors", "QOA", 6, 10);
 		}
 
-		if (epoch < 20260111)
+		if (epoch < 20260223)
 		{
-			cfSetProfileInt("version", "epoch", 20260111, 10);
+			fprintf(stderr, "ocp.ini update (3.2.0) reintroduced [fileselector] modextensions= for manually adding extra file extensions\n");
+			cfSetProfileString ("fileselector", "modextensions", cfGetProfileString("fileselector", "modextensions", ""));
+		}
+
+		if (epoch < 20260223)
+		{
+			cfSetProfileInt("version", "epoch", 20260223, 10);
 			cfStoreConfig();
 #ifdef _WIN32
 			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
@@ -1080,17 +1086,17 @@ static int init_modules(int argc, char *argv[]
 #endif
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260111)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260223)
 	{
 #ifndef _WIN32
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260111\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260223\033[0m\n\n");
 			sleep(5);
 		} else
 #endif
 		{
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260111\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260223\n\n");
 		}
 	}
 

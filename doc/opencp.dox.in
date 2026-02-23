@@ -1663,9 +1663,7 @@ pressing ~<Alt>~+~<C>~ in the fileselector. However to make changes permanent
 you have to modify the ~fileselector~ section.
 
   \[fileselector\] ; default fileselector section
-    modextensions=MOD S3M XM  IT  MDL DMF ULT AMS MTM 669 NST WOW \\
-                  OKT PTM MXM MID WAV RMI MP1 MP2 MP3 OGG OGA SID \\
-                  DAT AY  YM  HVL AHX PLS M3U PLT
+    modextensions=M15 M31
     movepath= ; default path to move files
     screentype=2
     typecolors=on
@@ -1679,9 +1677,10 @@ you have to modify the ~fileselector~ section.
     path=.
 
   ~modextensions~    files containing these extensions will be scanned by the
-                   fileselector. Only those files will be shown. If you want to
-                   load files with different extensions you have to specify them
-                   at the command line.
+                   fileselector in addition to those automatically added by
+                   the playback plugins. Only these files will be shown. If
+                   you want to load files with different extensions you have
+                   to specify them at the command line.
   ~movepath~         the standard path to move files into. This is described on
                    page "{FSelUseAdv,Fileselector: Advanced usage}".
   ~screentype~       the textmode to use within the fileselector. The options

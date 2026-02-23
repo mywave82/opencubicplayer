@@ -161,8 +161,8 @@ void plOpenCPPicInit (const struct configAPI_t *configAPI, const struct dirdbAPI
 	n=configAPI->CountSpaceList (picstr, 12);
 	for(i=0; i<n; i++)
 	{
-		char name[128];
-		if(configAPI->GetSpaceListEntry (name, &picstr, sizeof(name)) == 0)
+		char name[13];
+		if(configAPI->GetSpaceListEntry (name, &picstr, sizeof(name) - 1) == 0)
 			break;
 		if(!match(name))
 			continue;

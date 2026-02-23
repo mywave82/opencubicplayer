@@ -497,39 +497,236 @@ uint8_t fsModTypeColor(struct moduletype modtype)
 	return 7;
 }
 
-static char **moduleextensions=0;
+
+#define MAX_MODEXT_LENGTH 5
+#define MODULEEXTENSION_FLAGS_FROM_PLUGIN 1
+#define MODULEEXTENSION_FLAGS_FROM_INI    2
+struct moduleextension
+{
+	char ext[MAX_MODEXT_LENGTH+1];
+	unsigned int flags;
+};
+static unsigned int moduleextensions_count;
+static struct moduleextension *moduleextensions = 0;
+
+static unsigned int SearchExt (const char *ext, int *hit)
+{
+	unsigned int searchbase = 0, searchlen = moduleextensions_count;
+
+	*hit = 0;
+
+	if (!searchlen)
+	{
+		return 0;
+	}
+
+	while (searchlen > 1)
+	{
+		uint_fast32_t halfmark;
+		int result;
+
+		halfmark = searchlen >> 1;
+
+		result = strverscmp (ext, moduleextensions[searchbase + halfmark].ext);
+		if (!result)
+		{
+			*hit = 1;
+			return searchbase + halfmark;
+		} else if (result > 0)
+		{
+			searchbase += halfmark;
+			searchlen -= halfmark;
+		} else {
+			searchlen = halfmark;
+		}
+	}
+
+	/* fine-tune the position */
+	if (searchbase < moduleextensions_count)
+	{
+		int result = strverscmp (ext, moduleextensions[searchbase].ext);
+		if (!result)
+		{
+			*hit = 1;
+		} else {
+			if (result > 0)
+			{
+				searchbase++;
+			}
+		}
+	}
+
+	return searchbase;
+}
+
+static void fsUnregisterExtFlags(const char *_ext, unsigned int flags)
+{
+	char ext[MAX_MODEXT_LENGTH + 1];
+	int i;
+	unsigned int position;
+	int hit;
+
+	if (!strlen(_ext))
+	{
+		fprintf (stderr, "fsUnregisterExtFlags: ignoring zero-length entry\n");
+		return;
+	}
+	if (strlen (_ext) > MAX_MODEXT_LENGTH)
+	{
+		fprintf (stderr, "fsUnregisterExtFlags: ignoring \"%s\", since it is longer than %u\n", _ext, MAX_MODEXT_LENGTH);
+		return;
+	}
+
+	/* force upper-case, and filter by allowed characters only */
+	for (i = 0; _ext[i]; i++)
+	{
+		if ((_ext[i] >= 'a') && (_ext[i] <= 'z'))
+		{
+			ext[i] = _ext[i] - 0x20;
+		} else if (((_ext[i] >= 'A') && (_ext[i] <= 'Z')) ||
+		           ((_ext[i] >= '0') && (_ext[i] <= '9')) ||
+		            (_ext[i] == '-') ||
+		            (_ext[i] == '_')) {
+			ext[i] = _ext[i];
+		} else {
+			fprintf (stderr, "fsUnregisterExtFlags: ignoring \"%s\" due to invalid character\n", _ext);
+			return;
+		}
+	}
+	ext[i] = 0;
+
+	position = SearchExt (ext, &hit);
+	if (!hit)
+	{
+		return;
+	}
+
+	moduleextensions[position].flags &= ~flags;
+	if (moduleextensions[position].flags)
+	{
+		return;
+	}
+
+	memmove (moduleextensions + position, moduleextensions + position + 1, sizeof (moduleextensions[0]) * (moduleextensions_count - position - 1));
+	moduleextensions_count--;
+
+	{
+		struct moduleextension *temp = realloc (moduleextensions, moduleextensions_count * sizeof(moduleextensions[0]));
+		if (!temp)
+		{
+			fprintf (stderr, "fsUnregisterExtFlags: realloc() failed\n");
+			return;
+		}
+		moduleextensions = temp;
+	}
+}
+
+/* returns -1 on error, 0 if no changes was performed, 1 if entry was new, 2 if flag only was new */
+static int fsRegisterExtFlags(const char *_ext, unsigned int flags)
+{
+	char ext[MAX_MODEXT_LENGTH + 1];
+	int i;
+	unsigned int position;
+	int hit;
+
+	if (!strlen(_ext))
+	{
+		fprintf (stderr, "fsRegisterExtFlags: ignoring zero-length entry\n");
+		return -1;
+	}
+	if (strlen (_ext) > MAX_MODEXT_LENGTH)
+	{
+		fprintf (stderr, "fsRegisterExtFlags: ignoring \"%s\", since it is longer than %u\n", _ext, MAX_MODEXT_LENGTH);
+		return -1;
+	}
+
+	/* force upper-case, and filter by allowed characters only */
+	for (i = 0; _ext[i]; i++)
+	{
+		if ((_ext[i] >= 'a') && (_ext[i] <= 'z'))
+		{
+			ext[i] = _ext[i] - 0x20;
+		} else if (((_ext[i] >= 'A') && (_ext[i] <= 'Z')) ||
+		           ((_ext[i] >= '0') && (_ext[i] <= '9')) ||
+		            (_ext[i] == '-') ||
+		            (_ext[i] == '_')) {
+			ext[i] = _ext[i];
+		} else {
+			fprintf (stderr, "fsRegisterExtFlags: ignoring \"%s\" due to invalid character\n", _ext);
+			return -1;
+		}
+	}
+	ext[i] = 0;
+
+	position = SearchExt (ext, &hit);
+	if (!hit)
+	{
+		struct moduleextension *temp = realloc (moduleextensions, (moduleextensions_count+1) * sizeof(moduleextensions[0]));
+		if (!temp)
+		{
+			fprintf (stderr, "fsRegisterExtFlags: realloc() failed\n");
+			return -1;
+		}
+		moduleextensions = temp;
+		memmove (moduleextensions + position + 1, moduleextensions + position, sizeof (moduleextensions[0]) * (moduleextensions_count - position));
+		moduleextensions_count++;
+		strcpy (moduleextensions[position].ext, ext);
+		moduleextensions[position].flags = flags;
+		return 2;
+	} else {
+		if ((moduleextensions[position].flags & flags) == flags)
+		{
+			return 0;
+		}
+		moduleextensions[position].flags |= flags;
+		return 1;
+	}
+}
 
 void fsRegisterExt(const char *ext)
 {
-	if (moduleextensions)
-	{
-		int n=0;
-		char **e;
-		for (e=moduleextensions; *e; e++, n++)
-			if (!strcasecmp(ext, *e))
-				return;
-		moduleextensions=realloc(moduleextensions, (n+2)*sizeof(char *));
-		moduleextensions[n]=strdup(ext);
-		moduleextensions[n+1]=0;
-	} else {
-		moduleextensions=malloc(2*sizeof(char *));
-		moduleextensions[0]=strdup(ext);
-		moduleextensions[1]=0;
-	}
+	fsRegisterExtFlags (ext, MODULEEXTENSION_FLAGS_FROM_PLUGIN);
 }
 
 /* This function tells if a file ends with a valid extension or not
  */
-int fsIsModule (const char *ext)
+int fsIsModule (const char *_ext)
 {
-	char **e;
+	char ext[MAX_MODEXT_LENGTH + 1];
+	int retval;
+	int i;
 
-	if (*ext++!='.')
+	if (*_ext++ != '.')
+	{
 		return 0;
-	for (e=moduleextensions; *e; e++)
-		if (!strcasecmp(ext, *e))
-			return 1;
-	return 0;
+	}
+	if (!strlen(_ext))
+	{
+		return 0;
+	}
+	if (strlen (_ext) > MAX_MODEXT_LENGTH)
+	{
+		return 0;
+	}
+	/* force upper-case, and filter by allowed characters only */
+	for (i = 0; _ext[i]; i++)
+	{
+		if ((_ext[i] >= 'a') && (_ext[i] <= 'z'))
+		{
+			ext[i] = _ext[i] - 0x20;
+		} else if (((_ext[i] >= 'A') && (_ext[i] <= 'Z')) ||
+		           ((_ext[i] >= '0') && (_ext[i] <= '9')) ||
+		            (_ext[i] == '-') ||
+		            (_ext[i] == '_')) {
+			ext[i] = _ext[i];
+		} else {
+			return 0;
+		}
+	}
+	ext[i] = 0;
+
+	SearchExt (ext, &retval);
+	return retval;
 }
 
 static void addfiles_file (void *token, struct ocpfile_t *file)
@@ -1190,6 +1387,15 @@ int fsInit(void)
 #endif
 	plRegisterInterface (&VirtualInterface);
 
+	{
+		const char *str = cfGetProfileString("fileselector", "modextensions", "");
+		char ext[MAX_MODEXT_LENGTH+1];
+		while (cfGetSpaceListEntry(ext, &str, MAX_MODEXT_LENGTH))
+		{
+			fsRegisterExtFlags (ext, MODULEEXTENSION_FLAGS_FROM_INI);
+		}
+	}
+
 	return 1;
 }
 
@@ -1218,14 +1424,9 @@ void fsClose(void)
 
 	adbMetaClose();
 	mdbClose();
-	if (moduleextensions)
-	{
-		int i;
-		for (i=0;moduleextensions[i];i++)
-			free(moduleextensions[i]);
-		free(moduleextensions);
-		moduleextensions=0;
-	}
+	free (moduleextensions);
+	moduleextensions = 0;
+	moduleextensions_count = 0;
 
 	dirdbClose();
 
@@ -2172,6 +2373,424 @@ static void fsShowDir(unsigned int firstv, unsigned int selectv, unsigned int fi
 	}
 }
 
+static void fsEditRegisterExt(void)
+{
+	char ExtToInsert[MAX_MODEXT_LENGTH + 1];
+	int InInsertion = 0;
+	int InKeyboardHelp = 0;
+	int Changes = 0;
+	unsigned int CountFromPlugin = 0;
+	unsigned int CountFromIni = 0;
+	unsigned int SelectedFromPlugin = 0;
+	unsigned int SelectedFromIni = 0;
+	int i, j, Iter;
+	int dsel = 0;
+
+	for (i=0; i < moduleextensions_count; i++)
+	{
+		if (moduleextensions[i].flags & MODULEEXTENSION_FLAGS_FROM_PLUGIN) /* Move SelectedIndex till after the .NNN entries from playopl plugin */
+		{
+			CountFromPlugin++;
+			if ( (moduleextensions[i].ext[0] < 'A') &&
+			     ((!moduleextensions[i].ext[1]) || (moduleextensions[i].ext[1] < 'A')) &&
+			     ((!moduleextensions[i].ext[1]) || (!moduleextensions[i].ext[2]) || (moduleextensions[i].ext[2] < 'A')) )
+			{
+				SelectedFromPlugin++;
+			}
+		}
+		if (moduleextensions[i].flags & MODULEEXTENSION_FLAGS_FROM_INI)
+		{
+			CountFromIni++;
+		}
+	}
+
+superbreak:
+Repaint:
+	int mlWidth = 80;
+	int mlHeight = plScrHeight - 3;
+	int mlTop = 2;
+	int mlLeft = (plScrWidth - mlWidth) / 2;
+	int skipleft, skipright, dotleft, dotright;
+	const int LINES_NOT_AVAILABLE = 6;
+	int contentheight = mlHeight - LINES_NOT_AVAILABLE;
+	int half = (contentheight) / 2;
+
+	if (CountFromPlugin <= contentheight)
+	{ /* all entries can fit */
+		skipleft = 0;
+		dotleft = 0;
+	} else if (SelectedFromPlugin < half)
+	{ /* we are in the top part */
+		skipleft = 0;
+		dotleft = (LINES_NOT_AVAILABLE - 1);
+	} else if (SelectedFromPlugin >= (CountFromPlugin - half))
+	{ /* we are at the bottom part */
+		skipleft = CountFromPlugin - contentheight;
+		dotleft = mlHeight - 2;
+	} else {
+		skipleft = SelectedFromPlugin - half;
+		dotleft = skipleft * (contentheight) / (CountFromPlugin - (contentheight)) + 5;
+	}
+
+	if ((CountFromIni+1) <= contentheight)
+	{ /* all entries can fit */
+		skipright = 0;
+		dotright = 0;
+	} else if (SelectedFromIni < half)
+	{ /* we are in the top part */
+		skipright = 0;
+		dotright = (LINES_NOT_AVAILABLE - 1);
+	} else if (SelectedFromIni >= (CountFromIni + 1 - half))
+	{ /* we are at the bottom part */
+		skipright = CountFromIni + 1 - contentheight;
+		dotright = mlHeight - 2;
+	} else {
+		skipright = SelectedFromIni - half;
+		dotright = skipright * (contentheight) / (CountFromIni + 1 - (contentheight)) + 5;
+	}
+
+	make_title("file selector setup - file extensions", 0);
+	displayvoid (1, 0, plScrWidth);
+	for (i=2; i < plScrHeight-2; i++)
+	{
+		displayvoid(i, 0, mlLeft);
+		displayvoid(i, mlLeft + mlWidth, plScrWidth - mlLeft - mlWidth);
+	}
+	displayvoid (plScrHeight-1, 0, plScrWidth);
+
+	Console.DisplayFrame (mlTop, mlLeft, mlHeight, mlWidth, DIALOG_COLOR_FRAME, "File extensions", dotright, 4, 0);
+	mlTop++; mlLeft++; mlHeight-=2; mlWidth-=2;
+	Console.DisplayPrintf (mlTop++, mlLeft + 1, 0x07, mlWidth - 2, "Use arrow keys %.15o<\x1b>%.7o, %.15o<\x1a>%.7o, %.15o<\x18>%.7o and %.15o<\x19>%.7o to move cursor. In the user supplied");
+	Console.DisplayPrintf (mlTop++, mlLeft + 1, 0x07, mlWidth - 2, "list <INSERT>%.7o and %.15o<DELETE>%.7o keys may be used, or press %.15o<ENTER>%.7o on");
+	Console.DisplayPrintf (mlTop++, mlLeft + 1, 0x07, mlWidth - 2, "\"%.10oAdd new extensions%.7o\". Press %0.15o<ESC>%.7o when completed.");
+
+	// the horizontal line + vertical line */
+	Console.Driver->DisplayStr (mlTop, mlLeft + 12, 0x03, " From Plugins ", 14);
+	Console.Driver->DisplayStr (mlTop, mlLeft + 50, 0x03, " From OCP.INI ", 14);
+	Console.Driver->DisplayChr (mlTop++, mlLeft + mlWidth / 2, DIALOG_COLOR_FRAME, 0xc2, 1);
+	mlHeight -= 4;
+	for (i=0; i < mlHeight; i++)
+	{
+		Console.Driver->DisplayChr (mlTop + i, mlLeft + mlWidth / 2, DIALOG_COLOR_FRAME, (i + 5) == (dotleft) ? 0xdd : 0xb3, 1);
+	}
+
+	/* LEFT from plugins list */
+	for (i = 0, j = 0, Iter = 0; (i < mlHeight) && (j < moduleextensions_count); j++)
+	{
+		if (!(moduleextensions[j].flags & MODULEEXTENSION_FLAGS_FROM_PLUGIN))
+		{
+			continue;
+		}
+		if (skipleft)
+		{
+			Iter++;
+			skipleft--;
+			continue;
+		}
+
+		Console.DisplayPrintf (mlTop + i, mlLeft, ((dsel == 0) && (Iter == SelectedFromPlugin)) ? 0x8f : 0x0f, 39, "  %c%s", Iter==SelectedFromPlugin ? '>' : ' ', moduleextensions[j].ext);
+		i++; Iter++;
+	}
+
+	/* RIGHT from ocp.ini list */
+	for (i = 0, j = 0, Iter = 0; (i < mlHeight) && (j <= moduleextensions_count); j++)
+	{
+		if (j == moduleextensions_count)
+		{
+			Console.DisplayPrintf (mlTop + i, mlLeft + 40, ((dsel == 1) && (Iter == SelectedFromIni)) ? 0x8a : 0x0a, 38, "  %cAdd new extension", (Iter == SelectedFromIni) ? '>' : ' ');
+			i++; Iter++;
+			continue;
+		}
+		if (!(moduleextensions[j].flags & MODULEEXTENSION_FLAGS_FROM_INI))
+		{
+			continue;
+		}
+		if (skipright)
+		{
+			Iter++;
+			skipright--;
+			continue;
+		}
+		Console.DisplayPrintf (mlTop + i, mlLeft + 40, ((dsel == 1) && (Iter == SelectedFromIni)) ? 0x8f : 0x0f, 38, "  %c%s", (Iter == SelectedFromIni) ? '>' : ' ', moduleextensions[j].ext);
+		i++; Iter++;
+	}
+
+	mlTop += mlHeight;
+	Console.Driver->DisplayChr (mlTop++, mlLeft + mlWidth / 2, DIALOG_COLOR_FRAME, 0xc1, 1);
+
+	if (InInsertion)
+	{
+		int ml2Width = 70;
+		int ml2Height = 5;
+		int ml2Top = (plScrHeight - ml2Height) / 2;
+		int ml2Left = (plScrWidth - ml2Width) / 2;
+
+		ExtToInsert[InInsertion - 1] = 0; // Ensure correct-string termination
+
+		Console.DisplayFrame (ml2Top, ml2Left, ml2Height, ml2Width, DIALOG_COLOR_FRAME, "Add file-extension", 0, 2, 0);
+		Console.DisplayPrintf (ml2Top + 1, ml2Left + 1, 0x07, ml2Width - 2, "Type extension to add, up to %d characters, and finish with %.15o<ENTER>%0.7o.", MAX_MODEXT_LENGTH);
+		Console.Driver->DisplayStr (ml2Top + 3, ml2Left + 1, 0x07, ExtToInsert, ml2Width - 2);
+		Console.Driver->SetCursorShape (1);
+		Console.Driver->SetCursorPosition (ml2Top + 3, ml2Left + InInsertion);
+
+		while ( !Console.KeyboardHit() )
+		{
+			framelock();
+		}
+		do
+		{
+			uint16_t c = Console.KeyboardGetChar();
+
+			if ((c == KEY_EXIT) || (c==KEY_ESC))
+			{
+				Console.Driver->SetCursorShape (0);
+				InInsertion = 0;
+				break;
+			} else if (c == _KEY_ENTER)
+			{
+				if (InInsertion > 1)
+				{
+					if (fsRegisterExtFlags (ExtToInsert, MODULEEXTENSION_FLAGS_FROM_INI) > 0)
+					{
+						Changes++;
+						if (SelectedFromIni == CountFromIni)
+						{
+							SelectedFromIni++;
+						}
+						CountFromIni++;
+					}
+				}
+				Console.Driver->SetCursorShape (0);
+				InInsertion = 0;
+				break;
+			} else if (c == KEY_BACKSPACE)
+			{
+				if (InInsertion > 1)
+				{
+					InInsertion--;
+					ExtToInsert[InInsertion - 1] = 0;
+				}
+			} else if (InInsertion < (MAX_MODEXT_LENGTH + 1))
+			{
+				if (((c >= 'A') && (c <= 'Z')) ||
+				    ((c >= '0') && (c <= '9')) ||
+				    (c == '-') ||
+				    (c == '_'))
+				{
+					ExtToInsert[InInsertion - 1] = c;
+					ExtToInsert[InInsertion++] = 0;
+				} else if ((c >= 'a') && (c <= 'z'))
+				{
+					ExtToInsert[InInsertion - 1] = c - 0x20;
+					ExtToInsert[InInsertion++] = 0;
+				}
+			}
+		} while (Console.KeyboardHit());
+		goto Repaint;
+	}
+
+	if (InKeyboardHelp)
+	{
+		InKeyboardHelp = cpiKeyHelpDisplay();
+		framelock();
+		goto Repaint;
+	}
+
+	while ( !Console.KeyboardHit() )
+	{
+		framelock();
+	}
+	do
+	{
+		uint16_t c = Console.KeyboardGetChar();
+
+		switch (c)
+		{
+#if 0
+			case VIRT_KEY_RESIZE:
+				break; /* repaint */
+#endif
+			case KEY_TAB:
+				dsel ^= 1;
+				break;
+
+			case KEY_LEFT:
+				dsel = 0;
+				break;
+
+			case KEY_RIGHT:
+				dsel = 1;
+				break;
+
+			case KEY_UP:
+				if (dsel == 0)
+				{
+					if (SelectedFromPlugin)
+					{
+						SelectedFromPlugin--;
+					}
+				} else if (dsel == 1)
+				{
+					if (SelectedFromIni)
+					{
+						SelectedFromIni--;
+					}
+				}
+				break;
+
+			case KEY_DOWN:
+				if (dsel == 0)
+				{
+					if ((SelectedFromPlugin + 1) < CountFromPlugin)
+					{
+						SelectedFromPlugin++;
+					}
+				} else if (dsel == 1)
+				{
+					if ((SelectedFromIni + 1) <= CountFromIni)
+					{
+						SelectedFromIni++;
+					}
+				}
+				break;
+
+			case KEY_HOME:
+				if (dsel == 0)
+				{
+					SelectedFromPlugin = 0;
+				} else if (dsel == 1)
+				{
+					SelectedFromIni = 0;
+				}
+				break;
+
+			case KEY_END:
+				if (dsel == 0)
+				{
+					SelectedFromPlugin = CountFromPlugin - 1;
+				} else if (dsel == 1)
+				{
+					SelectedFromIni = CountFromIni;
+				}
+				break;
+
+			case KEY_PPAGE:
+				if (dsel == 0)
+				{
+					SelectedFromPlugin -= SelectedFromPlugin > 10 ? 10 : SelectedFromPlugin;
+				} else if (dsel == 1)
+				{
+					SelectedFromIni -= SelectedFromIni > 10 ? 10 : SelectedFromIni;
+				}
+				break;
+
+			case KEY_NPAGE:
+				if (dsel == 0)
+				{
+					SelectedFromPlugin += (CountFromPlugin - SelectedFromPlugin) > 10 ? 10 : (CountFromPlugin - SelectedFromPlugin - 1);
+				} else if (dsel == 1)
+				{
+					SelectedFromIni += (CountFromIni + 1 - SelectedFromIni) > 10 ? 10 : (CountFromIni + 1 - SelectedFromIni - 1);
+				}
+				break;
+
+			case KEY_INSERT:
+				if (dsel == 1)
+				{
+					InInsertion = 1;
+					goto superbreak;
+				}
+				break;
+
+			case _KEY_ENTER:
+				if ((dsel == 1) && (SelectedFromIni == CountFromIni))
+				{
+					InInsertion = 1;
+					goto superbreak;
+				}
+				break;
+
+			case KEY_DELETE:
+				if (dsel == 1)
+				{
+					for (j = 0, Iter = 0; (j < moduleextensions_count); j++)
+					{
+						if (!(moduleextensions[j].flags & MODULEEXTENSION_FLAGS_FROM_INI))
+						{
+							continue;
+						}
+						if (Iter == SelectedFromIni)
+						{
+							fsUnregisterExtFlags (moduleextensions[j].ext, MODULEEXTENSION_FLAGS_FROM_INI);
+							CountFromIni--;
+							Changes++;
+							break;
+						}
+						Iter++;
+					}
+				}
+				break;
+
+			case KEY_EXIT:
+			case KEY_ESC:
+				if (Changes)
+				{
+					unsigned int length = 0;
+					for (i=0; i < moduleextensions_count; i++)
+					{
+						if (moduleextensions[i].flags & MODULEEXTENSION_FLAGS_FROM_INI)
+						{
+							length += 1 + strlen (moduleextensions[i].ext);
+						}
+					}
+					if (!length)
+					{
+						cfSetProfileString("fileselector", "modextensions", "");
+					} else {
+						char *str = malloc(length);
+						if (str)
+						{
+							*str = 0;
+							for (i=0; i < moduleextensions_count; i++)
+							{
+								if (moduleextensions[i].flags & MODULEEXTENSION_FLAGS_FROM_INI)
+								{
+									if (str[0])
+									{
+										strcat (str, " ");
+									}
+									strcat (str, moduleextensions[i].ext);
+								}
+							}
+							cfSetProfileString("fileselector", "modextensions", str);
+							free (str);
+						}
+					}
+					cfStoreConfig();
+				}
+				return;
+
+			case KEY_ALT_K:
+				cpiKeyHelpClear();
+				cpiKeyHelp(KEY_TAB,    "Toggle left/right pane");
+				cpiKeyHelp(KEY_LEFT,   "Move to left pane");
+				cpiKeyHelp(KEY_RIGHT,  "Move to right pane");
+				cpiKeyHelp(KEY_UP,     "Move cursor up");
+				cpiKeyHelp(KEY_DOWN,   "Move cursor down");
+				cpiKeyHelp(KEY_HOME,   "Move cursor to the top");
+				cpiKeyHelp(KEY_END,    "Move cursor to the bottom");
+				cpiKeyHelp(KEY_PPAGE,  "Move cursor 10 positions up");
+				cpiKeyHelp(KEY_NPAGE,  "Move cursor 10 positions down");
+				cpiKeyHelp(KEY_INSERT, "Insert entry, if cursor at the right pane");
+				cpiKeyHelp(KEY_DELETE, "Delete selected entry, if cursor at the right pane");
+				cpiKeyHelp(_KEY_ENTER, "If \"Add new\" is selected, insert an entry");
+				cpiKeyHelp(KEY_ESC,    "Close the dialog");
+				InKeyboardHelp = 1;
+				goto superbreak;
+		}
+	} while (Console.KeyboardHit());
+	goto Repaint;
+}
 
 void fsSetup(void)
 {
@@ -2210,16 +2829,17 @@ superbreak:
 		display_nprintf (11, 0, 0x07, plScrWidth, "B:  module information display mode: %.15o%s",          fsInfoModes[fsInfoMode]);
 		display_nprintf (12, 0, 0x07, plScrWidth, "C:  put archives: %.15o%s",                             fsPutArcs?"on":"off");
 		display_nprintf (13, 0, 0x07, plScrWidth, "D:  show all files: %.15o%s",                           fsShowAllFiles?"on":"off");
-		display_nprintf (14, 0, 0x07, plScrWidth, "+-: target framerate:%.15o%-4d%.7o, actual framerate: %.15o%d", fsFPS, LastCurrent=fsFPSCurrent);
+		display_nprintf (14, 0, 0x07, plScrWidth, "E:  file-extensions to scan");
+		display_nprintf (15, 0, 0x07, plScrWidth, "+-: target framerate:%.15o%-4d%.7o, actual framerate: %.15o%d", fsFPS, LastCurrent=fsFPSCurrent);
 
-		displayvoid (15, 0, plScrWidth);
+		displayvoid (16, 0, plScrWidth);
 
-		displaystr(16, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
+		displaystr(17, 0, 0x07, "ALT-S (or CTRL-S if in X) to save current setup to ocp.ini", plScrWidth);
 		displaystr(plScrHeight-1, 0, 0x17, "  press the number of the item you wish to change and ESC when done", plScrWidth);
 
-		displaystr(17, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
+		displaystr(18, 0, 0x03, (stored?"ocp.ini saved":""), plScrWidth);
 
-		for (i=18; i < plScrHeight; i++)
+		for (i=19; i < plScrHeight; i++)
 		{
 			displayvoid (i, 0, plScrWidth);
 		}
@@ -2261,6 +2881,7 @@ superbreak:
 			case 'b': case 'B': stored = 0; fsInfoMode=(fsInfoMode+1)%5; break;
 			case 'c': case 'C': stored = 0; fsPutArcs=!fsPutArcs; break;
 			case 'd': case 'D': stored = 0; fsShowAllFiles=!fsShowAllFiles; break;
+			case 'e': case 'E': fsEditRegisterExt(); break;
 			case '+': if (fsFPS<1000) fsFPS++; break;
 			case '-': if (fsFPS>1) fsFPS--; break;
 			case KEY_CTRL_S:
