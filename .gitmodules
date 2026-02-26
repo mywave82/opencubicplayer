@@ -19,3 +19,6 @@
 [submodule "playqoa/qoa-git"]
 	path = playqoa/qoa-git
 	url = https://github.com/phoboslab/qoa
+[submodule "playsid/libresidfp-git"]
+	path = playsid/libresidfp-git
+	url = https://github.com/mywave82/libresidfp.git

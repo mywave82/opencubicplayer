@@ -12,46 +12,33 @@ TARGETS=playsid$(LIB_SUFFIX)
 LIBSIDPLAYCXXFLAGS+= -I./sidplayfp-config -I./libsidplayfp-git/src
 
 LIBSIDPLAYOBJECTS= \
+	libsidplayfp-builders-sidlite-builder-sidlite-builder.o \
+	libsidplayfp-builders-sidlite-builder-sidlite-emu.o \
+	libsidplayfp-builders-sidlite-builder-sidlite-ADSR.o \
+	libsidplayfp-builders-sidlite-builder-sidlite-Filter.o \
+	libsidplayfp-builders-sidlite-builder-sidlite-SID.o \
+	libsidplayfp-builders-sidlite-builder-sidlite-WaveGen.o \
 	libsidplayfp-builders-residfp-builder-residfp-builder.o \
-	libsidplayfp-builders-residfp-builder-residfp-Dac.o \
 	libsidplayfp-builders-residfp-builder-residfp-emu.o \
-	libsidplayfp-builders-residfp-builder-residfp-EnvelopeGenerator.o \
-	libsidplayfp-builders-residfp-builder-residfp-ExternalFilter.o \
-	libsidplayfp-builders-residfp-builder-residfp-Filter.o \
-	libsidplayfp-builders-residfp-builder-residfp-Filter6581.o \
-	libsidplayfp-builders-residfp-builder-residfp-Filter8580.o \
-	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o \
-	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o \
-	libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o \
-	libsidplayfp-builders-residfp-builder-residfp-Integrator6581.o\
-	libsidplayfp-builders-residfp-builder-residfp-Integrator8580.o\
-	libsidplayfp-builders-residfp-builder-residfp-OpAmp.o \
-	libsidplayfp-builders-residfp-builder-residfp-SID.o \
-	libsidplayfp-builders-residfp-builder-residfp-SincResampler.o \
-	libsidplayfp-builders-residfp-builder-residfp-Spline.o \
-	libsidplayfp-builders-residfp-builder-residfp-version.o \
-	libsidplayfp-builders-residfp-builder-residfp-WaveformCalculator.o \
-	libsidplayfp-builders-residfp-builder-residfp-WaveformGenerator.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-builder.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Dac.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-emu.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-EnvelopeGenerator.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-ExternalFilter.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Filter.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Filter6581.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Filter8580.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig6581.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig8580.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Integrator6581.o\
-	libsidplayfp-builders-residfpII-builder-residfpII-Integrator8580.o\
-	libsidplayfp-builders-residfpII-builder-residfpII-OpAmp.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-SID.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-SincResampler.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-Spline.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-version.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-WaveformCalculator.o \
-	libsidplayfp-builders-residfpII-builder-residfpII-WaveformGenerator.o \
+	libresidfp-Dac.o \
+	libresidfp-EnvelopeGenerator.o \
+	libresidfp-ExternalFilter.o \
+	libresidfp-Filter.o \
+	libresidfp-Filter6581.o \
+	libresidfp-Filter8580.o \
+	libresidfp-FilterModelConfig.o \
+	libresidfp-FilterModelConfig6581.o \
+	libresidfp-FilterModelConfig8580.o \
+	libresidfp-Integrator6581.o\
+	libresidfp-Integrator8580.o\
+	libresidfp-OpAmp.o \
+	libresidfp-residfp.o \
+	libresidfp-SID.o \
+	libresidfp-Spline.o \
+	libresidfp-version.o \
+	libresidfp-WaveformCalculator.o \
+	libresidfp-WaveformGenerator.o \
+	libresidfp-resample-SincResampler.o \
 	libsidplayfp-c64-c64.o \
 	libsidplayfp-c64-CIA-interrupt.o \
 	libsidplayfp-c64-CIA-mos652x.o \
@@ -79,8 +66,6 @@ LIBSIDPLAYOBJECTS= \
 	libsidplayfp-sidtune-SidTuneBase.o \
 	libsidplayfp-sidtune-SidTuneTools.o \
 	libsidplayfp-simpleMixer.o \
-	libsidplayfp-utils-md5Factory.o \
-	libsidplayfp-utils-MD5-MD5.o \
 	libsidplayfp-api.o
 
 all: $(TARGETS) $(DUMPSID)
@@ -102,126 +87,87 @@ playsid_so=cpiinfo.o cpisidsetup.o sidplay.o sidpplay.o sidconfig.o sidtype.o $(
 playsid$(LIB_SUFFIX): $(playsid_so)
 	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $^
 
+libsidplayfp-builders-sidlite-builder-sidlite-builder.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite-builder.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
+libsidplayfp-builders-sidlite-builder-sidlite-emu.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite-emu.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
+libsidplayfp-builders-sidlite-builder-sidlite-ADSR.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite/ADSR.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
+libsidplayfp-builders-sidlite-builder-sidlite-Filter.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite/Filter.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
+libsidplayfp-builders-sidlite-builder-sidlite-SID.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite/SID.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
+libsidplayfp-builders-sidlite-builder-sidlite-WaveGen.o: \
+	libsidplayfp-git/src/builders/sidlite-builder/sidlite/WavGen.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-builder.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp-builder.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Dac.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Dac.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libresidfp-git/src -o $@ $< -c
 libsidplayfp-builders-residfp-builder-residfp-emu.o: \
 	libsidplayfp-git/src/builders/residfp-builder/residfp-emu.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-EnvelopeGenerator.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/EnvelopeGenerator.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libresidfp-git/src -o $@ $< -c
+libresidfp-Dac.o: \
+	libresidfp-git/src/Dac.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-ExternalFilter.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/ExternalFilter.cpp
+libresidfp-EnvelopeGenerator.o: \
+	libresidfp-git/src/EnvelopeGenerator.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Filter.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter.cpp
+libresidfp-ExternalFilter.o: \
+	libresidfp-git/src/ExternalFilter.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Filter6581.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter6581.cpp
+libresidfp-Filter.o: \
+	libresidfp-git/src/Filter.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Filter8580.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Filter8580.cpp
+libresidfp-Filter6581.o: \
+	libresidfp-git/src/Filter6581.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig.cpp
+libresidfp-Filter8580.o: \
+	libresidfp-git/src/Filter8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig6581.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig6581.cpp
+libresidfp-FilterModelConfig.o: \
+	libresidfp-git/src/FilterModelConfig.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-FilterModelConfig8580.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp
+libresidfp-FilterModelConfig6581.o: \
+	libresidfp-git/src/FilterModelConfig6581.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Integrator6581.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Integrator6581.cpp
+libresidfp-FilterModelConfig8580.o: \
+	libresidfp-git/src/FilterModelConfig8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Integrator8580.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Integrator8580.cpp
+libresidfp-Integrator6581.o: \
+	libresidfp-git/src/Integrator6581.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-OpAmp.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/OpAmp.cpp
+libresidfp-Integrator8580.o: \
+	libresidfp-git/src/Integrator8580.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-SID.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/SID.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-SincResampler.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/resample/SincResampler.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libsidplayfp-git/src/builders/residfp-builder/residfp -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-Spline.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/Spline.cpp
+libresidfp-OpAmp.o: \
+	libresidfp-git/src/OpAmp.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-version.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/version.cc
+libresidfp-residfp.o: \
+	libresidfp-git/src/residfp/residfp.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libresidfp-git/src -o $@ $< -c
+libresidfp-SID.o: \
+	libresidfp-git/src/SID.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libresidfp-git/src -o $@ $< -c
+libresidfp-Spline.o: \
+	libresidfp-git/src/Spline.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-WaveformCalculator.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/WaveformCalculator.cpp
+libresidfp-version.o: \
+	libresidfp-git/src/version.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfp-builder-residfp-WaveformGenerator.o: \
-	libsidplayfp-git/src/builders/residfp-builder/residfp/WaveformGenerator.cpp
+libresidfp-WaveformCalculator.o: \
+	libresidfp-git/src/WaveformCalculator.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-builder.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII-builder.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfpII-builder/residfpII -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Dac.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Dac.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-emu.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII-emu.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfpII-builder/residfpII -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-EnvelopeGenerator.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/EnvelopeGenerator.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-ExternalFilter.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/ExternalFilter.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Filter.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Filter.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Filter6581.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Filter6581.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Filter8580.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Filter8580.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/FilterModelConfig.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig6581.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/FilterModelConfig6581.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-FilterModelConfig8580.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/FilterModelConfig8580.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Integrator6581.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Integrator6581.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Integrator8580.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Integrator8580.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-OpAmp.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/OpAmp.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-SID.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/SID.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfpII-builder/residfpII -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-SincResampler.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/resample/SincResampler.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -I./libsidplayfp-git/src/builders/residfpII-builder/residfpII -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-Spline.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/Spline.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-version.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/version.cc
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-WaveformCalculator.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/WaveformCalculator.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-builders-residfpII-builder-residfpII-WaveformGenerator.o: \
-	libsidplayfp-git/src/builders/residfpII-builder/residfpII/WaveformGenerator.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+libresidfp-WaveformGenerator.o: \
+	libresidfp-git/src/WaveformGenerator.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
+libresidfp-resample-SincResampler.o: \
+	libresidfp-git/src/resample/SincResampler.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libresidfp-git/src -o $@ $< -c
 libsidplayfp-c64-c64.o: \
 	libsidplayfp-git/src/c64/c64.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
@@ -315,12 +261,6 @@ libsidplayfp-sidtune-SidTuneBase.o: \
 libsidplayfp-simpleMixer.o: \
 	libsidplayfp-git/src/simpleMixer.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-utils-md5Factory.o: \
-	libsidplayfp-git/src/utils/md5Factory.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
-libsidplayfp-utils-MD5-MD5.o: \
-	libsidplayfp-git/src/utils/MD5/MD5.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 
 libsidplayfp-api.o: \
 	libsidplayfp-api.cpp \
@@ -331,7 +271,6 @@ libsidplayfp-api.o: \
 	./libsidplayfp-git/src/sidplayfp/SidInfo.h \
 	libsidplayfp-git/src/sidplayfp/SidTuneInfo.h \
 	./libsidplayfp-git/src/builders/residfp-builder/residfp.h \
-	./libsidplayfp-git/src/builders/residfpII-builder/residfpII.h \
 	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	../filesel/dirdb.h \

@@ -37,6 +37,11 @@ AS_IF([test "x$with_debug" = "xyes"], [
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
+  RESIDFP_INLINE=""
+  RESIDFP_INLINING=0
+],[
+  RESIDFP_INLINE=inline
+  RESIDFP_INLINING=1
 ])
 
 AC_CHECK_HEADERS_ONCE([sys/time.h])
@@ -924,7 +929,7 @@ AC_CHECK_DECL(
         [AC_CHECK_FUNCS([strnicmp])]
     )]
 )
-dnl TODO RESID_BRANCH_HINTS
+dnl TODO RESIDFP_BRANCH_HINTS
 dnl Enable branch prediction hints.
 AC_ARG_ENABLE([branch-hints],
   [AS_HELP_STRING([--enable-branch-hints],
@@ -932,7 +937,7 @@ AC_ARG_ENABLE([branch-hints],
   [],
   [enable_branch_hints=yes]
 )
-AS_IF([test "$enable_branch_hints" != no], [RESID_BRANCH_HINTS=1], [RESID_BRANCH_HINTS=0])
+AS_IF([test "$enable_branch_hints" != no], [RESIDFP_BRANCH_HINTS=1], [RESIDFP_BRANCH_HINTS=0])
 AC_CACHE_CHECK([for __builtin_expect], [resid_cv_builtin_expect],
   [AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { __builtin_expect(0, 0); }])],
     [resid_cv_builtin_expect=yes], [resid_cv_builtin_expect=no])]
@@ -953,9 +958,9 @@ CXX=$origCXX
 CXXFLAGS=$origCXXFLAGS
 
 AC_SUBST(HAVE_BUILTIN_EXPECT)
-AC_SUBST(RESID_INLINING)
-AC_SUBST(RESID_INLINE)
-AC_SUBST(RESID_BRANCH_HINTS)
+AC_SUBST(RESIDFP_INLINING)
+AC_SUBST(RESIDFP_INLINE)
+AC_SUBST(RESIDFP_BRANCH_HINTS)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H)
 AC_SUBST(HAVE_SIDPLAYFP_BUILDERS_RESID_H)
 
@@ -1187,8 +1192,9 @@ AC_CONFIG_FILES(doc/opencp.dox)
 AC_CONFIG_FILES(doc/texi/faq.texi)
 AC_CONFIG_FILES(doc/texi/ocp.texi)
 AC_CONFIG_FILES(doc/ocp.1)
-AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h)
-AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fpII.h)
+AC_CONFIG_FILES(playsid/libresidfp-git/src/siddefs-fp.h)
+AC_CONFIG_FILES(playsid/libresidfp-git/src/residfp/sidversion.h)
+AC_CONFIG_FILES(playsid/libsidplayfp-git/src/builders/sidlite-builder/sidlite/sl_defs.h)
 AC_CONFIG_FILES(playopl/libbinio-git/src/binio.h)
 AC_CONFIG_FILES(playopl/adplug-git/src/version.h)
 AC_CONFIG_FILES(haiku/ocp.rdef)

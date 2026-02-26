@@ -605,6 +605,10 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 		self->cdrom->lasttoc.starttrack = 1;
 		self->cdrom->lasttoc.lasttrack  = 99;
 
+#ifdef CDROM_VERBOSE
+		fprintf(stderr, "iocdtl (CDROMREADTOCHDR) failed, probe tracks\n");
+#endif
+
 		for (ti = self->cdrom->lasttoc.starttrack; ti <= 99; ti++)
 		{
 			cdte.cdte_track = ti;
@@ -616,13 +620,25 @@ static ocpdirhandle_pt cdrom_drive_readdir_start (struct ocpdir_t *_self, void(*
 					dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
 					                                                     cdte.cdte_addr.msf.second * 75 +
 					                                                     cdte.cdte_addr.msf.frame;
+#ifdef CDROM_VERBOSE
+					fprintf (stderr, "track[%d] MSF %d:%02d:%02d => LBA %" PRIu32, ti, cdte.cdte_addr.msf.minute, cdte.cdte_addr.msf.second, cdte.cdte_addr.msf.frame, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 				} else {
+#ifdef CDROM_VERBOSE
+					fprintf (stderr, "track[%d] LBA %" PRIu32, ti, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 					dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
 				}
 				dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, " %s\n", cdte.cdte_datamode ? "DATA" : "AUDIO");
+#endif
 				if ((dh->initlba < 0) && (!cdte.cdte_datamode))
 				{
 					dh->initlba = dh->owner->cdrom->lasttoc.track[ti].lba_addr;
+#ifdef CDROM_VERBOSE
+					fprintf (stderr, "INITLBA %" PRIu32 "\n", dh->initlba);
+#endif
 				}
 			} else {
 				self->cdrom->lasttoc.lasttrack = ti - 1;
@@ -639,15 +655,28 @@ leadout:
 				dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
 				                                                     cdte.cdte_addr.msf.second * 75 +
 				                                                     cdte.cdte_addr.msf.frame;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, "track[%d] LEADOUT MSF %d:%02d:%02d => LBA %" PRIu32, ti, cdte.cdte_addr.msf.minute, cdte.cdte_addr.msf.second, cdte.cdte_addr.msf.frame, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 			} else {
 				dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, "track[%d] LEADOUT LBA %" PRIu32, ti, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 			}
 			dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+#ifdef CDROM_VERBOSE
+			fprintf (stderr, " %s\n", cdte.cdte_datamode ? "DATA" : "AUDIO");
+#endif
 		}
 	} else {
 		dh->i = dh->tochdr.cdth_trk0;
 		self->cdrom->lasttoc.starttrack = dh->tochdr.cdth_trk0;
 		self->cdrom->lasttoc.lasttrack  = (dh->tochdr.cdth_trk1 < 100) ? dh->tochdr.cdth_trk1 : 99;
+#ifdef CDROM_VERBOSE
+		fprintf (stderr, "START TRACK: %d\n", self->cdrom->lasttoc.starttrack);
+		fprintf (stderr, "LAST TRACK: %d\n", self->cdrom->lasttoc.lasttrack);
+#endif
 
 		for (ti = self->cdrom->lasttoc.starttrack; ti <= (self->cdrom->lasttoc.lasttrack + 1); ti++)
 		{
@@ -661,13 +690,25 @@ leadout:
 					dh->owner->cdrom->lasttoc.track[ti].lba_addr = 150 - cdte.cdte_addr.msf.minute * 75 * 60 +
 					                                                     cdte.cdte_addr.msf.second * 75 +
 					                                                     cdte.cdte_addr.msf.frame;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, "track[%d] MSF %d:%02d:%02d => LBA %" PRIu32, ti, cdte.cdte_addr.msf.minute, cdte.cdte_addr.msf.second, cdte.cdte_addr.msf.frame, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 				} else {
 					dh->owner->cdrom->lasttoc.track[ti].lba_addr = cdte.cdte_addr.lba;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, "track[%d] LBA %" PRIu32, ti, dh->owner->cdrom->lasttoc.track[ti].lba_addr);
+#endif
 				}
 				dh->owner->cdrom->lasttoc.track[ti].is_data = cdte.cdte_datamode;
+#ifdef CDROM_VERBOSE
+				fprintf (stderr, " %s\n", cdte.cdte_datamode ? "DATA" : "AUDIO");
+#endif
 				if ((dh->initlba < 0) && (!cdte.cdte_datamode))
 				{
 					dh->initlba = dh->owner->cdrom->lasttoc.track[ti].lba_addr;
+#ifdef CDROM_VERBOSE
+					fprintf (stderr, "INITLBA %" PRIu32 "\n", dh->initlba);
+#endif
 				}
 			}
 		}

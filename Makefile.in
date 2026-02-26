@@ -168,8 +168,11 @@ distclean: clean
 		doc/texi/ocp.texi \
 		haiku/ocp.rdef \
 		haiku/ocp.rsrc \
-		playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h \
-		playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fp.h \
+		playsid/libresidfp-git/src/siddefs-fp.h \
+		playsid/libresidfp-git/src/residfp/sidversion.h \
+		playsid/libsidplayfp-git/src/builders/sidlite-builder/sidlite/sl_defs.h \
+		playopl/libbinio-git/src/binio.h \
+		playopl/adplug-git/src/version.h \
 		mingw/ocp.rc
 
 libocp$(LIB_SUFFIX): subdirs

@@ -24,7 +24,7 @@
 #include "sidplayfp/SidInfo.h"
 #include "sidplayfp/SidTuneInfo.h"
 #include "builders/residfp-builder/residfp.h"
-#include "builders/residfpII-builder/residfpII.h"
+#include "builders/sidlite-builder/sidlite.h"
 
 extern "C"
 {
@@ -402,12 +402,9 @@ namespace libsidplayfp
 			if (!use_residfp)
 			{
 				m_residfp = 2;
-				ReSIDfpIIBuilder *rs = new ReSIDfpIIBuilder( "ReSIDFPII" );
+				SIDLiteBuilder *rs = new SIDLiteBuilder ( "crSID" );
 				m_engCfg.sidEmulation = rs;
-				rs->filter6581Curve(m_filter.filterCurve6581);
-				rs->filter6581Range(m_filter.filterRange6581);
-				rs->filter8580Curve(m_filter.filterCurve8580);
-				rs->combinedWaveformsStrength(m_filter.combinedWaveforms);
+#warning no parameters available in crSID (sidlite)
 			} else {
 				m_residfp = 1;
 				ReSIDfpBuilder *rs = new ReSIDfpBuilder( "ReSIDFP" );
@@ -564,11 +561,8 @@ namespace libsidplayfp
 			}
 		} else if (m_residfp == 2)
 		{
-			ReSIDfpIIBuilder *rs = dynamic_cast<ReSIDfpIIBuilder *>(m_engCfg.sidEmulation);
-			if (rs)
-			{
-				rs->filter6581Curve (v);
-			}
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+#warning no parameters available in crSID (sidlite)
 		}
 	}
 
@@ -586,11 +580,8 @@ namespace libsidplayfp
 			}
 		} else if (m_residfp == 2)
 		{
-			ReSIDfpIIBuilder *rs = dynamic_cast<ReSIDfpIIBuilder *>(m_engCfg.sidEmulation);
-			if (rs)
-			{
-				rs->filter6581Range (v);
-			}
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+#warning no parameters available in crSID (sidlite)
 		}
 	}
 
@@ -608,11 +599,8 @@ namespace libsidplayfp
 			}
 		} else if (m_residfp == 2)
 		{
-			ReSIDfpIIBuilder *rs = dynamic_cast<ReSIDfpIIBuilder *>(m_engCfg.sidEmulation);
-			if (rs)
-			{
-				rs->filter8580Curve (v);
-			}
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+#warning no parameters available in crSID (sidlite)
 		}
 	}
 
@@ -632,13 +620,8 @@ namespace libsidplayfp
 			}
 		} else if (m_residfp == 2)
 		{
-			ReSIDfpIIBuilder *rs = dynamic_cast<ReSIDfpIIBuilder *>(m_engCfg.sidEmulation);
-			if (rs)
-			{
-				if (CWS == 0) rs->combinedWaveformsStrength (SidConfig::AVERAGE);
-				if (CWS == 1) rs->combinedWaveformsStrength (SidConfig::WEAK);
-				if (CWS == 2) rs->combinedWaveformsStrength (SidConfig::STRONG);
-			}
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+#warning no parameters available in crSID (sidlite)
 		}
 	}
 

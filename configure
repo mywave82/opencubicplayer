@@ -689,9 +689,9 @@ LIBDISCID_LIBS
 LIBDISCID_CFLAGS
 HAVE_SIDPLAYFP_BUILDERS_RESID_H
 HAVE_SIDPLAYFP_BUILDERS_RESIDFP_H
-RESID_BRANCH_HINTS
-RESID_INLINE
-RESID_INLINING
+RESIDFP_BRANCH_HINTS
+RESIDFP_INLINE
+RESIDFP_INLINING
 HAVE_BUILTIN_EXPECT
 LIBSIDPLAYCXXFLAGS
 LIBSIDPLAYCXX
@@ -3831,7 +3831,15 @@ then :
     new_CXXFLAGS="$new_CFLAGS `echo $i|grep -- -I`";
   done;
   CXXFLAGS="$new_CXXFLAGS -g -DDEBUG=1"
+  RESIDFP_INLINE=""
+  RESIDFP_INLINING=0
 
+else case e in #(
+  e)
+  RESIDFP_INLINE=inline
+  RESIDFP_INLINING=1
+ ;;
+esac
 fi
 
 
@@ -18975,9 +18983,9 @@ fi
 
 if test "$enable_branch_hints" != no
 then :
-  RESID_BRANCH_HINTS=1
+  RESIDFP_BRANCH_HINTS=1
 else case e in #(
-  e) RESID_BRANCH_HINTS=0 ;;
+  e) RESIDFP_BRANCH_HINTS=0 ;;
 esac
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for __builtin_expect" >&5
@@ -21451,9 +21459,11 @@ ac_config_files="$ac_config_files doc/texi/ocp.texi"
 
 ac_config_files="$ac_config_files doc/ocp.1"
 
-ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h"
+ac_config_files="$ac_config_files playsid/libresidfp-git/src/siddefs-fp.h"
 
-ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fpII.h"
+ac_config_files="$ac_config_files playsid/libresidfp-git/src/residfp/sidversion.h"
+
+ac_config_files="$ac_config_files playsid/libsidplayfp-git/src/builders/sidlite-builder/sidlite/sl_defs.h"
 
 ac_config_files="$ac_config_files playopl/libbinio-git/src/binio.h"
 
@@ -22165,8 +22175,9 @@ do
     "doc/texi/faq.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/faq.texi" ;;
     "doc/texi/ocp.texi") CONFIG_FILES="$CONFIG_FILES doc/texi/ocp.texi" ;;
     "doc/ocp.1") CONFIG_FILES="$CONFIG_FILES doc/ocp.1" ;;
-    "playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/residfp-builder/residfp/siddefs-fp.h" ;;
-    "playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fpII.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/residfpII-builder/residfpII/siddefs-fpII.h" ;;
+    "playsid/libresidfp-git/src/siddefs-fp.h") CONFIG_FILES="$CONFIG_FILES playsid/libresidfp-git/src/siddefs-fp.h" ;;
+    "playsid/libresidfp-git/src/residfp/sidversion.h") CONFIG_FILES="$CONFIG_FILES playsid/libresidfp-git/src/residfp/sidversion.h" ;;
+    "playsid/libsidplayfp-git/src/builders/sidlite-builder/sidlite/sl_defs.h") CONFIG_FILES="$CONFIG_FILES playsid/libsidplayfp-git/src/builders/sidlite-builder/sidlite/sl_defs.h" ;;
     "playopl/libbinio-git/src/binio.h") CONFIG_FILES="$CONFIG_FILES playopl/libbinio-git/src/binio.h" ;;
     "playopl/adplug-git/src/version.h") CONFIG_FILES="$CONFIG_FILES playopl/adplug-git/src/version.h" ;;
     "haiku/ocp.rdef") CONFIG_FILES="$CONFIG_FILES haiku/ocp.rdef" ;;

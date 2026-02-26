@@ -464,6 +464,12 @@ static int cdaOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modul
 		return errFormStruc;
 	}
 
+	if (start < 0)
+	{
+		cpifaceSession->cpiDebug (cpifaceSession, "[CDA] No audio present\n");
+		return errFormStruc;
+	}
+
 	newpos = start;
 	setnewpos=0;
 	cpifaceSession->InPause = 0;

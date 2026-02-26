@@ -171,7 +171,7 @@ static void cdIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 
 	/* first check for EOF */
-	if (lba_next == lba_stop)
+	if (lba_next >= lba_stop)
 	{
 		if (donotloop)
 		{
@@ -180,6 +180,11 @@ static void cdIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 		} else {
 			cda_looped &= ~1;
 			lba_next = lba_start;
+			if (lba_next >= lba_stop)
+			{ /* nothing to play */
+				cda_looped |= 1;
+				return;
+			}
 		}
 	} else {
 		cda_looped &= ~1;
