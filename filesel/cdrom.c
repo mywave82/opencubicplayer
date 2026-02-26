@@ -240,7 +240,7 @@ static void try(const char *dev, const char *vdev)
 					 fprintf(stderr, "Unknown cd type\n");
 			}
 			{
-				struct cdrom_mcn mcn;
+				struct cdrom_mcn mcn = {0};
 				if (!ioctl(fd, CDROM_GET_MCN, &mcn))
 					fprintf(stderr, "MCN: %13s\n", mcn.medium_catalog_number);
 			}
@@ -259,7 +259,7 @@ static void *cdrom_thread (void *_self)
 	{
 		if (self->request)
 		{
-			struct cdrom_read_audio rip_ioctl;
+			struct cdrom_read_audio rip_ioctl = {0};
 
 			pthread_mutex_unlock (&self->mutex);
 
