@@ -45,9 +45,9 @@ if [ f"$FLAC_VERSION" != f"$FLAC_LATEST_VERSION" ]; then
 	echo FLAC version should have been $FLAC_LATEST_VERSION
 fi
 
-SDL2_LATEST_VERSION=`curl -s https://github.com/libsdl-org/SDL/releases|grep -m 1 "Link--primary Link.*>2\."|sed -e 's/.*"Link--primary Link">//'|sed -e 's/<.*//'`
-if [ f"$SDL2_VERSION" != f"$SDL2_LATEST_VERSION" ]; then
-	echo SDL2 version should have been $SDL2_LATEST_VERSION
+SDL3_LATEST_VERSION=`curl -s https://github.com/libsdl-org/SDL/releases|grep -m 1 "Link--primary Link.*>3\."|sed -e 's/.*"Link--primary Link">//'|sed -e 's/<.*//'`
+if [ f"$SDL3_VERSION" != f"$SDL3_LATEST_VERSION" ]; then
+	echo SDL3 version should have been $SDL3_LATEST_VERSION
 fi
 
 BROTLI_LATEST_VERSION=`curl -s https://github.com/google/brotli/releases|grep -m 1 "Link--primary Link.*>v[1-9]"|sed -e 's/.*"Link--primary Link">v//'|sed -e 's/<.*//'`

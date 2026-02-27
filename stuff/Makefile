@@ -174,6 +174,21 @@ poutput-sdl2.o: poutput-sdl2.c \
 	../stuff/poutput-swtext.h
 	$(CC) $(SDL2_CFLAGS) poutput-sdl2.c -o $@ -c
 
+poutput-sdl3.o: poutput-sdl3.c \
+	ttf.h \
+	../config.h \
+	../types.h \
+	../boot/console.h \
+	../boot/psetting.h \
+	../stuff/framelock.h \
+	../stuff/imsrtns.h \
+	../stuff/poutput.h \
+	../stuff/poutput-fontengine.h \
+	../stuff/poutput-keyboard.h \
+	../stuff/poutput-sdl3.h \
+	../stuff/poutput-swtext.h
+	$(CC) $(SDL3_CFLAGS) poutput-sdl3.c -o $@ -c
+
 poutput-swtext.o: poutput-swtext.c poutput-swtext.h \
 	framelock.h \
 	latin1.h \
@@ -229,6 +244,7 @@ console.o: console.c \
 	poutput-curses.h \
 	poutput-sdl.h \
 	poutput-sdl2.h \
+	poutput-sdl3.h \
 	poutput-x11.h \
 	poutput-vcsa.h \
 	utf-8.h

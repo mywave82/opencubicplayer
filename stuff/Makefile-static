@@ -30,6 +30,12 @@ poutput_so_libs+=$(SDL2_LIBS)
 NEED_TTF=1
 endif
 
+ifeq ($(HAVE_SDL3),1)
+poutput_so+=poutput-sdl3.o
+poutput_so_libs+=$(SDL3_LIBS)
+NEED_TTF=1
+endif
+
 ifeq ($(NEED_TTF),1)
 poutput_so+=ttf.o poutput-swtext.o poutput-fontengine.o
 poutput_so_libs+=$(FREETYPE2_LIBS)

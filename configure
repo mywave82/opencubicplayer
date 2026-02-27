@@ -723,13 +723,16 @@ UNIFONT_TTF
 FREETYPE2_CFLAGS
 FREETYPE2_LIBS
 HAVE_SDL
-HAVE_SDL2
 SDL2_CONFIG
 SDL_LIBS
 SDL_CFLAGS
 SDL2_FRAMEWORK
+HAVE_SDL2
 SDL2_LIBS
 SDL2_CFLAGS
+HAVE_SDL3
+SDL3_LIBS
+SDL3_CFLAGS
 HAVE_X11
 HAVE_FLAC
 FLAC_LIBS
@@ -859,6 +862,7 @@ with_coreaudio
 with_flac
 with_sdl
 with_sdl2
+with_sdl3
 with_info
 with_update_mime_database
 with_desktop_file_install
@@ -920,6 +924,8 @@ VORBISFILE_CFLAGS
 VORBISFILE_LIBS
 FLAC_CFLAGS
 FLAC_LIBS
+SDL3_CFLAGS
+SDL3_LIBS
 SDL2_FRAMEWORK
 SDL_CFLAGS
 SDL_LIBS
@@ -1591,6 +1597,8 @@ Optional Packages:
                           default)
   --with-sdl2             force/disable SDL2 video support (autodetect by
                           default)
+  --with-sdl3             force/disable SDL3 video support (autodetect by
+                          default)
   --without-info          Do not install info manual pages
   --without-update-mime-database
                           Do not update mime database after file copy (SDL and
@@ -1607,7 +1615,7 @@ Optional Packages:
                           as ocp.hlp)
   --with-unifontdir-ttf=/path
                           the path to where ttf-unifont is located (used by
-                          X11, SDL1.x and SDL2)
+                          X11, SDL1.x/2/3)
   --with-unifont-ttf=/path
                           the full path to unifont.ttf (default is
                           UNIFONTDIR/unifont.ttf); use this option if the
@@ -1624,7 +1632,7 @@ Optional Packages:
                           UNIFONTDIR/unifont_upper.ttf)
   --with-unifontdir-otf=/path
                           the path to where otf-unifont is located (used by
-                          X11, SDL1.x and SDL2)
+                          X11, SDL1.x/2/3)
   --with-unifont-otf=/path
                           the full path to unifont.otf (default is
                           UNIFONTDIR/unifont.otf); use this option if the
@@ -1691,6 +1699,8 @@ Some influential environment variables:
               linker flags for VORBISFILE, overriding pkg-config
   FLAC_CFLAGS C compiler flags for FLAC, overriding pkg-config
   FLAC_LIBS   linker flags for FLAC, overriding pkg-config
+  SDL3_CFLAGS C compiler flags for SDL3, overriding pkg-config
+  SDL3_LIBS   linker flags for SDL3, overriding pkg-config
   SDL2_FRAMEWORK
               Path to SDL2.framework
   SDL_CFLAGS  C compiler flags for SDL, overriding pkg-config
@@ -8129,6 +8139,16 @@ esac
 fi
 
 
+# Check whether --with-sdl3 was given.
+if test ${with_sdl3+y}
+then :
+  withval=$with_sdl3;
+else case e in #(
+  e) with_sdl3=auto ;;
+esac
+fi
+
+
 # Check whether --with-info was given.
 if test ${with_info+y}
 then :
@@ -12422,14 +12442,128 @@ if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"
 then :
   as_fn_error $? "\"Can not use both --with-sdl and --with-sdl2\"" "$LINENO" 5
 fi
+if test "x$with_sdl" = "xyes" && test "x$with_sdl3" = "xyes"
+then :
+  as_fn_error $? "\"Can not use both --with-sdl and --with-sdl3\"" "$LINENO" 5
+fi
+if test "x$with_sdl2" = "xyes" && test "x$with_sdl3" = "xyes"
+then :
+  as_fn_error $? "\"Can not use both --with-sdl2 and --with-sdl3\"" "$LINENO" 5
+fi
 if test "x$with_sdl" = "xyes"
 then :
-  with_sdl2="no"
+  with_sdl2="no";with_sdl3="no"
 fi
 if test "x$with_sdl2" = "xyes"
 then :
-  with_sdl="no"
+  with_sdl="no";with_sdl3="no"
 fi
+if test "x$with_sdl3" = "xyes"
+then :
+  with_sdl="no";with_sdl2="no"
+fi
+
+
+
+
+if test "x$with_sdl3" != "xno"
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sdl3" >&5
+printf %s "checking for sdl3... " >&6; }
+
+if test -n "$SDL3_CFLAGS"; then
+    pkg_cv_SDL3_CFLAGS="$SDL3_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sdl3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SDL3_CFLAGS=`$PKG_CONFIG --cflags "sdl3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SDL3_LIBS"; then
+    pkg_cv_SDL3_LIBS="$SDL3_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sdl3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SDL3_LIBS=`$PKG_CONFIG --libs "sdl3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SDL3_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sdl3" 2>&1`
+        else
+	        SDL3_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sdl3" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SDL3_PKG_ERRORS" >&5
+
+	if test "x$with_sdl3" = "xyes"
+then :
+  as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
+fi
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	if test "x$with_sdl3" = "xyes"
+then :
+  as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
+fi
+else
+	SDL3_CFLAGS=$pkg_cv_SDL3_CFLAGS
+	SDL3_LIBS=$pkg_cv_SDL3_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	with_sdl3=yes;with_sdl2=no;with_sdl=no
+fi
+
+fi
+
+if test "x$with_sdl3" = "xno"
+then :
+
+	HAVE_SDL3=
+
+else case e in #(
+  e)
+	HAVE_SDL3=1
+	printf "%s\n" "#define HAVE_SDL3 1" >>confdefs.h
+
+	with_sdl="no"
+ ;;
+esac
+fi
+
 
 
 
@@ -12743,7 +12877,7 @@ printf "%s\n" "yes" >&6; }
     fi
   fi
   if test "x$no_sdl" = x ; then
-     with_sdl2=yes
+     with_sdl2=yes;with_sdl=no
   else
      if test "$SDL2_CONFIG" = "no" ; then
        echo "*** The sdl2-config script installed by SDL could not be found"
@@ -12823,7 +12957,6 @@ SDL2_LIBS=$SDL_LIBS
 SDL_CFLAGS=
 SDL_LIBS=
 
-
 if test "x$with_sdl2" = "xno"
 then :
 
@@ -12841,6 +12974,7 @@ fi
 
 org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
+
 
 
 if test "x$with_sdl" != "xno"
@@ -13079,7 +13213,6 @@ printf "%s\n" "yes" >&6; }
 fi
 
 fi
-
 if test "x$with_sdl" = "xno"
 then :
 
@@ -13098,7 +13231,7 @@ CPPFLAGS="$org_cflags"
 
 
 
-if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"
+if test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_SDL3" = "x1" || test "x$HAVE_X11" = "x1"
 then :
 
 
@@ -13682,7 +13815,7 @@ then :
 			       test "x$got_unifont_otf" = "xno"
 then :
 
-as_fn_error $? "Unable to locate unifont.ttf/unifont.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+as_fn_error $? "Unable to locate unifont.ttf/unifont.otf (needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_TTF_DEBUG
 $UNIFONT_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -13696,7 +13829,7 @@ fi
 			       test "x$got_unifont_csur_ttf" = "xno" &&
 			       test "x$got_unifont_csur_otf" = "xno"
 then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x and SDL2). Following paths were tested:
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_CSUR_TTF_DEBUG
 $UNIFONT_CSUR_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -13704,7 +13837,7 @@ Please use --with-unifontdir-ttf=/dir/ or
            --with-unifont-csur-ttf=/dir/file or
            --with-unifont-csur-otf=/dir/file or
            disable the optional CSUR by using --without-unifont-csur-ttf and --without-unifont-csur-otf" >&5
-printf "%s\n" "$as_me: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x and SDL2). Following paths were tested:
+printf "%s\n" "$as_me: WARNING: Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_CSUR_TTF_DEBUG
 $UNIFONT_CSUR_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -13716,7 +13849,7 @@ fi
 			if test "x$got_unifont_upper_ttf" = "xno" &&
 			       test "x$got_unifont_upper_otf" = "xno"
 then :
-  as_fn_error $? "Unable to locate unifont_upper.ttf/unifont_upper.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+  as_fn_error $? "Unable to locate unifont_upper.ttf/unifont_upper.otf (needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_UPPER_TTF_DEBUG
 $UNIFONT_UPPER_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -21252,7 +21385,7 @@ fi
 if test "x$with_update_mime_database" != "xno"
 then :
 
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"
 then :
 
 		# Extract the first word of "update-mime-database", so it can be a program name with args.
@@ -21313,7 +21446,7 @@ fi
 if test "x$with_desktop_file_install" != "xno"
 then :
 
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"
 then :
 
 		# Extract the first word of "desktop-file-install", so it can be a program name with args.
@@ -21374,7 +21507,7 @@ fi
 if test "x$with_update_desktop_database" != "xno"
 then :
 
-	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"
+	if test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"
 then :
 
 		# Extract the first word of "update-desktop-database", so it can be a program name with args.
@@ -22814,6 +22947,13 @@ then :
   echo "SDL2:              OFF"
 else case e in #(
   e) echo "SDL2:              ON" ;;
+esac
+fi
+if test "x$with_sdl3"      = "xno"
+then :
+  echo "SDL3:              OFF"
+else case e in #(
+  e) echo "SDL3:              ON" ;;
 esac
 fi
 if test "x$with_alsa"      = "xno"

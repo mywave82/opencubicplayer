@@ -88,7 +88,7 @@ test -f libpng-$LIBPNG_VERSION.tar.gz               || $WGET https://download.so
 test -f libogg-$LIBOGG_VERSION.tar.gz               || $WGET https://downloads.xiph.org/releases/ogg/libogg-$LIBOGG_VERSION.tar.gz -O libogg-$LIBOGG_VERSION.tar.gz                                                                          || rm libogg-$LIBOGG_VERSION.tar.gz               || false
 test -f libvorbis-$LIBVORBIS_VERSION.tar.gz         || $WGET https://downloads.xiph.org/releases/vorbis/libvorbis-$LIBVORBIS_VERSION.tar.gz -O libvorbis-$LIBVORBIS_VERSION.tar.gz                                                           || rm libvorbis-$LIBVORBIS_VERSION.tar.gz         || false
 test -f flac-$FLAC_VERSION.tar.xz                   || $WGET https://ftp.osuosl.org/pub/xiph/releases/flac/flac-$FLAC_VERSION.tar.xz -O flac-$FLAC_VERSION.tar.xz                                                                            || rm flac-$FLAC_VERSION.tar.xz                   || false
-test -f SDL2-devel-$SDL2_VERSION-mingw.tar.gz       || $WGET https://github.com/libsdl-org/SDL/releases/download/release-$SDL2_VERSION/SDL2-devel-$SDL2_VERSION-mingw.tar.gz -O SDL2-devel-$SDL2_VERSION-mingw.tar.gz                        || rm SDL2-devel-$SDL2_VERSION-mingw.tar.gz       || false
+test -f SDL3-devel-$SDL3_VERSION-mingw.tar.gz       || $WGET https://github.com/libsdl-org/SDL/releases/download/release-$SDL3_VERSION/SDL3-devel-$SDL3_VERSION-mingw.tar.gz -O SDL3-devel-$SDL3_VERSION-mingw.tar.gz                        || rm SDL3-devel-$SDL3_VERSION-mingw.tar.gz       || false
 if test "$host" == "i686-w64-mingw32"; then
   test -f brotli-$BROTLI_VERSION.tar.gz             || $WGET https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz                                                                     || rm brotli-$BROTLI_VERSION.tar.gz               || false
 fi
@@ -310,18 +310,11 @@ cd flac-$FLAC_VERSION
 do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
 cd ..
 
-########## SDL2 ##########
-dirs=`ls -d */|cut -f1|grep 'SDL2-*'` && rm -Rf $dirs
-tar xfz SDL2-devel-$SDL2_VERSION-mingw.tar.gz
-cd SDL2-$SDL2_VERSION
+########## SDL3 ##########
+dirs=`ls -d */|cut -f1|grep 'SDL3-*'` && rm -Rf $dirs
+tar xfz SDL3-devel-$SDL3_VERSION-mingw.tar.gz
+cd SDL3-$SDL3_VERSION
 cp $host/* $prefix -R
-prefix2=`echo $prefix|sed -e 's/\//\\\\\//'g`
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/bin/sdl2-config
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2.la
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2main.la
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/libSDL2_test.la
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw../$prefix2\//" -i $prefix/lib/pkgconfig/sdl2.pc
-sed -e "s/\/tmp\/tardir\/.*\/build-mingw\/.*mingw..\//$prefix2\//" -i $prefix/lib/cmake/SDL2/sdl2-config.cmake
 cd ..
 
 ########## BROTLI ##########, only needed for 32bit, unsure why
@@ -496,7 +489,7 @@ cp $prefix/lib/bz2.dll              \
    $prefix/bin/libpng16.dll         \
    $prefix/bin/libturbojpeg.dll     \
    $prefix/bin/ogg.dll              \
-   $prefix/bin/SDL2.dll             \
+   $prefix/bin/SDL3.dll             \
    $prefix/bin/vorbis.dll           \
    $prefix/bin/vorbisfile.dll       \
    /usr/lib/gcc/$host/$gccversion/libssp-0.dll       \

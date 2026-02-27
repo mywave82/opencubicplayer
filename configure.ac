@@ -124,19 +124,20 @@ AC_ARG_WITH([coreaudio],               [AS_HELP_STRING([--with-coreaudio],      
 AC_ARG_WITH([flac],                    [AS_HELP_STRING([--with-flac],                      [force/disable FLAC support (autodetect by default)])],                          [], [with_flac=auto])
 AC_ARG_WITH([sdl],                     [AS_HELP_STRING([--with-sdl],                       [force/disable SDL video support (autodetect by default)])],                     [], [with_sdl=auto])
 AC_ARG_WITH([sdl2],                    [AS_HELP_STRING([--with-sdl2],                      [force/disable SDL2 video support (autodetect by default)])],                    [], [with_sdl2=auto])
+AC_ARG_WITH([sdl3],                    [AS_HELP_STRING([--with-sdl3],                      [force/disable SDL3 video support (autodetect by default)])],                    [], [with_sdl3=auto])
 AC_ARG_WITH([info],                    [AS_HELP_STRING([--without-info],                   [Do not install info manual pages])],                                            [], [with_info=auto])
 AC_ARG_WITH([update_mime_database],    [AS_HELP_STRING([--without-update-mime-database],   [Do not update mime database after file copy (SDL and X11 normally does this)])],[], [with_update_mime_database=auto])
 AC_ARG_WITH([desktop_file_install],    [AS_HELP_STRING([--without-desktop_file_install],   [Do not install .desktop file (SDL and X11 normally does this)])],               [], [with_desktop_file_install=auto])
 AC_ARG_WITH([update_desktop_database], [AS_HELP_STRING([--without-update-desktop-database],[Do not update desktop database (SDL and X11 normally does this)])],             [], [with_update_desktop_database=auto])
 AC_ARG_WITH([dumptools],               [AS_HELP_STRING([--with-dumptools],                 [enable building the different fileformat dump utilities])],                     [], [with_dumptools=no])
 AC_ARG_WITH([unifont-relative],        [AS_HELP_STRING([--with-unifont-relative],          [unifont files should be placed in datarootdir (same as ocp.hlp)])],             [], [with_unifont_relative=no])
-AC_ARG_WITH([unifontdir-ttf],          [AS_HELP_STRING([--with-unifontdir-ttf=/path],      [the path to where ttf-unifont is located (used by X11, SDL1.x and SDL2)])],     [], [with_unifontdir_ttf='${datarootdir}/fonts/truetype/unifont'])
+AC_ARG_WITH([unifontdir-ttf],          [AS_HELP_STRING([--with-unifontdir-ttf=/path],      [the path to where ttf-unifont is located (used by X11, SDL1.x/2/3)])],          [], [with_unifontdir_ttf='${datarootdir}/fonts/truetype/unifont'])
 AC_ARG_WITH([unifont_ttf],             [AS_HELP_STRING([--with-unifont-ttf=/path],         [the full path to unifont.ttf (default is UNIFONTDIR/unifont.ttf); use this option if the unifont.ttf is named UniFont.ttf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
                                                                                                                                                                             [], [with_unifont_ttf='${with_unifontdir_ttf}/unifont.ttf'])
 AC_ARG_WITH([unifont_csur_ttf],        [AS_HELP_STRING([--with-unifont-csur-ttf=/path],    [the full path to unifont_csur.ttf (default is UNIFONTDIR/unifont_csur.ttf) or disable by using --without-unifont-csur-ttf])],
                                                                                                                                                                             [], [with_unifont_csur_ttf='${with_unifontdir_ttf}/unifont_csur.ttf'])
 AC_ARG_WITH([unifont_upper_ttf],       [AS_HELP_STRING([--with-unifont-upper-ttf=/path],   [the full path to unifont_upper.ttf (default is UNIFONTDIR/unifont_upper.ttf)])],[], [with_unifont_upper_ttf='${with_unifontdir_ttf}/unifont_upper.ttf'])
-AC_ARG_WITH([unifontdir-otf],          [AS_HELP_STRING([--with-unifontdir-otf=/path],      [the path to where otf-unifont is located (used by X11, SDL1.x and SDL2)])],     [], [with_unifontdir_otf='${datarootdir}/fonts/opentype/unifont'])
+AC_ARG_WITH([unifontdir-otf],          [AS_HELP_STRING([--with-unifontdir-otf=/path],      [the path to where otf-unifont is located (used by X11, SDL1.x/2/3)])],          [], [with_unifontdir_otf='${datarootdir}/fonts/opentype/unifont'])
 AC_ARG_WITH([unifont_otf],             [AS_HELP_STRING([--with-unifont-otf=/path],         [the full path to unifont.otf (default is UNIFONTDIR/unifont.otf); use this option if the unifont.otf is named UniFont.otf or similiar. If the filename contains version number it is recommended that this is fixed in unifont installation with non-version symlinks])],
                                                                                                                                                                             [], [with_unifont_otf='${with_unifontdir_otf}/unifont.otf'])
 AC_ARG_WITH([unifont_csur_otf],        [AS_HELP_STRING([--with-unifont-csur-otf=/path],    [the full path to unifont_csur.otf (default is UNIFONTDIR/unifont_csur.otf) or disable by using --without-unifont-csur-otf])],
@@ -537,19 +538,38 @@ AS_IF([test "x$with_x11" = "xno"], [
 ])
 
 AS_IF([test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl2")])
-AS_IF([test "x$with_sdl" = "xyes"], [with_sdl2="no"])
-AS_IF([test "x$with_sdl2" = "xyes"], [with_sdl="no"])
+AS_IF([test "x$with_sdl" = "xyes" && test "x$with_sdl3" = "xyes"], [AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl3")])
+AS_IF([test "x$with_sdl2" = "xyes" && test "x$with_sdl3" = "xyes"], [AC_MSG_ERROR("Can not use both --with-sdl2 and --with-sdl3")])
+AS_IF([test "x$with_sdl" = "xyes"], [with_sdl2="no";with_sdl3="no"])
+AS_IF([test "x$with_sdl2" = "xyes"], [with_sdl="no";with_sdl3="no"])
+AS_IF([test "x$with_sdl3" = "xyes"], [with_sdl="no";with_sdl2="no"])
+
+AC_SUBST(SDL3_CFLAGS)
+AC_SUBST(SDL3_LIBS)
+AC_SUBST(HAVE_SDL3)
+AS_IF([test "x$with_sdl3" != "xno"], [
+	PKG_CHECK_MODULES([SDL3], [sdl3], [with_sdl3=yes;with_sdl2=no;with_sdl=no], AS_IF([test "x$with_sdl3" = "xyes"], [AC_MSG_ERROR("libSDL3 was not found")]))
+])
+
+AS_IF([test "x$with_sdl3" = "xno"],
+[
+	HAVE_SDL3=
+],[
+	HAVE_SDL3=1
+	AC_DEFINE(HAVE_SDL3)
+	with_sdl="no"
+])
 
 AC_SUBST(SDL2_CFLAGS)
 AC_SUBST(SDL2_LIBS)
+AC_SUBST(HAVE_SDL2)
 AS_IF([test "x$with_sdl2" != "xno"], [
-	AM_PATH_SDL2(["2.0.0"], [with_sdl2=yes], AS_IF([test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("libSDL2 was not found")], [with_sdl2="no"]) )
+	AM_PATH_SDL2(["2.0.0"], [with_sdl2=yes;with_sdl=no], AS_IF([test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("libSDL2 was not found")], [with_sdl2="no"]) )
 ])
 SDL2_CFLAGS=$SDL_CFLAGS
 SDL2_LIBS=$SDL_LIBS
 SDL_CFLAGS=
 SDL_LIBS=
-AC_SUBST(HAVE_SDL2)
 
 AS_IF([test "x$with_sdl2" = "xno"],
 [
@@ -564,6 +584,7 @@ org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
 AC_SUBST(SDL_CFLAGS)
 AC_SUBST(SDL_LIBS)
+AC_SUBST(HAVE_SDL)
 AS_IF([test "x$with_sdl" != "xno"],[
 	PKG_CHECK_MODULES([SDL],[sdl],[],[
 	dnl Fall back to non-pkg-config method
@@ -575,7 +596,6 @@ AS_IF([test "x$with_sdl" != "xno"],[
 		])
 	])
 ])
-AC_SUBST(HAVE_SDL)
 AS_IF([test "x$with_sdl" = "xno"],[
 	HAVE_SDL=
 ],[
@@ -587,7 +607,7 @@ CPPFLAGS="$org_cflags"
 
 AC_SUBST(FREETYPE2_LIBS)
 AC_SUBST(FREETYPE2_CFLAGS)
-AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11" = "x1"],[
+AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_SDL3" = "x1" || test "x$HAVE_X11" = "x1"],[
 	PKG_CHECK_MODULES([FREETYPE2],[freetype2],[],[
 	dnl Fall back to non-pkg-config method
 		AC_CHECK_LIB([freetype], [FT_Init_FreeType], [],[AC_MSG_ERROR("libfreetype not found")])
@@ -647,7 +667,7 @@ AS_IF([test "x$HAVE_SDL" = "x1" || test "x$HAVE_SDL2" = "x1" || test "x$HAVE_X11
 		AS_IF([test "x$cross_compiling" != "xyes"],[
 			AS_IF([test "x$got_unifont_ttf" = "xno" &&
 			       test "x$got_unifont_otf" = "xno"],[
-AC_MSG_ERROR([Unable to locate unifont.ttf/unifont.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+AC_MSG_ERROR([Unable to locate unifont.ttf/unifont.otf (needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_TTF_DEBUG
 $UNIFONT_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -658,7 +678,7 @@ Please use --with-unifontdir-ttf=/dir/ or
 			AS_IF([test "x$with_unifont_csur_ttf" != "xno" &&
 			       test "x$with_unifont_csur_otf" != "xno" &&
 			       test "x$got_unifont_csur_ttf" = "xno" &&
-			       test "x$got_unifont_csur_otf" = "xno"],[AC_MSG_WARN([Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x and SDL2). Following paths were tested:
+			       test "x$got_unifont_csur_otf" = "xno"],[AC_MSG_WARN([Unable to locate unifont_csur.ttf/unifont_csur.otf (optionally needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_CSUR_TTF_DEBUG
 $UNIFONT_CSUR_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -667,7 +687,7 @@ Please use --with-unifontdir-ttf=/dir/ or
            --with-unifont-csur-otf=/dir/file or
            disable the optional CSUR by using --without-unifont-csur-ttf and --without-unifont-csur-otf])])
 			AS_IF([test "x$got_unifont_upper_ttf" = "xno" &&
-			       test "x$got_unifont_upper_otf" = "xno"],[AC_MSG_ERROR([Unable to locate unifont_upper.ttf/unifont_upper.otf (needed by X11, SDL1.x and SDL2). Following paths were tested:
+			       test "x$got_unifont_upper_otf" = "xno"],[AC_MSG_ERROR([Unable to locate unifont_upper.ttf/unifont_upper.otf (needed by X11, SDL1.x/2/3). Following paths were tested:
 $UNIFONT_UPPER_TTF_DEBUG
 $UNIFONT_UPPER_OTF_DEBUG
 Please use --with-unifontdir-ttf=/dir/ or
@@ -1152,7 +1172,7 @@ AS_IF([test "x$with_libgme" = "xno"], [
 ])
 
 AS_IF([test "x$with_update_mime_database" != "xno"],[
-	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"], [
 		AC_CHECK_PROG([UPDATE_MIME_DATABASE], [update-mime-database], [update-mime-database], [failed])
 		AS_IF([test "x$UPDATE_MIME_DATABASE" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find update-mime-database (required by x11 and SDL driver). Use --without-update-mime-database to forcefully disable.])
@@ -1161,7 +1181,7 @@ AS_IF([test "x$with_update_mime_database" != "xno"],[
 ])
 
 AS_IF([test "x$with_desktop_file_install" != "xno"],[
-	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"], [
 		AC_CHECK_PROG([DESKTOP_FILE_INSTALL], [desktop-file-install], [desktop-file-install], [failed])
 		AS_IF([test "x$DESKTOP_FILE_INSTALL" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find desktop-file-install (required by x11 and SDL driver). Use --without-desktop_file_install to forcefully disable.])
@@ -1170,7 +1190,7 @@ AS_IF([test "x$with_desktop_file_install" != "xno"],[
 ])
 
 AS_IF([test "x$with_update_desktop_database" != "xno"],[
-	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno"], [
+	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"], [
 		AC_CHECK_PROG([UPDATE_DESKTOP_DATABASE], [update-desktop-database], [update-desktop-database], [failed])
 		AS_IF([test "x$UPDATE_DESKTOP_DATABASE" = "xfailed"],[
 			AC_MSG_ERROR([Cannot find update-desktop-database (required by x11 and SDL driver). Use --without-update-desktop-database to forcefully disable.])
@@ -1214,6 +1234,7 @@ AS_IF([test "x$with_libgme"    = "xno" ], [echo "GME:               OFF"], [echo
 AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON"])
 AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON"])
 AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON"])
+AS_IF([test "x$with_sdl3"      = "xno" ], [echo "SDL3:              OFF"], [echo "SDL3:              ON"])
 AS_IF([test "x$with_alsa"      = "xno" ], [echo "ALSA:              OFF"], [echo "ALSA:              ON"])
 AS_IF([test "x$with_oss"       = "xno" ], [echo "OSS:               OFF"], [echo "OSS:               ON"])
 AS_IF([test "x$with_coreaudio" = "xno" ], [echo "CoreAudio:         OFF"], [echo "CoreAudio:         ON"])

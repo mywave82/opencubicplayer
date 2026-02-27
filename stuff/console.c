@@ -50,6 +50,9 @@
 #ifdef HAVE_SDL2
 #include "poutput-sdl2.h"
 #endif
+#ifdef HAVE_SDL3
+#include "poutput-sdl3.h"
+#endif
 #ifdef HAVE_FRAMEBUFFER
 #include "poutput-vcsa.h"
 #endif
@@ -180,6 +183,18 @@ static int console_init(const struct configAPI_t *configAPI)
 #else
 				fprintf(stderr, "SDL2 driver not compiled in\n");
 #endif
+			} else if (!strcmp(driver, "sdl3"))
+			{
+#ifdef HAVE_SDL3
+				if (!sdl3_init())
+				{
+					console_clean=sdl3_done;
+					return 0;
+				}
+				fprintf(stderr, "SDL3 init failed\n");
+#else
+				fprintf(stderr, "SDL3 driver not compiled in\n");
+#endif
 			}
 		}
 	}
@@ -214,6 +229,14 @@ static int console_init(const struct configAPI_t *configAPI)
 		if (!sdl2_init())
 		{
 			console_clean=sdl2_done;
+			return 0;
+		}
+#endif
+#ifdef HAVE_SDL3
+		fprintf(stderr, "stdout and stdin does not come from the same device, trying SDL3\n");
+		if (!sdl3_init())
+		{
+			console_clean=sdl3_done;
 			return 0;
 		}
 #endif
@@ -319,6 +342,14 @@ static int console_init(const struct configAPI_t *configAPI)
 	if (!x11_init(0))
 	{
 		console_clean=x11_done;
+		return 0;
+	}
+#endif
+
+#ifdef HAVE_SDL3
+	if (!sdl3_init())
+	{
+		console_clean=sdl3_done;
 		return 0;
 	}
 #endif

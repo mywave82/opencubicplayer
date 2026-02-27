@@ -105,6 +105,9 @@ static int cmdhlp(void)
 #ifdef HAVE_SDL2
 		printf("     sdl2         : SDL2 video driver\n");
 #endif
+#ifdef HAVE_SDL3
+		printf("     sdl3         : SDL3 video driver\n");
+#endif
 		printf("\nExample : ocp -fl0,r1 -vf2 -spdevpdisk -sr48000 ftstar.xm\n");
 		printf("          (for nice HD rendering of modules)\n");
 		return errHelpPrinted;

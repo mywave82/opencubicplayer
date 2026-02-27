@@ -294,6 +294,8 @@ int strverscmp(const char *s1, const char *s2);
 
 #undef HAVE_SDL2
 
+#undef HAVE_SDL3
+
 #undef HAVE_MAD
 
 #undef HAVE_ERRNO_H
