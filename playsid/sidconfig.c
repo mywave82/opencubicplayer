@@ -315,7 +315,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	      int mlHeight = contentheight + LINES_NOT_AVAILABLE;
 	      int mlTop, mlLeft, mlWidth;
 	const char *offon[] = {"off", "on"};
-	const char *emulators[] = {"residfp", "residfpII"};
+	const char *emulators[] = {"residfp", "crSID"};
 	const char *C64models[] = {"PAL", "NTSC", "OLD-NTSC", "DREAN", "PAL-M"};
 	const char *SIDmodels[] = {"MOS6581", "MOS8580"};
 	const char *CIAmodels[] = {"MOS6526", "MOS6526W4485", "MOS8521"};
@@ -398,8 +398,8 @@ if (skip)                   \
 	switch (EditPos)
 	{
 		case 0:
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " residfp   = floating point emulator.");
-			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " residfpII = floating point emulator, mark II.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " residfp = floating point emulator.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " crSID   = fixed point emulator (sidlite)");
 			break;
 		case 1:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " For SID files that does not specify C64 model.");
@@ -467,7 +467,8 @@ if (skip)                   \
 static int emulator_to_int (const char *src)
 {
 	if (!strcasecmp (src, "residfp")) return 0;
-	if (!strcasecmp (src, "residfpII")) return 1;
+	if (!strcasecmp (src, "crSID")) return 1;
+
 	return 1;
 }
 
@@ -475,9 +476,9 @@ static const char *emulator_from_int (const int src)
 {
 	switch (src)
 	{
-		case 0: return "residfp";
 		default:
-		case 1: return "residfpII";
+		case 0: return "residfp";
+		case 1: return "crSID";
 	}
 }
 

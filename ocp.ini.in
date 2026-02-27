@@ -1,5 +1,5 @@
 [version]
-  epoch=20260223
+  epoch=20260227
 
 [general]
 ;link=
@@ -96,8 +96,8 @@
 
 [libsidplayfp]
 ; emulator=residfp    to use the floating point version (CPU heavy)
-; emulator=residfpII  to use the floating point version (CPU heavy), mark II
-  emulator=residfpII
+; emulator=crSID      to use the integer version (sidlite)
+  emulator=residfp        ; Possible values are residfp and crSID
 ; defaultC64=PAL       Use the PAL      C64 model if .SID file does not specify the model
 ; defaultC64=NTSC      Use the NTSC     C64 model if .SID file does not specify the model
 ; defaultC64=OLD-NTSC  Use the OLD-NTSC C64 model if .SID file does not specify the model

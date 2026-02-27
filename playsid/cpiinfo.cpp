@@ -48,7 +48,7 @@ static char SidUTF8Buffer[CONSOLE_MAX_X*2+1];
 HEADER
 +------------------------------------------------------+ 0
 |  SIDPLAYFP - Music Player and C64 SID Chip Emulator  | 1
-|        Libsidplayfp V2.1.0 + OCP patches             | 2
+|     Libsidplayfp v2.16.1 + git 778d415 + OCP patches | 2
 +------------------------------------------------------+ 3
 | Title        : Ocean Loader v2                       | 4  Always present (info count grabs it)
 | Author       : Martin Galway                         | 5  Optional
@@ -150,7 +150,7 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3        Libsidplayfp v2.16.0 + git e0cc7af + OCP patches", SidInfoWidth-2);
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3     Libsidplayfp v2.16.1 + git 778d415 + OCP patches", SidInfoWidth-2);
 		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;

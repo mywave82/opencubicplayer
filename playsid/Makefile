@@ -188,7 +188,7 @@ libsidplayfp-c64-CIA-tod.o: \
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
 libsidplayfp-c64-CPU-mos6510.o: \
 	libsidplayfp-git/src/c64/CPU/mos6510.cpp
-	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c -DNDEBUG
 libsidplayfp-c64-CPU-mos6510debug.o: \
 	libsidplayfp-git/src/c64/CPU/mos6510debug.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -o $@ $< -c

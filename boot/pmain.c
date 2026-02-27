@@ -1067,9 +1067,21 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileString ("fileselector", "modextensions", cfGetProfileString("fileselector", "modextensions", ""));
 		}
 
-		if (epoch < 20260223)
+		if (epoch < 20260227)
 		{
-			cfSetProfileInt("version", "epoch", 20260223, 10);
+			const char *temp;
+			fprintf(stderr, "ocp.ini update (3.2.0) libsidplayfp removed emulator=residfpII and added emulator=crSID\n");
+			temp = cfGetProfileString("libsidplayfp", "emulator", "residfp");
+			if (!strcasecmp (temp, "residfpII"))
+			{
+				cfSetProfileString("libsidplayfp", "emulator", "residfp");
+			}
+			cfSetProfileComment ("libsidplayfp", "emulator", "; Possible values are residfp and crSID");
+		}
+
+		if (epoch < 20260227)
+		{
+			cfSetProfileInt("version", "epoch", 20260227, 10);
 			cfStoreConfig();
 #ifdef _WIN32
 			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
@@ -1079,24 +1091,24 @@ static int init_modules(int argc, char *argv[]
 			if (isatty(2))
 			{
 				fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\033[0m\nrm -f ~/.ocp/ocp.ini\033[1m\033[31m or \033[0m\nrm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
+				sleep(5);
 			} else {
 				fprintf(stderr,"\nWARNING, ocp.ini has changed, have tried my best to update it. If OCP failes to start, please try to remove by doing either:\nrm -f ~/.ocp/ocp.ini or rm -f $XDG_CONFIG_HOME/ocp/ocp.ini\n\n");
 			}
-			sleep(5);
 #endif
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260223)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260227)
 	{
 #ifndef _WIN32
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260223\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260227\033[0m\n\n");
 			sleep(5);
 		} else
 #endif
 		{
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260223\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260227\n\n");
 		}
 	}
 

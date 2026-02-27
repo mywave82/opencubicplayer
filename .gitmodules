@@ -6,6 +6,10 @@
 	path = playsid/libsidplayfp-git
 	url = https://github.com/mywave82/libsidplayfp.git
 	branch = ocp
+[submodule "playsid/libresidfp-git"]
+	path = playsid/libresidfp-git
+	url = https://github.com/mywave82/libresidfp.git
+	branch = ocp
 [submodule "playopl/libbinio-git"]
 	path = playopl/libbinio-git
 	url = https://github.com/mywave82/libbinio.git
@@ -19,6 +23,3 @@
 [submodule "playqoa/qoa-git"]
 	path = playqoa/qoa-git
 	url = https://github.com/phoboslab/qoa
-[submodule "playsid/libresidfp-git"]
-	path = playsid/libresidfp-git
-	url = https://github.com/mywave82/libresidfp.git

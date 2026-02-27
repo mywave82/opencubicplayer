@@ -45,7 +45,7 @@ static int SidSetupWidth;
 
 static int SidSetupEditPos = 0;
 
-static int SidSetupUseresidfp = 0; // true for residfp, false for residfpII
+static int SidSetupUseresidfp = 0; // true for residfp, false for crSID
 static int SidSetupFilter = 0;
 static int SidSetupFilterCurve6581 = 0;
 static int SidSetupFilterRange6581 = 0;
@@ -189,19 +189,19 @@ static void SidSetupDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?" Sid Setup":" Sid Setup (press i to focus)", SidSetupWidth);
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 1, 0, (focus&&(SidSetupEditPos==0))?0x07:0x08, &"  Filter:"[2 - skip], 27 + skip);
-	SidSetupDrawItems (cpifaceSession, focus, 1, skip, offon, 2, SidSetupFilter, SidSetupEditPos==0, 0);
+	SidSetupDrawItems (cpifaceSession, focus, 1, skip, offon, 2, SidSetupFilter, SidSetupEditPos==0, (SidSetupUseresidfp == 0));
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 2, 0, (focus&&(SidSetupEditPos==1))?0x07:0x08, &"  FilterCurve6581:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 2, skip, 100, "", 0, 100, SidSetupFilterCurve6581, SidSetupEditPos == 1, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") /* || (SidSetupUseresidfp == 0)*/);
+	SidSetupDrawBar (cpifaceSession, focus, 2, skip, 100, "", 0, 100, SidSetupFilterCurve6581, SidSetupEditPos == 1, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 3, 0, (focus&&(SidSetupEditPos==2))?0x07:0x08, &"  FilterRange6581:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 3, skip, 100, "", 0, 100, SidSetupFilterRange6581, SidSetupEditPos == 2, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") /* || (SidSetupUseresidfp == 0)*/);
+	SidSetupDrawBar (cpifaceSession, focus, 3, skip, 100, "", 0, 100, SidSetupFilterRange6581, SidSetupEditPos == 2, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 4, 0, (focus&&(SidSetupEditPos==3))?0x07:0x08, &"  FilterCurve8580:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 4, skip, 100, "", 0, 100, SidSetupFilterCurve8580, SidSetupEditPos == 3, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS8580") /* || (SidSetupUseresidfp == 0)*/);
+	SidSetupDrawBar (cpifaceSession, focus, 4, skip, 100, "", 0, 100, SidSetupFilterCurve8580, SidSetupEditPos == 3, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS8580") || (SidSetupUseresidfp == 0));
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 5, 0, (focus&&(SidSetupEditPos==4))?0x07:0x08, &"  CombinedWaveformsStrength:"[2 - skip], 27 + skip);
-	SidSetupDrawItems (cpifaceSession, focus, 5, skip, combinedwaveforms, 3, SidSetupCombinedWaveformsStrength, SidSetupEditPos==4, (SidSetupFilter == 0) /* || (SidSetupUseresidfp == 0) */); /* always active, libsidfp no longer ships resid */
+	SidSetupDrawItems (cpifaceSession, focus, 5, skip, combinedwaveforms, 3, SidSetupCombinedWaveformsStrength, SidSetupEditPos==4, (SidSetupFilter == 0) || (SidSetupUseresidfp == 0));
 }
 
 static int SidSetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
@@ -278,7 +278,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==1)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterCurve6581 -= repeat;
 					if (SidSetupFilterCurve6581 < 0) SidSetupFilterCurve6581 = 0;
@@ -286,7 +286,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==2)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterRange6581 -= repeat;
 					if (SidSetupFilterRange6581 < 0) SidSetupFilterRange6581 = 0;
@@ -294,7 +294,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==3)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterCurve8580 -= repeat;
 					if (SidSetupFilterCurve8580 < 0) SidSetupFilterCurve8580 = 0;
@@ -302,7 +302,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==4)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */ && (SidSetupCombinedWaveformsStrength > 0))
+				if (SidSetupFilter && SidSetupUseresidfp && (SidSetupCombinedWaveformsStrength > 0))
 				{
 					SidSetupCombinedWaveformsStrength--;
 					sidSetCombinedWaveformsStrength(SidSetupCombinedWaveformsStrength);
@@ -319,7 +319,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==1)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterCurve6581 += repeat;
 					if (SidSetupFilterCurve6581 > 100) SidSetupFilterCurve6581 = 100;
@@ -327,7 +327,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==2)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterRange6581 += repeat;
 					if (SidSetupFilterRange6581 > 100) SidSetupFilterRange6581 = 100;
@@ -335,7 +335,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==3)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */)
+				if (SidSetupFilter && SidSetupUseresidfp)
 				{
 					SidSetupFilterCurve8580 += repeat;
 					if (SidSetupFilterCurve8580 > 100) SidSetupFilterCurve8580 = 100;
@@ -343,7 +343,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 				}
 			} else if (SidSetupEditPos==4)
 			{
-				if (SidSetupFilter /* && SidSetupUseresidfp */ && (SidSetupCombinedWaveformsStrength < 2))
+				if (SidSetupFilter && SidSetupUseresidfp && (SidSetupCombinedWaveformsStrength < 2))
 				{
 					SidSetupCombinedWaveformsStrength++;
 					sidSetCombinedWaveformsStrength(SidSetupCombinedWaveformsStrength);

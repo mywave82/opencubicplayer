@@ -393,7 +393,7 @@ namespace libsidplayfp
 		// Remove old driver and emulation - should be no-op
 		clearSidEmu ();
 
-		int use_residfp = !strcmp(configAPI->GetProfileString("libsidplayfp", "emulator", "residfp"), "residfp"); // true for residfp, false for residfpII
+		int use_residfp = !strcmp(configAPI->GetProfileString("libsidplayfp", "emulator", "residfp"), "residfp"); // true for residfp, false for crSID
 
 		//fprintf (stderr, "use_residfp=%d\n", use_residfp);
 
@@ -404,7 +404,7 @@ namespace libsidplayfp
 				m_residfp = 2;
 				SIDLiteBuilder *rs = new SIDLiteBuilder ( "crSID" );
 				m_engCfg.sidEmulation = rs;
-#warning no parameters available in crSID (sidlite)
+				/* TODO: no parameters available in crSID (sidlite) */
 			} else {
 				m_residfp = 1;
 				ReSIDfpBuilder *rs = new ReSIDfpBuilder( "ReSIDFP" );
@@ -562,7 +562,7 @@ namespace libsidplayfp
 		} else if (m_residfp == 2)
 		{
 			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
-#warning no parameters available in crSID (sidlite)
+			/* TODO: no parameters available in crSID (sidlite) */
 		}
 	}
 
@@ -581,7 +581,7 @@ namespace libsidplayfp
 		} else if (m_residfp == 2)
 		{
 			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
-#warning no parameters available in crSID (sidlite)
+			/* TODO: no parameters available in crSID (sidlite) */
 		}
 	}
 
@@ -600,7 +600,7 @@ namespace libsidplayfp
 		} else if (m_residfp == 2)
 		{
 			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
-#warning no parameters available in crSID (sidlite)
+			/* TODO: no parameters available in crSID (sidlite) */
 		}
 	}
 
@@ -621,7 +621,7 @@ namespace libsidplayfp
 		} else if (m_residfp == 2)
 		{
 			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
-#warning no parameters available in crSID (sidlite)
+			/* TODO: no parameters available in crSID (sidlite) */
 		}
 	}
 
