@@ -113,9 +113,10 @@ test -f unifont_upper-$UNIFONT_VERSION.otf          || $WGET https://unifoundry.
 #cd ..
 
 ########## BZIP2 ##########
-dirs=`ls -d */|cut -f1|grep 'bzip2-*'` && rm -Rf $dirs
-tar xfz bzip2-$BZIP2_VERSION.tar.gz
-cd bzip2-$BZIP2_VERSION
+if ! test -f $prefix/build-bzip2-$BZIP2_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'bzip2-*'` && rm -Rf $dirs
+	tar xfz bzip2-$BZIP2_VERSION.tar.gz
+	cd bzip2-$BZIP2_VERSION
 cat <<EOF > Makefile.mingw32
 CC=$host-gcc
 CFLAGS=-fpic -fPIC -DWIN32 -MD -O2 -D_FILE_OFFSET_BITS=64 -DBZ_EXPORT
@@ -154,7 +155,7 @@ decompress.o: decompress.c
 bzlib.o: bzlib.c
 	\$(CC) \$(CFLAGS) -c bzlib.c
 EOF
- patch -p 1 <<EOF
+		patch -p 1 <<EOF
 --- bzip2-1.0.8/bzlib.h	2019-07-13 19:50:05.000000000 +0200
 +++ bzip2-1.0.8-new/bzlib.h	2023-06-11 01:30:31.804371512 +0200
 @@ -66,8 +66,8 @@
@@ -186,16 +187,19 @@ EOF
  #else
  #   define BZ_API(func) func
 EOF
- make -f Makefile.mingw32
- cp bz2.dll $prefix/lib
- cp bzlib.h $prefix/include
- cd ..
+		make -f Makefile.mingw32
+		cp bz2.dll $prefix/lib
+		cp bzlib.h $prefix/include
+	cd ..
+	touch $prefix/build-bzip2-$BZIP2_VERSION
+fi
 
 ########## MAD ##########
-dirs=`ls -d */|cut -f1|grep 'libmad-*'` && rm -Rf $dirs
-tar xfz libmad-$LIBMAD_VERSION.tar.gz
-cd libmad-$LIBMAD_VERSION
-patch -p 1 << EOF
+if ! test -f $prefix/build-libmad-$LIBMAD_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libmad-*'` && rm -Rf $dirs
+	tar xfz libmad-$LIBMAD_VERSION.tar.gz
+	cd libmad-$LIBMAD_VERSION
+		patch -p 1 << EOF
 diff -u libmad-0.15.1b/configure.ac libmad-0.15.1b-new/configure.ac
 --- libmad-0.15.1b/configure.ac	2004-01-23 10:41:32.000000000 +0100
 +++ libmad-0.15.1b-new/configure.ac	2023-04-07 21:37:26.401404106 +0200
@@ -226,43 +230,55 @@ diff -u libmad-0.15.1b/configure.ac libmad-0.15.1b-new/configure.ac
  	    : #x optimize="\$optimize -finline-functions"
  	    : #- optimize="\$optimize -fstrength-reduce"
 EOF
-touch AUTHORS ChangeLog NEWS
-autoreconf --install
-./configure --host $host --prefix=$prefix
-make all install
-#cp .libs/libmad-0.dll $prefix/lib/mad.dll
-#cp mad.h $prefix/include
-cd ..
+		touch AUTHORS ChangeLog NEWS
+		autoreconf --install
+		./configure --host $host --prefix=$prefix
+		make all install
+		#cp .libs/libmad-0.dll $prefix/lib/mad.dll
+		#cp mad.h $prefix/include
+	cd ..
+	touch $prefix/build-libmad-$LIBMAD_VERSION
+fi
 
 ########## LIBJPEG-TURBO ##########
-dirs=`ls -d */|cut -f1|grep 'libjpeg-turbo-*'` && rm -Rf $dirs
-tar xfz libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
-cd libjpeg-turbo-$LIBJPEGTURBO_VERSION
-do_cmake -DENABLE_SHARED=TRUE
-cd ..
+if ! test -f $prefix/build-libjpeg-turbo-$LIBJPEGTURBO_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libjpeg-turbo-*'` && rm -Rf $dirs
+	tar xfz libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
+	cd libjpeg-turbo-$LIBJPEGTURBO_VERSION
+		do_cmake -DENABLE_SHARED=TRUE
+	cd ..
+	touch $prefix/build-libjpeg-turbo-$LIBJPEGTURBO_VERSION
+fi
 
 ########## LIBPNG ##########
-dirs=`ls -d */|cut -f1|grep 'libpng-*'` && rm -Rf $dirs
-tar xfz libpng-$LIBPNG_VERSION.tar.gz
-cd libpng-$LIBPNG_VERSION
-#cmake does not use pkg-config for zlib?????
-do_cmake -DZLIB_ROOT=/usr/$host/
-cd ..
+if ! test -f $prefix/build-libpng-$LIBPNG_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libpng-*'` && rm -Rf $dirs
+	tar xfz libpng-$LIBPNG_VERSION.tar.gz
+	cd libpng-$LIBPNG_VERSION
+		#cmake does not use pkg-config for zlib?????
+		do_cmake -DZLIB_ROOT=/usr/$host/
+	cd ..
+	touch $prefix/build-libpng-$LIBPNG_VERSION
+fi
 
 ########## LIBOGG ##########
-dirs=`ls -d */|cut -f1|grep 'libogg-*'` && rm -Rf $dirs
-tar xfz libogg-$LIBOGG_VERSION.tar.gz
-cd libogg-$LIBOGG_VERSION
-do_cmake
-cd ..
-# Bug in build-system, missmatch with dll filename, and internal name
-mv -f $prefix/bin/libogg.dll $prefix/bin/ogg.dll
+if ! test -f $prefix/build-libogg-$LIBOGG_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libogg-*'` && rm -Rf $dirs
+	tar xfz libogg-$LIBOGG_VERSION.tar.gz
+	cd libogg-$LIBOGG_VERSION
+		do_cmake
+	cd ..
+	# Bug in build-system, missmatch with dll filename, and internal name
+	mv -f $prefix/bin/libogg.dll $prefix/bin/ogg.dll
+	touch $prefix/build-libogg-$LIBOGG_VERSION
+fi
 
 ########## VORBIS ##########
-dirs=`ls -d */|cut -f1|grep 'libvorbis-*'` && rm -Rf $dirs
-tar xfz libvorbis-$LIBVORBIS_VERSION.tar.gz
-cd libvorbis-$LIBVORBIS_VERSION
-patch -p1 << EOF
+if ! test -f $prefix/build-libvorbis$LIBVORBIS_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libvorbis-*'` && rm -Rf $dirs
+	tar xfz libvorbis-$LIBVORBIS_VERSION.tar.gz
+	cd libvorbis-$LIBVORBIS_VERSION
+		patch -p1 << EOF
 diff -ur libvorbis-1.3.7/win32/vorbis.def libvorbis-1.3.7-new/win32/vorbis.def
 --- libvorbis-1.3.7/win32/vorbis.def	2020-03-23 16:04:43.000000000 +0100
 +++ libvorbis-1.3.7-new/win32/vorbis.def	2023-04-09 10:02:45.550479019 +0200
@@ -297,61 +313,78 @@ diff -ur libvorbis-1.3.7/win32/vorbisfile.def libvorbis-1.3.7-new/win32/vorbisfi
  ov_clear
  ov_open
 EOF
-do_cmake
-cd ..
+		do_cmake
+	cd ..
 # Bug in build-system, missmatch with dll filename, and internal name
-mv -f $prefix/bin/libvorbisfile.dll $prefix/bin/vorbisfile.dll
-mv -f $prefix/bin/libvorbis.dll $prefix/bin/vorbis.dll
+	mv -f $prefix/bin/libvorbisfile.dll $prefix/bin/vorbisfile.dll
+	mv -f $prefix/bin/libvorbis.dll $prefix/bin/vorbis.dll
+	touch $prefix/build-libvorbis$LIBVORBIS_VERSION
+fi
 
 ########## FLAC ##########
-dirs=`ls -d */|cut -f1|grep 'flac-*'` && rm -Rf $dirs
-tar xfJ flac-$FLAC_VERSION.tar.xz
-cd flac-$FLAC_VERSION
-do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
-cd ..
+if ! test -f $prefix/build-flac-$FLAC_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'flac-*'` && rm -Rf $dirs
+	tar xfJ flac-$FLAC_VERSION.tar.xz
+	cd flac-$FLAC_VERSION
+		do_cmake -D_OGG_LIBRARY_DIRS=$prefix/lib
+	cd ..
+	touch $prefix/build-flac-$FLAC_VERSION
+fi
 
 ########## SDL3 ##########
-dirs=`ls -d */|cut -f1|grep 'SDL3-*'` && rm -Rf $dirs
-tar xfz SDL3-devel-$SDL3_VERSION-mingw.tar.gz
-cd SDL3-$SDL3_VERSION
-cp $host/* $prefix -R
-cd ..
+if ! test -f $prefix/build-SDL3-$SDL3_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'SDL3-*'` && rm -Rf $dirs
+	tar xfz SDL3-devel-$SDL3_VERSION-mingw.tar.gz
+	cd SDL3-$SDL3_VERSION
+		cp $host/* $prefix -R
+	cd ..
+	touch $prefix/build-SDL3-$SDL3_VERSION
+fi
 
 ########## BROTLI ##########, only needed for 32bit, unsure why
-dirs=`ls -d */|cut -f1|grep 'brotli-*'` && rm -Rf $dirs
-if test "$host" == "i686-w64-mingw32"; then
-  $WGET https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz
-  tar xfz brotli-$BROTLI_VERSION.tar.gz
-  cd brotli-$BROTLI_VERSION
-  do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
-  cd ..
+if ! test -f $prefix/build-brotli-$BROTLI_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'brotli-*'` && rm -Rf $dirs
+	if test "$host" == "i686-w64-mingw32"; then
+		$WGET https://github.com/google/brotli/archive/refs/tags/v$BROTLI_VERSION.tar.gz -O brotli-$BROTLI_VERSION.tar.gz
+		tar xfz brotli-$BROTLI_VERSION.tar.gz
+		cd brotli-$BROTLI_VERSION
+			do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
+		cd ..
+	fi
+	touch $prefix/build-brotli-$BROTLI_VERSION
 fi
 
 ########## HARFBUZZ #########
-dirs=`ls -d */|cut -f1|grep 'harfbuzz-*'` && rm -Rf $dirs
-tar xfJ harfbuzz-$HARFBUZZ_VERSION.tar.xz
-cd harfbuzz-$HARFBUZZ_VERSION
-do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
-cd ..
+if ! test -f $prefix/build-harfbuzz-$HARFBUZZ_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'harfbuzz-*'` && rm -Rf $dirs
+	tar xfJ harfbuzz-$HARFBUZZ_VERSION.tar.xz
+	cd harfbuzz-$HARFBUZZ_VERSION
+		do_cmake -DCMAKE_CXX_FLAGS=-Wa,-mbig-obj
+	cd ..
+	touch $prefix/build-harfbuzz-$HARFBUZZ_VERSION
+fi
 
 ########## FREETYPE2 ##########
-dirs=`ls -d */|cut -f1|grep 'freetype-*'` && rm -Rf $dirs
-tar xfz freetype-$FREETYPE2_VERSION.tar.gz
-cd freetype-$FREETYPE2_VERSION
-do_cmake -DZLIB_ROOT=/usr/$host/ \
-         -DFT_DISABLE_BZIP2=TRUE
-cd ..
+if ! test -f $prefix/build-freetype2-$FREETYPE2_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'freetype-*'` && rm -Rf $dirs
+	tar xfz freetype-$FREETYPE2_VERSION.tar.gz
+		cd freetype-$FREETYPE2_VERSION
+		do_cmake -DZLIB_ROOT=/usr/$host/ -DFT_DISABLE_BZIP2=TRUE
+	cd ..
+	touch $prefix/build-freetype2-$FREETYPE2_VERSION
+fi
 
 ########## LIBDISCID ##########
-dirs=`ls -d */|cut -f1|grep 'libdiscid-*'` && rm -Rf $dirs
-unzip libdiscid-$LIBDISCID_VERSION-win.zip
-if test "$host" == "i686-w64-mingw32"; then
-  cp -r libdiscid-$LIBDISCID_VERSION-win/Win32/* $prefix/lib
-else
-  cp -r libdiscid-$LIBDISCID_VERSION-win/x64/* $prefix/lib
-fi
-cp -r libdiscid-$LIBDISCID_VERSION-win/include/discid $prefix/include
-cat <<EOF > $prefix/lib/pkgconfig/libdiscid.pc
+if ! test -f $prefix/build-libdiscid-$LIBDISCID_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libdiscid-*'` && rm -Rf $dirs
+	unzip libdiscid-$LIBDISCID_VERSION-win.zip
+	if test "$host" == "i686-w64-mingw32"; then
+		cp -r libdiscid-$LIBDISCID_VERSION-win/Win32/* $prefix/lib
+	else
+		cp -r libdiscid-$LIBDISCID_VERSION-win/x64/* $prefix/lib
+	fi
+	cp -r libdiscid-$LIBDISCID_VERSION-win/include/discid $prefix/include
+	cat <<EOF > $prefix/lib/pkgconfig/libdiscid.pc
 prefix=
 exec_prefix=
 libdir=
@@ -365,12 +398,15 @@ Requires:
 Libs: -ldiscid
 Cflags:
 EOF
+	touch $prefix/build-libdiscid-$LIBDISCID_VERSION
+fi
 
 ########## cJSON ##########
-dirs=`ls -d */|cut -f1|grep 'cJSON-*'` && rm -Rf $dirs
-tar xfz cJSON-$CJSON_VERSION.tar.gz
-cd cJSON-$CJSON_VERSION
-patch -p 1 <<EOF
+if ! test -f $prefix/build-cjson-$CJSON_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'cJSON-*'` && rm -Rf $dirs
+	tar xfz cJSON-$CJSON_VERSION.tar.gz
+	cd cJSON-$CJSON_VERSION
+		patch -p 1 <<EOF
 diff -u cJSON-1.7.15-orig/cJSON.c cJSON-1.7.15/cJSON.c
 --- cJSON-1.7.15-orig/cJSON.c	2021-08-25 13:15:09.000000000 +0200
 +++ cJSON-1.7.15/cJSON.c	2023-04-08 15:46:56.341804545 +0200
@@ -413,43 +449,54 @@ diff -u cJSON-1.7.15-orig/CMakeLists.txt cJSON-1.7.15/CMakeLists.txt
              -Wwrite-strings
              -Wshadow
 EOF
-do_cmake
-cd ..
+		do_cmake
+	cd ..
+	touch $prefix/build-cjson-$CJSON_VERSION
+fi
 
 ########## ancient ##########
-dirs=`ls -d */|cut -f1|grep 'ancient-*'` && rm -Rf $dirs
-tar xfz ancient-$ANCIENT_VERSION.tar.gz
-cd ancient-$ANCIENT_VERSION
-mkdir -p m4
-cp ../ax_cxx_compile_stdcxx.m4 m4/
-cp ../ax_cxx_compile_stdcxx.m4 m4/
-cp ../ax_check_compile_flag.m4 m4/
-cp ../ax_cflags_warn_all.m4    m4/
-cp ../ax_compiler_vendor.m4    m4/
-cp ../ax_prepend_flag.m4       m4/
-cp ../ax_require_defined.m4    m4/
-aclocal -I m4
-autoreconf --install
-./configure --host $host --prefix=$prefix
-make all install
-cd ..
+if ! test -f $prefix/build-ancient-$ANCIENT_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'ancient-*'` && rm -Rf $dirs
+	tar xfz ancient-$ANCIENT_VERSION.tar.gz
+	cd ancient-$ANCIENT_VERSION
+		mkdir -p m4
+		cp ../ax_cxx_compile_stdcxx.m4 m4/
+		cp ../ax_cxx_compile_stdcxx.m4 m4/
+		cp ../ax_check_compile_flag.m4 m4/
+		cp ../ax_cflags_warn_all.m4    m4/
+		cp ../ax_compiler_vendor.m4    m4/
+		cp ../ax_prepend_flag.m4       m4/
+		cp ../ax_require_defined.m4    m4/
+		aclocal -I m4
+		autoreconf --install
+		./configure --host $host --prefix=$prefix
+		make all install
+	cd ..
+	touch $prefix/build-ancient-$ANCIENT_VERSION
+fi
 
 ########## libiconv ##########
-dirs=`ls -d */|cut -f1|grep 'libiconv-*'` && rm -Rf $dirs
-tar xfz libiconv-$LIBICONV_VERSION.tar.gz
-cd libiconv-$LIBICONV_VERSION
-./configure --host $host --prefix=$prefix
-make all install
-cd ..
+if ! test -f $prefix/build-libiconv-$LIBICONV_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'libiconv-*'` && rm -Rf $dirs
+	tar xfz libiconv-$LIBICONV_VERSION.tar.gz
+	cd libiconv-$LIBICONV_VERSION
+		./configure --host $host --prefix=$prefix
+		make all install
+	cd ..
+	touch $prefix/build-libiconv-$LIBICONV_VERSION
+fi
 
 ########## game-music-emulator ##########
-dirs=`ls -d */|cut -f1|grep 'game-music-emu-*'` && rm -Rf $dirs
-tar xfz game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
-cd game-music-emu-$GAMEMUSICEMU_VERSION
-do_cmake -DENABLE_UBSAN=off
-cd ..
+if ! test -f $prefix/build-game-music-emu-$GAMEMUSICEMU_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'game-music-emu-*'` && rm -Rf $dirs
+	tar xfz game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz
+	cd game-music-emu-$GAMEMUSICEMU_VERSION
+		do_cmake -DENABLE_UBSAN=off
+	cd ..
+	touch $prefix/build-game-music-emu-$GAMEMUSICEMU_VERSION
+fi
 
-######### unifont ##########
+######### compile and install ##########
 
 cd ..
 ./configure \
