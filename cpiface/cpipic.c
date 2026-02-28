@@ -128,7 +128,7 @@ static void wildcard_file (void *token, struct ocpfile_t *file)
 
 #ifdef _WIN32
 		uint16_t *wfullpath = utf8_to_utf16 (fullpath);
-		fwprintf(stderr, L"background: discovered %ls%s\n", wfullpath);
+		fwprintf(stderr, L"background: discovered %ls\n", wfullpath);
 		free (wfullpath); wfullpath = 0;
 #else
 		fprintf(stderr, "background: discovered %s\n", fullpath);
