@@ -1,3 +1,41 @@
+Version 3.2.0
+=============
+Bugfixes, add SDL3 support, custom file extensions for music files and major speeds-ups for directories, ZIP and TAR files with many files.
+
+ * [SDL] Add support for SDL3 (>= 3.2.0).
+ * [mingw] Update libpng to latest version (1.6.55), and SDL from 2.x.x to to latest version (3.4.2).
+ * Update libsidplayfp to latest version, includes a faster integer SID emulator crSID.
+ * [CDA]
+  * On Linux CDROM driver - silence two valgrind warnings (non-initialized fields in IOCTL, but they are output only fields)
+  * Do not assert (and exit program) if attempting to play a DATA-only CD.
+ * [ocp.ini]
+  * Add support for extra file extensions the file-browser accepts in addition to those provided by the plugins. This can be edited from ALT-C dialog, option E.
+  * Increase the line-buffer from 1024 bytes to 65536, and also allow for up to 64K bytes of string data.
+ * [M15,M31] adjust detection to not rely on filenames ending with .MOD, inspect instrument volumes and orderlength.
+ * [NCurses] Default to the cursor being hidden.
+ * Use strverscmp when sorting files in the file-browser
+ * [SDL2/SDL3 video] If 320x200 is streetched to 640x200, request 640x400 instead so we keep the original ratio.
+ * [wurfel animation and background pictures]
+  * Search in ZIP files
+  * Allow animations to end with .ANI
+  * File discovery message needs to use fwprintf() on Windows
+  * Filenames with extensions longer or fewer than 3 characters were blindly accepted instead of rejected as background picture
+  * .spec file now sources the historically files from https mirror instead ftp
+  * Include the historically files in the windows build.
+ * [ADPLUG, SID, YM, QOA, WAV, FLAC] Master balance was inverted
+ * [XM] Improve the loader when the files have incorrect instrument sizes / samples truncated.
+ * [IT]
+  * Allow to load files with does does not contain all the sample data.
+  * Remake tracker detection for the file comment in the file-browser - based on Schism tracker source code.
+ * [dirdb] Use sorted lists and binary search instead of single-linked lists; Speeds up operations on the tree a lot.
+ * [ZIP,TAR] Directory list is now stored in a sorted list instead of linked list - and searches are now performed with binary search.
+ * [SID, Windows]
+   * If browsing ROM files outside %APPDATA%OpenCubicPlayer/Data, the resulting path did not contain a drive and had slashes in the wrong direction.
+   * If ROM filepath contained any non-ASCII characters, they would fail to open for usage in playback.
+ * [CDFS] Protect against recursive directories and high directory depths.
+ * [Archive Cache Database] BinarySearch was done 32bit instead of 64bit, causing assertion on large files.
+
+
 Version 3.1.3
 =============
 Bugfix release, and speed-up reading directories with many files

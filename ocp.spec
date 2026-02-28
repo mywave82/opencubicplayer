@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.1.3
+%define version 3.2.0
 
 Name: %{name}
 Version: %{version}
@@ -34,121 +34,56 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
-Changes from version 3.1.2 to 3.1.3:
- * [Windows] Update build dependencies to latest available releases
- * utf8_casefold()
-   * Table for single- to single-point lookup is now done with a binarysearch,
-     increasing the speed a lot when there are many files to add in the
-     filebrowser view.
-   * Update tables to Unicode 17
- * [zip] Remove void call to dirdbUnref()
- * [X11,SDL,SDL2,curses]
-   * Unify the minimum text resolution to 80x20 (some had 80x25)
-   * Gracefully ignore the physical size can know achieve the text resolution,
-     and use virtual resolution of 80x20
-   * Some few dialogs required 80x25, add scrolling
- * [Textlayout] Do not lock-up if window grows to smaller size than supported
-   (easily happens when running in ncurses)
- * [DMF]
-   * Support sample-header for both file-version <8 and >=8
-   * Use correct buffer-size for input data if decompressing sample-data.
-   * Reject patterns with more than 512 rows (not valid in the real editor)
-   * When resizing order-list (splitting patterns with more than 256 rows into
-     2), malloc() a buffer that is larger. (Old code performed buffer overflow)
-   * Protect against buffer over/underflow when building the initial pattern-list
- * [HVL] Muting single channels, while displaying channel information caused crash
- * [669] Sample-looping did not work. Minor copy-paste error when the code was
-   made endian-neutral.
+Changes from version 3.1.3 to 3.2.0:
 
-Changes from version 3.1.1 to 3.1.2:
- * [QOA] Failed to compile on some systems.
- * [SID] Remove debug messages sent to the console
- * [FontSize control logic]
-   * Was not consistent between SDL and X11 driver.
-   * Was not possible to change away from 8x16 if window could not grow and fit
-     16x32.
-   * Help screen would reset font-size on X11. Now help screen follow to global
-     selected font size instead.
- * [Windows]
-   * OCP.INI update Messages: Do not use escape codes, use correct wide-char
-     path and refer to `del` instead of `rm`.
-   * Debug messages with paths for HomePath etc, now use wide-char paths.
-   * Use wide-char version of fopen() when opening OCP.INI (support international
-     user-names)
- * [MIDI]
-   * Font-browser dialog had minor hickup in scrolling, and incorrect highlight
-     for "No soundfont found".
-   * When file wraps, do no free data and reload the file - reuse the already
-     loaded data.
-   * Remove double free() when attempting to load an invalid MIDI fil
- * [CURL]
-   * Mention CURL in README.md and ocp.spec
-   * Improve errors-messages if unable to launch the helper program
-
-Changes from version 3.1.0 to 3.1.1:
- * [MIDI] loading files would cause crash (null dereference) if ~/.timidity.cfg
-   not present
- * Avoid using extended SED syntax in stuff/Makefile
-
-Changes from version 3.0.1 to 3.1.0:
- * Add 16x32 font, which is nice for high DPI screens. Access the setting via ALT-C.
- * [QOA] Add support for "Quite OK Audio" files
+ * [SDL] Add support for SDL3 (>= 3.2.0).
+ * [mingw] Update libpng to latest version (1.6.55), and SDL from 2.x.x to to
+   latest version (3.4.2).
+ * Update libsidplayfp to latest version, includes a faster integer SID emulator
+   crSID.
+ * [CDA]
+  * On Linux CDROM driver - silence two valgrind warnings (non-initialized
+    fields in IOCTL, but they are output only fields)
+  * Do not assert (and exit program) if attempting to play a DATA-only CD.
+ * [ocp.ini]
+  * Add support for extra file extensions the file-browser accepts in addition
+    to those provided by the plugins. This can be edited from ALT-C dialog,
+    option E.
+  * Increase the line-buffer from 1024 bytes to 65536, and also allow for up to
+    64K bytes of string data.
+ * [M15,M31] adjust detection to not rely on filenames ending with .MOD, inspect
+   instrument volumes and orderlength.
+ * [NCurses] Default to the cursor being hidden.
+ * Use strverscmp when sorting files in the file-browser
+ * [SDL2/SDL3 video] If 320x200 is streetched to 640x200, request 640x400
+   instead so we keep the original ratio.
+ * [wurfel animation and background pictures]
+  * Search in ZIP files
+  * Allow animations to end with .ANI
+  * File discovery message needs to use fwprintf() on Windows
+  * Filenames with extensions longer or fewer than 3 characters were blindly
+    accepted instead of rejected as background picture
+  * .spec file now sources the historically files from https mirror instead ftp
+  * Include the historically files in the windows build.
+ * [ADPLUG, SID, YM, QOA, WAV, FLAC] Master balance was inverted
+ * [XM] Improve the loader when the files have incorrect instrument sizes /
+   samples truncated.
  * [IT]
-   * Files created with other trackers than Impulse Tracker, was not marked
-     correctly by file-detection.
-   * Loading *.IT files with stereo samples caused random noise due to only
-     reading one channel of the stereo sample causing multiple problems.
- * [devw]
-   * Add support for playback of stereo-samples (instead of down-converting to
-     mono)
-   * If same sample could both be looped, and unlooped; minor curruption of data
-     just after the loop-end could occure under special occations.
- * [S3M] commit 5732560 made stereo-commands pan aggressivly away from center
-   (absolute + repeat relative) and "randomly" enable stereo if value was 1.
- * [XM] Make it possible to load songs that are partially truncated, missing some
-   of the sample-data.
- * [modland.com] setup dialog:
-   * select mirror: the custom editfield did not 100% match position when
-     entering edit-mode.
-   * cachedir: Add missing $ in the UI
- * Multiple updates regarding graphical modes:
-   * Remove leftovers of "gdb-helpers"
-   * Attemping to enable graphic mode needs to be able to gracefully fail, even
-     when announced present (and revert back to text)
-   * Changing fontsize, while graphical mode was enable did not have an impact on
-     the textmodes.
-   * Saving `fontsize` from ALT+C dialog did not work as expected, due to
-     `screentype` likely being another value than 8 in ocp.ini. Update
-     `screentype` value too when in this dialog to the relevant value.
-   * SDL 1.x, enabling graphical mode two times in a row (and window size did not
-     match from textmode), would cause the window to not resize correctly.
- * Remove a possible occation of strcpy where dst == src, which causes undefined
-   behaviour.
- * [Windows]
-   * Use WideChar / UTF-16 interface version of Windows filesystem API calls.
-     This should make it possible to view file names that are using non-ASCII
-     characters.
-   * Make driver letters capital and sort them infront of the other protocols in
-     the file browser.
- * [Timidity] Setup dialog for soundfonts:
-   * When selecting soundfont / configfile, give hints in the bottom of the
-     dialog about locations searched.
-   * On Windows, add "*" to the end of the path when performing directory
-     listings, to be compliant with the windows APIs.
-   * On Windows, search $OCP\data for sf2 files.
-   * On Windows, timidityplay.c didn't follow the TiMidity windows search logic.
-   * If user-override only if found for timidity.cfg, relay this in the config
-     dialog.
-   * Add file-browser in the config-dialog. Making it possible to select SF2
-     file outside the default search-scopes.
- * [adplug] Update to current master
- * [libsidplayfp] Update to current master
- * [MOD] MOD (Amiga ProTracker 1.1b), MODd (Dual Module Player) and MODt (old
-   Amiga ProTracker) now use 8287Hz as the base-freqeuncy for samples matching
-   Amiga PAL machines, while MODf (Fast Tracker II) still use 8363Hz. If a song
-   now plays the samples slightly too fast, they should be marked with MODf
-   (press <ALT>+<E> in the filebrowser, move the cursor over to "type:" and press
-   <ENTER>)
+  * Allow to load files with does does not contain all the sample data.
+  * Remake tracker detection for the file comment in the file-browser - based on
+    Schism tracker source code.
+ * [dirdb] Use sorted lists and binary search instead of single-linked lists;
+   Speeds up operations on the tree a lot.
+ * [ZIP,TAR] Directory list is now stored in a sorted list instead of linked
+   list - and searches are now performed with binary search.
+ * [SID, Windows]
+   * If browsing ROM files outside %APPDATA%OpenCubicPlayer/Data, the resulting
+     path did not contain a drive and had slashes in the wrong direction.
+   * If ROM filepath contained any non-ASCII characters, they would fail to open
+     for usage in playback.
+ * [CDFS] Protect against recursive directories and high directory depths.
+ * [Archive Cache Database] BinarySearch was done 32bit instead of 64bit,
+   causing assertion on large files.
 
 %prep
 %setup -q -n %{name}-%{version}
