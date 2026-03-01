@@ -230,6 +230,7 @@ struct cdfs_disc_t
 
 	int                                refcount;
 	//int                                iorefcount;
+	int                                recursivedirlevel;
 
 	// CDROM-AUDIO START
         void                          *musicbrainzhandle;

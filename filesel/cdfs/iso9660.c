@@ -990,6 +990,13 @@ static void CDFS_Render_ISO9660_directory (struct cdfs_disc_t *disc, struct Volu
 {
 	int i;
 
+	if (disc->recursivedirlevel >= 100)
+	{
+		fprintf (stderr, "[ISO9660] directory depth exceeding 100 levels\n");
+		return;
+	}
+	disc->recursivedirlevel++;
+
 	for (i=2; i < directory->dirents_count; i++) /* skip . and .. */
 	{
 		char *temp;
@@ -1025,6 +1032,7 @@ static void CDFS_Render_ISO9660_directory (struct cdfs_disc_t *disc, struct Volu
 		}
 		free (temp);
 	}
+	disc->recursivedirlevel++;
 }
 
 OCP_INTERNAL void CDFS_Render_ISO9660 (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "ISO9660" */
@@ -1108,6 +1116,13 @@ static void CDFS_Render_RockRidge_directory (struct cdfs_disc_t *disc, struct Vo
 {
 	int i, j;
 
+	if (disc->recursivedirlevel >= 100)
+	{
+		fprintf (stderr, "[RockRidge] directory depth exceeding 100 levels\n");
+		return;
+	}
+	disc->recursivedirlevel++;
+
 	for (i=2; i < directory->dirents_count; i++) /* skip . and .. */
 	{
 		char *temp = 0;
@@ -1172,6 +1187,7 @@ static void CDFS_Render_RockRidge_directory (struct cdfs_disc_t *disc, struct Vo
 next:
 		free (temp);
 	}
+	disc->recursivedirlevel--;
 }
 
 OCP_INTERNAL void CDFS_Render_RockRidge (struct cdfs_disc_t *disc, uint32_t parent_directory) /* parent_directory should point to "RockRidge" */
@@ -1435,6 +1451,8 @@ static int Volume_Description_DeQueue (struct cdfs_disc_t *disc, struct Volume_D
 		if (self->directories_data[i].Location == self->directory_scan_queue_data[0].Location)
 		{
 			debug_printf ("WARNING - Volume_Description_DeQueue() tried to add an entry already present\n");
+			memmove (self->directory_scan_queue_data, self->directory_scan_queue_data + 1, sizeof (self->directory_scan_queue_data[0]) * (self->directory_scan_queue_count - 1));
+			self->directory_scan_queue_count--;
 			return 0;
 		}
 		if (self->directories_data[i].Location > self->directory_scan_queue_data[0].Location)
