@@ -103,7 +103,7 @@ static struct adbMetaEntry_t *adbMetaInit_CreateBlob (const char          *filen
 	}
 
 #ifdef ADBMETA_DEBUG
-	fprintf (stderr, "adbMetaInit_CreateBlob (\"%s\", %"PRId64", \"%s\", %p, %"PRId32")\n", filename, filesize, signature, data, datasize);
+	fprintf (stderr, "adbMetaInit_CreateBlob (\"%s\", %"PRIu64", \"%s\", %p, %"PRId32")\n", filename, filesize, signature, data, datasize);
 #endif
 
 	retval->filename = (char *)&(retval[1]);
@@ -272,6 +272,16 @@ fillmore:
 	return 0;
 }
 
+static int adbMeta_cmp (const void *_a, const void *_b)
+{
+	const struct adbMetaEntry_t * const *a = _a;
+	const struct adbMetaEntry_t * const *b = _b;
+
+	if (a[0]->filesize > b[0]->filesize) return 1;
+	if (a[0]->filesize < b[0]->filesize) return -1;
+	return 0;
+}
+
 int adbMetaInit (const struct configAPI_t *configAPI)
 {
 	int retval;
@@ -338,6 +348,11 @@ int adbMetaInit (const struct configAPI_t *configAPI)
 	}
 
 	retval = adbMetaInit_ParseFd (adbMetaFile);
+
+	if (adbMetaCount > 1)
+	{
+		qsort (adbMetaEntries, adbMetaCount, sizeof (adbMetaEntries[0]), adbMeta_cmp);
+	}
 
 	osfile_purge_readahead_cache (adbMetaFile);
 
@@ -407,11 +422,11 @@ void adbMetaClose (void)
 	}
 }
 
-static uint32_t adbMetaBinarySearchFilesize (const uint32_t filesize)
+static uint32_t adbMetaBinarySearchFilesize (const uint64_t filesize)
 {
 	uint_fast32_t searchbase = 0, searchlen = adbMetaCount;
-
-//	fprintf (stderr, "\n SEARCH %d..\n", (int)filesize);
+//	int i;
+//	fprintf (stderr, "\n SEARCH %"PRIu64"..\n", filesize);
 
 	if (adbMetaCount == 0)
 	{
@@ -422,13 +437,11 @@ static uint32_t adbMetaBinarySearchFilesize (const uint32_t filesize)
 	{
 		uint_fast32_t halfmark;
 
-//		int i;
-
 		halfmark = searchlen >> 1;
 
 //		for (i=0; i < searchlen; i++)
 //		{
-//			fprintf (stderr, " %d(%d)%s ", (int)(adbMetaEntries[searchbase + i]->filesize), (int)(searchbase + i), (i == halfmark)?"*":"");
+//			fprintf (stderr, " %"PRIu64"(%d)%s ", adbMetaEntries[searchbase + i]->filesize, (int)(searchbase + i), (i == halfmark)?"*":"");
 //		}
 //		fprintf (stderr, "\n");
 
@@ -439,14 +452,13 @@ static uint32_t adbMetaBinarySearchFilesize (const uint32_t filesize)
 		} else {
 			searchlen = halfmark;
 		}
-
-//		for (i=0; i < searchlen; i++)
-//		{
-//			fprintf (stderr, " %d(%d) ", (int)(adbMetaEntries[searchbase + i]->filesize), (int)(searchbase + i));
-//		}
-//		fprintf (stderr, "\n\n");
-
 	}
+
+//	for (i=0; i < searchlen; i++)
+//	{
+//		fprintf (stderr, " %"PRIu64"(%d) ", adbMetaEntries[searchbase + i]->filesize, (int)(searchbase + i));
+//	}
+//	fprintf (stderr, "\n");
 
 	/* fine-tune the position */
 	if (searchbase < adbMetaCount)
@@ -459,9 +471,11 @@ static uint32_t adbMetaBinarySearchFilesize (const uint32_t filesize)
 */
 		if (adbMetaEntries[searchbase]->filesize < filesize)
 		{
+//			fprintf (stderr, "Finetune += 1\n");
 			searchbase++;
 		}
 	}
+//	fprintf (stderr, "\n");
 
 	return searchbase;
 }
