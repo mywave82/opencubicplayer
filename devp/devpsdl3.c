@@ -68,6 +68,7 @@ static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver, cons
 	{
 		int i, n;
 		const char *current_driver = SDL_GetCurrentAudioDriver ();
+		SDL_AudioDeviceID *devices;
 
 		if (!current_driver) current_driver = ""; /* should never happen */
 
@@ -78,14 +79,18 @@ static const struct plrDevAPI_t *sdlInit (const struct plrDriver_t *driver, cons
 			fprintf (stderr, "   %s %s\n", strcmp (iter, current_driver) ? "          " : "(selected)", iter);
 		}
 
-		n = SDL_GetNumAudioDevices (0);
-		if (n > 0)
+		n = 0;
+		devices = SDL_GetAudioPlaybackDevices(&n);
+		if (devices)
 		{
+			SDL_AudioDeviceID *iter;
 			fprintf (stderr, "[SDL] Audio devices:\n");
-			for (i=0; i < n; i++)
+			for (iter = devices; *iter; iter++)
 			{
-				fprintf (stderr, "   Audio device %d: %s\n", i, SDL_GetAudioDeviceName (i, 0));
+				fprintf (stderr, "   Audio device %d: %s\n", *iter, SDL_GetAudioDeviceName (*iter));
 			}
+			SDL_free (devices);
+			devices = 0;
 		}
 	}
 #else

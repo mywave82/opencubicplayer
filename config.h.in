@@ -207,6 +207,7 @@
 /* #define COREAUDIO_DEBUG 1 */
 /* #define SDL_DEBUG 1 */
 /* #define SDL2_DEBUG 1 */
+/* #define SDL3_DEBUG 1 */
 /* #define CPIFACE_DEBUG 1 */
 /* #define PNG_DEBUG 1 */
 /* #define JPEG_DEBUG 1 */

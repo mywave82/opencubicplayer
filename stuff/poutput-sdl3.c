@@ -23,10 +23,12 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <time.h>
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_version.h>
 #include <SDL3/SDL_video.h>
 #include "types.h"
 #include "boot/console.h"
@@ -1301,7 +1303,6 @@ static int ekbhit_sdl3dummy(void)
 			}
 
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-#warning TODO SDL_EVENT_MOUSE_WHEEL
 			{
 #ifdef SDL3_DEBUG
 				fprintf(stderr, "[SDL3-video] SDL_EVENT_MOUSE_BUTTON_DOWN\n");
@@ -1319,17 +1320,59 @@ static int ekbhit_sdl3dummy(void)
 					case 3:
 						set_state (!current_fullsceen, Console.GraphBytesPerLine, Console.GraphLines, 0);
 						break;
-
-					case 4:
-						___push_key(KEY_UP);
-						break;
-
-					case 5:
-						___push_key(KEY_DOWN);
-						break;
 				}
 				break;
 			}
+
+			case SDL_EVENT_MOUSE_WHEEL:
+			{
+				int i;
+#ifdef SDL3_DEBUG
+				fprintf(stderr, "[SDL3-video] SDL_EVENT_MOUSE_WHEEL\n");
+				fprintf(stderr, "              x: %f\n", event.wheel.x);
+				fprintf(stderr, "              y: %f\n", event.wheel.y);
+#if SDL_VERSION_ATLEAST(3,2,12)
+				fprintf(stderr, "              integer_x: %d\n", event.wheel.integer_x);
+				fprintf(stderr, "              integer_y: %d\n", event.wheel.integer_y);
+#endif
+				fprintf(stderr, "              mouse x,y: %f, %f\n", event.wheel.mouse_x, event.wheel.mouse_y);
+#endif
+
+#if SDL_VERSION_ATLEAST(3,2,12)
+				if (event.wheel.integer_y > 0)
+				{
+					for (i = 0; i < event.wheel.integer_y; i++)
+					{
+						___push_key (KEY_UP);
+					}
+				} else if (event.wheel.integer_y < 0)
+				{
+					for (i = 0; i > event.wheel.integer_y; i--)
+					{
+						___push_key (KEY_DOWN);
+					}
+				}
+#else
+				{
+					int integer_y = (int)round(event.wheel.y);
+					if (integer_y > 0)
+					{
+						for (i = 0; i < integer_y; i++)
+						{
+							___push_key (KEY_UP);
+						}
+					} else if (integer_y < 0)
+					{
+						for (i = 0; i > integer_y; i--)
+						{
+							___push_key (KEY_DOWN);
+						}
+					}
+				}
+#endif
+				break;
+			}
+
 			case SDL_EVENT_TEXT_EDITING:
 #ifdef SDL3_DEBUG
 				fprintf(stderr, "[SDL3-video] SDL_EVENT_TEXT_EDITING\n");
@@ -1569,6 +1612,7 @@ int sdl3_init(void)
 	SDL_SetEventEnabled (SDL_EVENT_WINDOW_RESIZED, true);
 	SDL_SetEventEnabled (SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED, true);
 	SDL_SetEventEnabled (SDL_EVENT_MOUSE_BUTTON_DOWN, true);
+	SDL_SetEventEnabled (SDL_EVENT_MOUSE_WHEEL, true);
 	SDL_SetEventEnabled (SDL_EVENT_TEXT_EDITING, true);
 	SDL_SetEventEnabled (SDL_EVENT_TEXT_INPUT, true);
 	SDL_SetEventEnabled (SDL_EVENT_KEY_UP, true);
