@@ -114,7 +114,7 @@ static unsigned int plWinFirstLine, plWinHeight, plHelpHeight, plHelpScroll;
 static const uint32_t  Helpfile_ID=1213219663;
 static const uint32_t  Helpfile_Ver=0x011000;
 static uint32_t   Helppages;
-static int        HelpfileErr=hlpErrNoFile;
+static int        HelpfileErr=hlpErrNotInitialized;
 static helppage  *Page, *curpage;
 static help_link *curlink;
 static int        link_ind;
@@ -631,16 +631,22 @@ void brDisplayHelp(void)
 			case hlpErrTooNew:
 				strcat(errormsg, "Helpfile version is too new. Please update.");
 				break;
+			case hlpErrNotInitialized:
+				strcat(errormsg, "hlpGlobalInit() not executed yet");
+				break;
+			case hlpErrShutdown:
+				strcat(errormsg, "hlpGlobalClose() executed");
+				break;
 			default:
 				strcat(errormsg, "Currently undefined help error");
 		};
 
-		displayvoid(plWinFirstLine, 0, CONSOLE_MAX_X);
+		displayvoid(plWinFirstLine, 0, plScrWidth);
 
 		displaystr(plWinFirstLine+1, 4, 0x04, errormsg, 74);
 
 		for (y=2; y<plWinHeight; y++)
-			displayvoid(y+plWinFirstLine, 0, CONSOLE_MAX_X);
+			displayvoid(y+plWinFirstLine, 0, plScrWidth);
 	} else {
 		int addx = (plScrWidth - 80) / 2;
 		for (y=0; y<plWinHeight; y++)
@@ -944,7 +950,7 @@ void hlpFreePages(void)
 	curlink=NULL;
 
 	Helppages=link_ind=0;
-	HelpfileErr=hlpErrNoFile;
+	HelpfileErr=hlpErrShutdown;
 }
 
 static void hlpGlobalClose (struct PluginCloseAPI_t *API)

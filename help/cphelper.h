@@ -32,10 +32,13 @@ typedef struct     helppage {
 	uint32_t   size, lines;
 } helppage;
 
-#define hlpErrOk       0
-#define hlpErrNoFile   1
-#define hlpErrBadFile  2
-#define hlpErrTooNew   3
+#define hlpErrOk             0
+#define hlpErrNoFile         1
+#define hlpErrBadFile        2
+#define hlpErrTooNew         3
+#define hlpErrNotInitialized 4
+#define hlpErrShutdown       5
+
 
 extern helppage *brDecodeRef(char *name);
 extern void brRenderPage(helppage *pg);
