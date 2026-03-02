@@ -548,7 +548,7 @@ AC_SUBST(SDL3_CFLAGS)
 AC_SUBST(SDL3_LIBS)
 AC_SUBST(HAVE_SDL3)
 AS_IF([test "x$with_sdl3" != "xno"], [
-	PKG_CHECK_MODULES([SDL3], [sdl3], [with_sdl3=yes;with_sdl2=no;with_sdl=no], AS_IF([test "x$with_sdl3" = "xyes"], [AC_MSG_ERROR("libSDL3 was not found")]))
+	PKG_CHECK_MODULES([SDL3], [sdl3], [with_sdl3=yes;with_sdl2=no;with_sdl=no], [AS_IF([test "x$with_sdl3" = "xyes"], [AC_MSG_ERROR("libSDL3 was not found")]);with_sdl3=no])
 ])
 
 AS_IF([test "x$with_sdl3" = "xno"],

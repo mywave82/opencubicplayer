@@ -12531,14 +12531,14 @@ fi
 	if test "x$with_sdl3" = "xyes"
 then :
   as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
-fi
+fi;with_sdl3=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	if test "x$with_sdl3" = "xyes"
 then :
   as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
-fi
+fi;with_sdl3=no
 else
 	SDL3_CFLAGS=$pkg_cv_SDL3_CFLAGS
 	SDL3_LIBS=$pkg_cv_SDL3_LIBS
