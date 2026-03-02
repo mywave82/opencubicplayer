@@ -2405,7 +2405,7 @@ static void fsEditRegisterExt(void)
 	}
 
 superbreak:
-Repaint:
+Repaint: ;
 	int mlWidth = 80;
 	int mlHeight = plScrHeight - 3;
 	int mlTop = 2;
