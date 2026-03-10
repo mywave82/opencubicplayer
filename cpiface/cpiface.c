@@ -2491,12 +2491,15 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			cpiKeyHelp('8', "Select and toggle channel 8 on/off");
 			cpiKeyHelp('9', "Select and toggle channel 9 on/off");
 			cpiKeyHelp('0', "Select and toggle channel 10 on/off");
-			cpiKeyHelp('Q', "Toggle selected channel on/off");
-			cpiKeyHelp('q', "Toggle selected channel on/off");
-			cpiKeyHelp('s', "Toggle solo on selected channel on/off");
-			cpiKeyHelp('S', "Toggle solo on selected channel on/off");
-			cpiKeyHelp(KEY_CTRL_S, "Enable all channels");
-			cpiKeyHelp(KEY_CTRL_Q, "Enable all channels");
+			if (cpifaceSession->SetMuteChannel)
+			{
+				cpiKeyHelp('Q', "Toggle selected channel on/off");
+				cpiKeyHelp('q', "Toggle selected channel on/off");
+				cpiKeyHelp('s', "Toggle solo on selected channel on/off");
+				cpiKeyHelp('S', "Toggle solo on selected channel on/off");
+				cpiKeyHelp(KEY_CTRL_S, "Enable all channels");
+				cpiKeyHelp(KEY_CTRL_Q, "Enable all channels");
+			}
 			return 0;
 		case KEY_LEFT:
 			if (cpifaceSession->SelectedChannel)
@@ -2535,37 +2538,45 @@ static int cpiChanProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16
 			if (key >= cpifaceSession->LogicalChannelCount)
 				break;
 			cpifaceSession->SelectedChannel = key;
-
+			/* fall-through */
 		case 'q': case 'Q':
-			cpifaceSession->SetMuteChannel (cpifaceSession, cpifaceSession->SelectedChannel, !cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]);
-			cpifaceSession->SelectedChannelChanged = 1;
+			if (cpifaceSession->SetMuteChannel)
+			{
+				cpifaceSession->SetMuteChannel (cpifaceSession, cpifaceSession->SelectedChannel, !cpifaceSession->MuteChannel[cpifaceSession->SelectedChannel]);
+				cpifaceSession->SelectedChannelChanged = 1;
+			}
 			break;
 
 		case 's': case 'S':
-			if (cpifaceSession->SelectedChannel == soloch)
+			if (cpifaceSession->SetMuteChannel)
+			{
+				if (cpifaceSession->SelectedChannel == soloch)
+				{
+					for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
+					{
+						cpifaceSession->SetMuteChannel (cpifaceSession, i, 0);
+					}
+					soloch=-1;
+				} else {
+					for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
+					{
+						cpifaceSession->SetMuteChannel (cpifaceSession, i, i != cpifaceSession->SelectedChannel);
+					}
+					soloch = cpifaceSession->SelectedChannel;
+				}
+				cpifaceSession->SelectedChannelChanged = 1;
+			}
+			break;
+		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
+			if (cpifaceSession->SetMuteChannel)
 			{
 				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
 				{
 					cpifaceSession->SetMuteChannel (cpifaceSession, i, 0);
 				}
 				soloch=-1;
-			} else {
-				for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
-				{
-					cpifaceSession->SetMuteChannel (cpifaceSession, i, i != cpifaceSession->SelectedChannel);
-				}
-				soloch = cpifaceSession->SelectedChannel;
+				cpifaceSession->SelectedChannelChanged = 1;
 			}
-			cpifaceSession->SelectedChannelChanged = 1;
-			break;
-
-		case KEY_CTRL_Q: case KEY_CTRL_S: /* TODO-keys*/
-			for (i=0; i < cpifaceSession->LogicalChannelCount; i++)
-			{
-				cpifaceSession->SetMuteChannel (cpifaceSession, i, 0);
-			}
-			soloch=-1;
-			cpifaceSession->SelectedChannelChanged = 1;
 			break;
 		default:
 			return 0;
@@ -2640,9 +2651,6 @@ static interfaceReturnEnum plmpDrawScreen(void)
 			}
 		}
 
-#ifdef DEBUG
-		DEBUGINT(key);
-#endif
 
 		if (key == KEY_ALT_K)
 		{
