@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Check for latest version of external packages
 #
 # Known to work at Ubuntu 23.04

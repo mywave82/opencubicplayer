@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Cross compile for windows from Linux:
 #
 # Known to work at Ubuntu 23.04
