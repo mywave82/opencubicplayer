@@ -426,7 +426,7 @@ static void cdSetSpeed (unsigned short sp)
 	cdbufrate=imuldiv(256*sp, 44100, cdRate);
 }
 
-static void cdSetVolume()
+static void cdSetVolume (void)
 {
 	volr = voll = vol * 4;
 	if (bal < 0)
