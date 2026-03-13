@@ -1,0 +1,509 @@
+/* OpenCP Module Player
+ * copyright (c) 2005-'26 Stian Skjelstad <stian.skjelstad@gmail.com>
+ *
+ * AYPlay interface routines
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ * revision history: (please note changes here)
+ *  -sss051202   Stian Skjelstad <stian@nixia.no>
+ *    -first release
+ */
+
+#include "config.h"
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+#include "types.h"
+#include "sndhplay.h"
+#include "sndhtype.h"
+#include "boot/plinkman.h"
+#include "cpiface/cpiface.h"
+#include "dev/player.h"
+#include "filesel/dirdb.h"
+#include "filesel/filesystem.h"
+#include "filesel/mdb.h"
+#include "filesel/pfilesel.h"
+#include "stuff/compat.h"
+#include "stuff/err.h"
+#include "stuff/poutput.h"
+#include "stuff/sets.h"
+
+static void sndhCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	sndhTrackDone (cpifaceSession);
+	sndhClosePlayer (cpifaceSession);
+}
+
+static int sndhLooped (struct cpifaceSessionAPI_t *cpifaceSession, int LoopMod)
+{
+	sndhSetLoop (LoopMod);
+	sndhIdle (cpifaceSession);
+	return (!LoopMod) && sndhIsLooped();
+}
+
+static void sndhDrawGStrings (struct cpifaceSessionAPI_t *cpifaceSession)
+{
+	struct sndhStat_t stat;
+	sndhStat (&stat);
+
+	cpifaceSession->drawHelperAPI->GStringsSongXofY
+	(
+		cpifaceSession,
+		stat.SubTune_active,
+		stat.SubTunes
+	);
+}
+
+static char convnote(long freq)
+{
+	if (!freq) return (char)0xff;
+
+	float frfac=(float)freq/220.0;
+
+	float nte=12*(log(frfac)/log(2))+48;
+
+	if (nte<0 || nte>127) nte=0xff;
+	return (char)nte;
+}
+
+/*
+static void logvolbar(int *l, int *r)
+{
+	if ((*l)>32)
+		(*l)=32+(((*l)-32)>>1);
+	if ((*l)>48)
+		(*l)=48+(((*l)-48)>>1);
+	if ((*l)>56)
+		(*l)=56+(((*l)-56)>>1);
+	if ((*l)>64)
+		(*l)=64;
+	if ((*r)>32)
+		(*r)=32+(((*r)-32)>>1);
+	if ((*r)>48)
+		(*r)=48+(((*r)-48)>>1);
+	if ((*r)>56)
+		(*r)=56+(((*r)-56)>>1);
+	if ((*r)>64)
+		(*r)=64;
+}
+*/
+static void drawvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int l, int r, unsigned char st)
+{
+	/* logvolbar(&l, &r); */
+	l=(l+4)>>3;
+	r=(r+4)>>3;
+
+	if (cpifaceSession->InPause)
+	{
+		l=r=0;
+	}
+	if (st > 1)
+	{
+		cpifaceSession->console->WriteString (buf, 0, 0x08, "        ", 8);
+		cpifaceSession->console->WriteString (buf, 9, 0x08, "        ", 8);
+	} else if (st)
+	{
+		cpifaceSession->console->WriteString (buf, 8-l, 0x08, "\376\376\376\376\376\376\376\376", l);
+		cpifaceSession->console->WriteString (buf, 9, 0x08, "\376\376\376\376\376\376\376\376", r);
+	} else {
+		uint16_t left[] =  {0x0ffe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe};
+		uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0ffe};
+		cpifaceSession->console->WriteStringAttr (buf, 8-l, left+8-l, l);
+		cpifaceSession->console->WriteStringAttr (buf, 9, right, r);
+	}
+}
+
+static void drawlongvolbar (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, int l, int r, unsigned char st)
+{
+	/* logvolbar(&l, &r); */
+	l=(l+2)>>2;
+	r=(r+2)>>2;
+	if (cpifaceSession->InPause)
+	{
+		l=r=0;
+	}
+	if (st > 1)
+	{
+		cpifaceSession->console->WriteString (buf,  0,   0x08, "                ", 16);
+		cpifaceSession->console->WriteString (buf, 17,   0x08, "                ", 16);
+	} else if (st)
+	{
+		cpifaceSession->console->WriteString (buf, 16-l, 0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", l);
+		cpifaceSession->console->WriteString (buf, 17,   0x08, "\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376\376", r);
+	} else {
+		uint16_t left[] =  {0x0ffe, 0x0ffe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe};
+		uint16_t right[] = {0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x01fe, 0x09fe, 0x09fe, 0x09fe, 0x09fe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0bfe, 0x0ffe, 0x0ffe};
+		cpifaceSession->console->WriteStringAttr (buf, 16-l, left+16-l, l);
+		cpifaceSession->console->WriteStringAttr (buf, 17,   right, r);
+	}
+}
+
+static void drawchannel (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t *buf, enum cpiChanWidth width, int i, int compoMode)
+{
+	int vol, voll, volr;
+	int env = 0;
+        unsigned char st = cpifaceSession->MuteChannel[i]; /* TODO */
+
+        unsigned char tcol=st?0x08:0x0F;
+        unsigned char tcold=st?0x08:0x07;
+
+	unsigned char channel_mode=0;
+	int freq=0;
+
+	const char *waves4 []= {"t+s ", "nois", "tone", "    ", "gene",
+	"\\___",  /* 0 0 0 0 */
+	"\\___",  /* 0 0 0 1 */
+	"\\___",  /* 0 0 1 0 */
+	"\\___",  /* 0 0 1 1 */
+	"/|__",   /* 0 1 0 0 */
+	"/|__",   /* 0 1 0 1 */
+	"/|__",   /* 0 1 1 0 */
+	"/|__",   /* 0 1 1 1 */
+	"\\|\\|", /* 1 0 0 0 */
+	"\\___",  /* 1 0 0 1 */
+	"\\/\\/", /* 1 0 1 0 */
+	"\\|--",  /* 1 0 1 1 */
+	"/|/|",   /* 1 1 0 0 */
+	"/---",   /* 1 1 0 1 */
+	"\\/\\/", /* 1 1 1 0 */
+	"/|__",   /* 1 1 1 1 */
+	"p:  ",
+	"p:m ",
+	"p:  ",
+	"p:ml",
+	"p:  ",
+	"p:s ",
+	"p:  ",
+	"p:sl",
+	};
+	const char *waves16[]= {"tone+noise      ", "noise           ", "tone            ", "                ", "noise generator ",
+	"env:falling     ", /* 0 0 0 0 */
+	"env:falling     ", /* 0 0 0 1 */
+	"env:falling     ", /* 0 0 1 0 */
+	"env:falling     ", /* 0 0 1 1 */
+	"env:pos spike   ", /* 0 1 0 0 */
+	"env:pos spike   ", /* 0 1 0 1 */
+	"env:pos spike   ", /* 0 1 1 0 */
+	"env:pos spike   ", /* 0 1 1 1 */
+	"env:falling saw ", /* 1 0 0 0 */
+	"env:falling     ", /* 1 0 0 1 */
+	"env:saw         ", /* 1 0 1 0 */
+	"env:neg spike   ", /* 1 0 1 1 */
+	"env:rising saw  ", /* 1 1 0 0 */
+	"env:rising      ", /* 1 1 0 1 */
+	"env:saw         ", /* 1 1 1 0 */
+	"env:spike       ", /* 1 1 1 1 */
+	"pcm:            ",
+	"pcm:mono        ",
+	"pcm:            ",
+	"pcm:mono loop   ",
+	"pcm:            ",
+	"pcm:stereo      ",
+	"pcm:            ",
+	"pcm:stereo loop ",
+	};
+/*
+	const char *waves4 []= {"sine", "half", "2x  ", "saw "};
+	const char *waves16[]= {"sine curves     ", "half sine curves", "positiv sines   ", "sawtooth        "};*/
+	struct channel_info_t *info = sndhRegisters();
+
+	switch (i)
+	{
+		case 0:
+			freq = info->frequency_a;
+			voll = volr = info->power_a;
+			vol = info->level_a & 15;
+			if (info->level_a & 16)
+				env = 1;
+			channel_mode = (info->mixer_control & 1) | ((info->mixer_control >> 2)&2);
+			//if (channel_mode==3)
+			//	voll = volr = 0;
+			break;
+		case 1:
+			freq = info->frequency_b;
+			voll = volr = info->power_b;
+			vol = info->level_b & 15;
+			if (info->level_b & 16)
+				env = 1;
+			channel_mode = ((info->mixer_control>>1) & 1) | ((info->mixer_control >> 3)&2);
+			//if (channel_mode==3)
+			//	voll = volr = 0;
+			break;
+		case 2:
+			freq = info->frequency_c;
+			voll = volr = info->power_c;
+			vol = info->level_c & 15;
+			if (info->level_c & 16)
+				env = 1;
+			channel_mode = ((info->mixer_control>>2) & 1) | ((info->mixer_control >> 4)&2);
+			//if (channel_mode==3)
+			//	voll = volr = 0;
+			break;
+		case 3:
+			freq = info->frequency_noise;
+			voll = volr = 0;
+			vol = -1;
+			st = 2;
+			channel_mode = 4;
+			break;
+		case 4:
+			freq = info->frequency_envelope;
+			voll = volr = 0;
+			vol = -1;
+			st = 2;
+			channel_mode = 5+info->envelope_shape;
+			break;
+		case 5:
+			freq = info->dma_samplerate;
+			voll = info->power_l;
+			volr = info->power_r;
+			vol = -1;
+			st = 0;
+			channel_mode = 21 + (info->dma_active_and_repeat_and_mono & 0x07);
+			break;
+
+	}
+
+	switch (width)
+	{
+		case cpiChanWidth_36:
+			cpifaceSession->console->WriteString (buf, 0, tcold, " ---- --- -- - -- \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 36);
+			break;
+		case cpiChanWidth_62:
+			cpifaceSession->console->WriteString (buf, 0, tcold, " ---------------- ---- --- --- --- -------  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 62);
+			break;
+		case cpiChanWidth_128:
+			cpifaceSession->console->WriteString (buf, 0, tcold, "                   \263        \263       \263       \263                \263               \263   \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", 128);
+			break;
+		case cpiChanWidth_76:
+			cpifaceSession->console->WriteString (buf, 0, tcold, "                  \263      \263     \263     \263     \263             \263 \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372", 76);
+			break;
+		case cpiChanWidth_44:
+			cpifaceSession->console->WriteString (buf, 0, tcold, " ---- ---- --- -- --- --  \372\372\372\372\372\372\372\372 \372\372\372\372\372\372\372\372 ", 44);
+
+		break;
+	}
+
+	uint8_t nte=i < 4 ? convnote(freq) : 0xff;
+	char nchar[4];
+
+	if (nte<0xFF)
+	{
+		nchar[0]="CCDDEFFGGAAB"[nte%12];
+		nchar[1]="-#-#--#-#-#-"[nte%12];
+		nchar[2]="0123456789ABCDEFGHIJKLMN"[nte/12];
+		nchar[3]=0;
+	} else
+		strcpy(nchar,"   ");
+
+	switch (width)
+	{
+		case cpiChanWidth_36:
+			cpifaceSession->console->WriteString (buf+1, 0, tcol, waves4[channel_mode], 4);
+			cpifaceSession->console->WriteString (buf+6, 0, tcol, nchar, 3);
+			if (env)
+				cpifaceSession->console->WriteString (buf+10, 0, tcol, "En", 2);
+			if (vol >= 0)
+				cpifaceSession->console->WriteNum (buf+15, 0, tcol, vol, 10, 2, 0);
+			/*
+			if (ci.filtenabled && ftype)
+				cpifaceSession->console->WriteNum (buf+13, 0, tcol, ftype, 16, 1, 0);
+			*/
+			drawvolbar (cpifaceSession, buf+18, voll, volr, st);
+			break;
+		case cpiChanWidth_44:
+			cpifaceSession->console->WriteString (buf+1, 0, tcol, waves4[channel_mode], 4);
+/*
+			cpifaceSession->console->WriteNum (buf+6, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf+8, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->console->WriteString (buf+11, 0, tcol, nchar, 3);
+			if (env)
+				cpifaceSession->console->WriteString (buf+15, 0, tcol, "En", 2);
+			if (vol >= 0)
+				cpifaceSession->console->WriteNum (buf+22, 0, tcol, vol, 10, 2, 0);
+			/*
+			if (ci.filtenabled && ftype)
+				cpifaceSession->console->WriteString (buf+18, 0, tcol, filters3[ftype], 3);
+			*/
+			drawvolbar (cpifaceSession, buf+26, voll, volr, st);
+			break;
+		case cpiChanWidth_62:
+			cpifaceSession->console->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
+/*
+			cpifaceSession->console->WriteNum (buf+18, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf+20, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->console->WriteString (buf+23, 0, tcol, nchar, 3);
+
+			if (env)
+				cpifaceSession->console->WriteString (buf+27, 0, tcol, "Env", 3);
+			if (vol >= 0)
+			{
+				cpifaceSession->console->WriteString (buf+31, 0, tcol, " ", 1);
+				cpifaceSession->console->WriteNum (buf+32, 0, tcol, vol, 10, 2, 0);
+			}
+			/*
+			if (ci.filtenabled && ftype)
+				cpifaceSession->console->WriteString (buf+31, 0, tcol, filters3[ftype], 3);
+			*/
+			drawvolbar (cpifaceSession, buf+44, voll, volr, st);
+			break;
+		case cpiChanWidth_76:
+			cpifaceSession->console->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
+			if (freq)
+			{
+				cpifaceSession->console->WriteNum (buf+19, 0, tcol, freq, 10, 6, 0);
+			}
+/*
+			cpifaceSession->console->WriteNum (buf+20, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf+22, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->console->WriteString (buf+27, 0, tcol, nchar, 3);
+			if (env)
+				cpifaceSession->console->WriteString (buf+33, 0, tcol, "Env", 3);
+			if (vol >= 0)
+				cpifaceSession->console->WriteNum (buf+40, 0, tcol, vol, 10, 2, 0);
+			/*
+			if (ci.filtenabled && ftype)
+				cpifaceSession->console->WriteString (buf+39, 0, tcol, filters3[ftype], 3);
+			*/
+			drawvolbar (cpifaceSession, buf+59, voll, volr, st);
+			break;
+		case cpiChanWidth_128:
+			cpifaceSession->console->WriteString (buf+1, 0, tcol, waves16[channel_mode], 16);
+			if (freq)
+			{
+				cpifaceSession->console->WriteNum (buf+21, 0, tcol, freq, 10, 6, 0);
+			}
+/*
+			cpifaceSession->console->WriteNum (buf+22, 0, tcol, ci.ad, 16, 2, 0);
+			cpifaceSession->console->WriteNum (buf+24, 0, tcol, ci.sr, 16, 2, 0);*/
+			cpifaceSession->console->WriteString (buf+31, 0, tcol, nchar, 3);
+			if (env)
+				cpifaceSession->console->WriteString (buf+39, 0, tcol, "Env", 3);
+			if (vol >= 0)
+				cpifaceSession->console->WriteNum (buf+52, 0, tcol, vol, 10, 2, 0);
+			/*
+			if (ci.filtenabled && ftype)
+				cpifaceSession->console->WriteString (buf+47, 0, tcol, filters12[ftype], 12);
+			*/
+			drawlongvolbar (cpifaceSession, buf+81, voll, volr, st);
+			break;
+	}
+}
+
+static int sndhProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
+{
+	struct sndhStat_t stat;
+	sndhStat (&stat);
+
+	switch (key)
+	{
+		case KEY_ALT_K:
+			cpifaceSession->KeyHelp ('p', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp ('P', "Start/stop pause with fade");
+			cpifaceSession->KeyHelp (KEY_CTRL_HOME, "Restart Song");
+			cpifaceSession->KeyHelp (KEY_CTRL_P, "Start/stop pause");
+			cpifaceSession->KeyHelp ('<', "Jump to previous track");
+			cpifaceSession->KeyHelp (KEY_CTRL_LEFT, "Jump to previous track");
+			cpifaceSession->KeyHelp ('>', "Jump to next track");
+			cpifaceSession->KeyHelp (KEY_CTRL_RIGHT, "Jump to next track");
+			return 0;
+		case 'p': case 'P':
+			cpifaceSession->TogglePauseFade (cpifaceSession);
+			break;
+		case KEY_CTRL_P:
+			cpifaceSession->TogglePause (cpifaceSession);
+			break;
+		case KEY_CTRL_HOME:
+			sndhStartTune (cpifaceSession, stat.SubTune_onqueue);
+			cpifaceSession->ResetSongTimer (cpifaceSession);
+			break;
+		case '<':
+		case KEY_CTRL_LEFT: /* curses.h can't do these */
+			if (stat.SubTune_onqueue > 1)
+			{
+				sndhStartTune (cpifaceSession, stat.SubTune_onqueue - 1);
+				cpifaceSession->ResetSongTimer (cpifaceSession);
+			}
+			break;
+		case '>':
+		case KEY_CTRL_RIGHT: /* curses.h can't do these */
+			if (stat.SubTune_onqueue < stat.SubTunes)
+			{
+				sndhStartTune (cpifaceSession, stat.SubTune_onqueue + 1);
+				cpifaceSession->ResetSongTimer (cpifaceSession);
+			}
+			break;
+		default:
+			return 0;
+	}
+	return 1;
+}
+
+
+static int sndhOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct moduleinfostruct *info, struct ocpfilehandle_t *file)
+{
+	const char *filename;
+	int retval;
+
+	if (!file)
+		return -1;
+
+	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
+	cpifaceSession->cpiDebug (cpifaceSession, "[SNDH] loading %s...\n", filename);
+
+	cpifaceSession->IsEnd = sndhLooped;
+	cpifaceSession->ProcessKey = sndhProcessKey;
+	cpifaceSession->DrawGStrings = sndhDrawGStrings;
+
+#if 0
+	cpifaceSession->SetMuteChannel = sndhSetMute;
+#endif
+
+	if ((retval = sndhOpenPlayer(file, cpifaceSession)))
+	{
+		return retval;
+	}
+
+	cpifaceSession->InPause = 0;
+
+	cpifaceSession->LogicalChannelCount = 6;
+	cpifaceSession->PhysicalChannelCount = 5;
+
+	cpifaceSession->UseChannels (cpifaceSession, drawchannel);
+	cpifaceSession->GetPChanSample = sndhGetPChanSample;
+
+#if 0
+	cpifaceSession->SetMuteChannel = sndhMute;
+#endif
+
+	sndhTrackInit (cpifaceSession);
+
+	return errOk;
+}
+
+static int sndhPluginInit (struct PluginInitAPI_t *API)
+{
+	return sndh_type_init (API);
+}
+
+static void sndhPluginClose (struct PluginCloseAPI_t *API)
+{
+	sndh_type_done (API);
+}
+
+OCP_INTERNAL const struct cpifaceplayerstruct sndhPlayer = {"[psgplay plugin]", sndhOpenFile, sndhCloseFile};
+DLLEXTINFO_PLAYBACK_PREFIX struct linkinfostruct dllextinfo = {.name = "playsndh", .desc = "OpenCP sndhplay Player (c) 2026 Fredrik Noring & Stian Skjelstad", .ver = DLLVERSION, .sortindex = 95, .PluginInit = sndhPluginInit, .PluginClose = sndhPluginClose};

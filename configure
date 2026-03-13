@@ -644,6 +644,7 @@ ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 BUILD_DUMPTOOLS
+OD
 LIBGME_LIBS
 LIBGME_CFLAGS
 HAVE_LIBGME
@@ -678,6 +679,9 @@ X11_LIBS
 CDROM_SUPPORT
 LINUX
 HAVE_ALSA
+LIBANCIENT_SNDH_LIBS
+LIBANCIENT_SNDH_CFLAGS
+SNDH_MUSTPROVIDE_ICE
 LIBANCIENT_CXX
 LIBANCIENT_LIBS
 LIBANCIENT_CFLAGS
@@ -940,6 +944,8 @@ ALSA_CFLAGS
 ALSA_LIBS
 LIBANCIENT_CFLAGS
 LIBANCIENT_LIBS
+LIBANCIENT_SNDH_CFLAGS
+LIBANCIENT_SNDH_LIBS
 OSS_CFLAGS
 OSS_LIBS
 LIBDIROCP
@@ -1724,6 +1730,10 @@ Some influential environment variables:
               C compiler flags for LIBANCIENT, overriding pkg-config
   LIBANCIENT_LIBS
               linker flags for LIBANCIENT, overriding pkg-config
+  LIBANCIENT_SNDH_CFLAGS
+              C compiler flags for LIBANCIENT_SNDH, overriding pkg-config
+  LIBANCIENT_SNDH_LIBS
+              linker flags for LIBANCIENT_SNDH, overriding pkg-config
   OSS_CFLAGS  C compiler flags for OSS, overriding pkg-config
   OSS_LIBS    linker flags for OSS, overriding pkg-config
   LIBDIROCP   Path to OpenCubicPlayer lib files, defaults to ${libdir}/ocp
@@ -20367,6 +20377,94 @@ LIBANCIENT_CXX="$CXX"
 CXX="$origCXX"
 
 
+#SNDH needs libancient 2.3.0 or newer, else it has to provide its own ICE! decompresser
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libancient >= 2.3.0" >&5
+printf %s "checking for libancient >= 2.3.0... " >&6; }
+
+if test -n "$LIBANCIENT_SNDH_CFLAGS"; then
+    pkg_cv_LIBANCIENT_SNDH_CFLAGS="$LIBANCIENT_SNDH_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libancient >= 2.3.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libancient >= 2.3.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBANCIENT_SNDH_CFLAGS=`$PKG_CONFIG --cflags "libancient >= 2.3.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBANCIENT_SNDH_LIBS"; then
+    pkg_cv_LIBANCIENT_SNDH_LIBS="$LIBANCIENT_SNDH_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libancient >= 2.3.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libancient >= 2.3.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBANCIENT_SNDH_LIBS=`$PKG_CONFIG --libs "libancient >= 2.3.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBANCIENT_SNDH_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libancient >= 2.3.0" 2>&1`
+        else
+	        LIBANCIENT_SNDH_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libancient >= 2.3.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBANCIENT_SNDH_PKG_ERRORS" >&5
+
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: libancient < 2.3.0 detected, SNDH plugin needs to provide its own ICE decompressor" >&5
+printf "%s\n" "$as_me: libancient < 2.3.0 detected, SNDH plugin needs to provide its own ICE decompressor" >&6;}
+		printf "%s\n" "#define SNDH_MUSTPROVIDE_ICE 1" >>confdefs.h
+
+		SNDH_MUSTPROVIDE_ICE=1
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: libancient < 2.3.0 detected, SNDH plugin needs to provide its own ICE decompressor" >&5
+printf "%s\n" "$as_me: libancient < 2.3.0 detected, SNDH plugin needs to provide its own ICE decompressor" >&6;}
+		printf "%s\n" "#define SNDH_MUSTPROVIDE_ICE 1" >>confdefs.h
+
+		SNDH_MUSTPROVIDE_ICE=1
+
+else
+	LIBANCIENT_SNDH_CFLAGS=$pkg_cv_LIBANCIENT_SNDH_CFLAGS
+	LIBANCIENT_SNDH_LIBS=$pkg_cv_LIBANCIENT_SNDH_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: libancient >= 2.3.0 detected, it provides ICE decompressor needed for some SNDH files" >&5
+printf "%s\n" "$as_me: libancient >= 2.3.0 detected, it provides ICE decompressor needed for some SNDH files" >&6;};SNDH_MUSTPROVIDE_ICE=
+fi
+
+
+
 if test "x$with_alsa" = "xno"
 then :
   HAVE_ALSA=
@@ -21380,6 +21478,57 @@ else case e in #(
 
  ;;
 esac
+fi
+
+# Extract the first word of "od", so it can be a program name with args.
+set dummy od; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_path_OD+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) case $OD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_OD="$OD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_path_OD="$as_dir$ac_word$ac_exec_ext"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac ;;
+esac
+fi
+OD=$ac_cv_path_OD
+if test -n "$OD"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $OD" >&5
+printf "%s\n" "$OD" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+if test -z "$OD"
+then :
+  as_fn_error $? "od is needed for compiling sngplay used by playsndh" "$LINENO" 5
 fi
 
 if test "x$with_update_mime_database" != "xno"

@@ -164,7 +164,6 @@
 /* #define KICKSTART_DEBUG */
 /* #define ADBMETA_DEBUG */
 /* #define CDFS_DEBUG */
-/* #define PLAYTIMIDITY_DEBUG */
 /* #define ZIP_DEBUG */
 /* #define ZIP_VERBOSE */
 /* #define DIRDB_DEBUG */
@@ -195,11 +194,14 @@
 /* #define VCSA_DEBUG 1*/
 /* #define DEBUG_FRAMEBUFFER 1 */
 /* #define MDB_DEBUG 1 */
+/* #define PLAYAY_DEBUG 1 */
 /* #define PLAYMP2_DEBUG 1 */
 /* #define PLAYQOA_DEBUG 1 */
 /* #define PLAYSID_DEBUG 1 */
-/* #define PSETTING_DEBUG 1 */
+/* #define PLAYSNDH_DEBUG 1 */
+/* #define PLAYTIMIDITY_DEBUG */
 /* #define PLAYWAVE_DEBUG 1 */
+/* #define PSETTING_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */
 /* #define IT_LOAD_DEBUG 1 */
 /* #define OKT_LOAD_DEBUG 1 */
@@ -211,7 +213,6 @@
 /* #define CPIFACE_DEBUG 1 */
 /* #define PNG_DEBUG 1 */
 /* #define JPEG_DEBUG 1 */
-/* #define PLAYAY_DEBUG 1 */
 /* #define AMS_DEBUG 1 */
 /* #define ANCIENT_DEBUG 1 */
 
@@ -457,5 +458,7 @@ static inline void *memmem(const void *_haystack, size_t haystacklen,
 #undef HAVE_SYSCONF
 
 #undef HAVE_STRUCT_DIRENT_D_TYPE
+
+#undef SNDH_MUSTPROVIDE_ICE
 
 #endif

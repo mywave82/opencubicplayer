@@ -47,6 +47,7 @@
 #include "stuff/imsrtns.h"
 #include "stuff/latin1.h"
 #include "stuff/utf-16.h"
+#include "stuff/utf-8.h"
 
 #ifdef MDB_DEBUG
 #define DEBUG_PRINT(...) do { fprintf(stderr, __VA_ARGS__); } while (0)
@@ -204,6 +205,8 @@ static const struct mdbReadInfoAPI_t mdbReadInfoAPI =
 {
 	cp437_f_to_utf8_z,
 	latin1_f_to_utf8_z,
+	utf8_encoded_length,
+	utf8_encode,
 	&dirdbAPI
 };
 int mdbReadInfo (struct moduleinfostruct *m, struct ocpfilehandle_t *f)

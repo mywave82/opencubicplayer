@@ -58,6 +58,8 @@ struct mdbReadInfoAPI_t
 {
 	void (*cp437_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
 	void (*latin1_f_to_utf8_z) (const char *src, size_t srclen, char *dst, size_t dstlen);
+	int (*utf8_encoded_length) (uint32_t codepoint);
+	int (*utf8_encode) (char *dst, uint32_t code);
 	const struct dirdbAPI_t *dirdb;
 };
 

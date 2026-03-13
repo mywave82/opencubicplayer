@@ -23,3 +23,7 @@
 [submodule "playqoa/qoa-git"]
 	path = playqoa/qoa-git
 	url = https://github.com/phoboslab/qoa
+[submodule "playsndh/psgplay-git"]
+	path = playsndh/psgplay-git
+	url = https://github.com/mywave82/psgplay.git
+	branch = ocp

@@ -1000,6 +1000,17 @@ AC_SUBST(LIBANCIENT_CXX)
 LIBANCIENT_CXX="$CXX"
 CXX="$origCXX"
 
+AC_SUBST(SNDH_MUSTPROVIDE_ICE)
+#SNDH needs libancient 2.3.0 or newer, else it has to provide its own ICE! decompresser
+PKG_CHECK_MODULES([LIBANCIENT_SNDH],[libancient >= 2.3.0],
+	[AC_MSG_NOTICE([libancient >= 2.3.0 detected, it provides ICE decompressor needed for some SNDH files]);SNDH_MUSTPROVIDE_ICE=],
+	[
+		AC_MSG_NOTICE([libancient < 2.3.0 detected, SNDH plugin needs to provide its own ICE decompressor])
+		AC_DEFINE(SNDH_MUSTPROVIDE_ICE)
+		SNDH_MUSTPROVIDE_ICE=1
+	])
+
+
 AC_SUBST(HAVE_ALSA)
 AS_IF([test "x$with_alsa" = "xno"],[HAVE_ALSA=],[HAVE_ALSA=1])
 
@@ -1170,6 +1181,9 @@ AS_IF([test "x$with_libgme" = "xno"], [
 	HAVE_LIBGME=1
 	AC_DEFINE(HAVE_LIBGME)
 ])
+
+AC_PATH_PROG([OD], [od])
+AS_IF([test -z "$OD"], [AC_MSG_ERROR([od is needed for compiling sngplay used by playsndh])])
 
 AS_IF([test "x$with_update_mime_database" != "xno"],[
 	AS_IF([test "x$with_x11" != "xno" || test "x$with_sdl" != "xno" || test "x$with_sdl2" != "xno" || test "x$with_sdl3" != "xno"], [

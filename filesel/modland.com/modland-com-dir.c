@@ -318,7 +318,7 @@ static const char *known_root_directories[] =
 	// "SC68",                           /* <-- https://github.com/Zeinok/sc68 */
 	// "SCC-Musixx",
 	// "SCUMM",
-	// "SNDH",
+	"SNDH",                              /* SNDH, requires libancient 2.3.0, until files are updated (per 2026-03-12). Files are old v1.x compressed with ICE!, upstream database at https://sndh.atari.org/ are v2.2 without compression  */
 	// "SPU",
 	// "SVAr Tracker",
 	// "Sam Coupe COP";

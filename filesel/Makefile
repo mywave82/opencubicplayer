@@ -434,7 +434,8 @@ mdb.o: mdb.c \
 	../stuff/file.h \
 	../stuff/imsrtns.h \
 	../stuff/latin1.h \
-	../stuff/utf-16.h
+	../stuff/utf-16.h \
+	../stuff/utf-8.h
 	$(CC) $< -o $@ -c
 
 mdb-test$(EXE_SUFFIX): mdb-test.c \
