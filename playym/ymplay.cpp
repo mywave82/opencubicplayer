@@ -52,12 +52,20 @@ static int donotloop=1;
 /* ymIdler dumping locations */
 
 #define TIMESLOTS 128
-#define REGISTERS 10
 static struct timeslot
 {
 	int inymbuf; /* ymbuf */
 	int indevp;  /* devp */
-	uint8_t registers[REGISTERS];
+	uint16_t period_a;
+	uint16_t period_b;
+	uint16_t period_c;
+	uint8_t period_noise;
+	uint8_t mixer_control;
+	uint8_t level_a;
+	uint8_t level_b;
+	uint8_t level_c;
+	uint16_t envelope_period;
+	uint8_t envelope_shape;
 	const struct plrDevAPI_t *plrDevAPI;
 } timeslots[TIMESLOTS];
 static struct timeslot register_current_state;
@@ -312,41 +320,52 @@ static struct channel_info_t Registers;
 static void register_delay_callback_from_devp (void *arg, int samples_ago)
 {
 	struct timeslot *state = (struct timeslot *)arg;
+	uint32_t period;
 	state->indevp = 0;
 
 	register_current_state = *state;
 
-	if (register_current_state.registers[0]==0)
-		Registers.frequency_a = 0;
-	else
-		Registers.frequency_a = pMusic->readYmClock() / (register_current_state.registers[0] * 16);
+	period = register_current_state.period_a;
+	if (period == 0)
+	{
+		period = 1;
+	}
+	Registers.frequency_a = pMusic->readYmClock() / (period * 16);
 
-	if (register_current_state.registers[1]==0)
-		Registers.frequency_b = 0;
-	else
-		Registers.frequency_b = pMusic->readYmClock() / (register_current_state.registers[1] * 16);
+	period = register_current_state.period_b;
+	if (period == 0)
+	{
+		period = 1;
+	}
+	Registers.frequency_b = pMusic->readYmClock() / (period * 16);
 
-	if (register_current_state.registers[2]==0)
-		Registers.frequency_c = 0;
-	else
-		Registers.frequency_c = pMusic->readYmClock() / (register_current_state.registers[2] * 16);
+	period = register_current_state.period_c;
+	if (period == 0)
+	{
+		period = 1;
+	}
+	Registers.frequency_c = pMusic->readYmClock() / (period * 16);
 
-	if (register_current_state.registers[3] == 0)
-		Registers.frequency_noise = 0;
-	else
-		Registers.frequency_noise = pMusic->readYmClock() / (register_current_state.registers[3] * 16);
+	period = register_current_state.period_noise;
+	if (period == 0)
+	{
+		period = 1;
+	}
+	Registers.frequency_noise = pMusic->readYmClock() / ((period * 16 * 2));
 
-	Registers.mixer_control = register_current_state.registers[4];
-	Registers.level_a = register_current_state.registers[5];
-	Registers.level_b = register_current_state.registers[6];
-	Registers.level_c = register_current_state.registers[7];
+	Registers.mixer_control = register_current_state.mixer_control;
+	Registers.level_a = register_current_state.level_a;
+	Registers.level_b = register_current_state.level_b;
+	Registers.level_c = register_current_state.level_c;
 
-	if (register_current_state.registers[8] == 0)
-		Registers.frequency_envelope = 0;
-	else
-		Registers.frequency_envelope = pMusic->readYmClock() / (register_current_state.registers[8] * 256);
+	period = register_current_state.envelope_period;
+	if (period == 0)
+	{
+		period = 1;
+	}
+	Registers.frequency_envelope = pMusic->readYmClock() / (period * 256);
 
-	Registers.envelope_shape = register_current_state.registers[9];
+	Registers.envelope_shape = register_current_state.envelope_shape;
 }
 
 static void register_delay_callback_from_ymbuf (void *arg, int samples_ago)
@@ -386,16 +405,16 @@ static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 		slot = register_slot_get ();
 		if (slot)
 		{
-			slot->registers[0] = pMusic->readYmRegister(0)|(pMusic->readYmRegister(1)<<8); /* frequency A */
-			slot->registers[1] = pMusic->readYmRegister(2)|(pMusic->readYmRegister(3)<<8); /* frequency B */
-			slot->registers[2] = pMusic->readYmRegister(4)|(pMusic->readYmRegister(5)<<8); /* frequency C */
-			slot->registers[3] = pMusic->readYmRegister(6)&0x1f; /* frequency noise */
-			slot->registers[4] = pMusic->readYmRegister(7); /* mixer control */
-			slot->registers[5] = pMusic->readYmRegister(8); /* volume A */
-			slot->registers[6] = pMusic->readYmRegister(9); /* volume B */
-			slot->registers[7] = pMusic->readYmRegister(10); /* volume C */
-			slot->registers[8] = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
-			slot->registers[9] = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
+			slot->period_a = pMusic->readYmRegister(0)|(pMusic->readYmRegister(1)<<8); /* frequency A */
+			slot->period_b = pMusic->readYmRegister(2)|(pMusic->readYmRegister(3)<<8); /* frequency B */
+			slot->period_c = pMusic->readYmRegister(4)|(pMusic->readYmRegister(5)<<8); /* frequency C */
+			slot->period_noise = pMusic->readYmRegister(6)&0x1f; /* frequency noise */
+			slot->mixer_control = pMusic->readYmRegister(7); /* mixer control */
+			slot->level_a = pMusic->readYmRegister(8); /* volume A */
+			slot->level_b = pMusic->readYmRegister(9); /* volume B */
+			slot->level_c = pMusic->readYmRegister(10); /* volume C */
+			slot->envelope_period = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
+			slot->envelope_period = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
 			slot->inymbuf = 1;
 			slot->plrDevAPI = cpifaceSession->plrDevAPI;
 			cpifaceSession->ringbufferAPI->add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
