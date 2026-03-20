@@ -50,6 +50,8 @@ cdfs.o: \
 
 cue.o: \
 	cue.c \
+	../../config.h \
+	../../types.h \
 	cdfs.h \
 	cue.h \
 	../filesystem.h \
@@ -88,6 +90,8 @@ main.o: \
 
 toc.o: \
 	toc.c \
+	../../config.h \
+	../../types.h \
 	cdfs.h \
 	../filesystem.h \
 	toc.h \
