@@ -32,17 +32,44 @@
 #include "boot/plinkman.h"
 #include "mchasm.h"
 
+static uint16_t mean16SS(const void *ch, uint32_t len)
+{
+	int32_t retval=0;
+	const int16_t *ref=ch;
+	uint32_t l = len;
+
+	if (!len)
+	{
+		return 0;
+	}
+
+	while (l)
+	{
+		retval += *ref;
+		ref+=2;
+		l--;
+	}
+	return retval / (int)len; /* we need a signed division */
+}
+
 uint32_t mixAddAbs16SS(const void *ch, uint32_t len)
 { /* Stereo, 16bit, signed */
 	uint32_t retval=0;
 	const int16_t *ref=ch;
+	int16_t DCbias = mean16SS (ch, len);
+
+	if (!len)
+	{
+		return 0;
+	}
 
 	while (len)
 	{
-		if (*ref<0)
-			retval-=*ref;
+		int32_t diff = (int32_t)*ref - DCbias;
+		if (diff < 0)
+			retval -= diff;
 		else
-			retval+=*ref;
+			retval += diff;
 		ref+=2;
 		len--;
 	}

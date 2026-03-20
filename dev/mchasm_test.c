@@ -34,8 +34,8 @@ void test4(void)
 {
 	int16_t samples_zero[10]={0x0000, 0x7F00, 0x0000, 0x00EE, 0x0000, 0x0011, 0x0000, 0x0033, 0x0000, 0x0006};
 	int16_t samples_range[10]={0x0001, 0x0001, 0x0000, 0x7999, 0x0011, 0x0011, 0x0011, 0x0011, 0x0011, 0x0001};
-	int16_t samples_positive[10]={0x0002, 0x0000, 0x0002, 0x7aaa, 0x0002, 0x7ddd, 0x0002, 0x0000, 0x0002, 0x1234};
-	int16_t samples_negative[10]={-0x0002, 0x0000, -0x0002, 0x0100, -0x0002, -0x1000, -0x0002, -0x0f01, -0x0002, 0x4321};
+	int16_t samples_positive[10]={0x0002, 0x0000, 0x0003, 0x7aaa, 0x0004, 0x7ddd, 0x0003, 0x0000, 0x0004, 0x1234};
+	int16_t samples_negative[10]={-0x0002, 0x0000, -0x0003, 0x0100, -0x0004, -0x1000, -0x0003, -0x0f01, -0x0004, 0x4321};
 	uint32_t result;
 
 	fputs("mixAddAbs16SS():", stderr);
@@ -52,25 +52,25 @@ void test4(void)
 	fputs("  (range: ", stderr);
 	if ((result=mixAddAbs16SS(samples_range+2, 1))!=0)
 	{
-		fputs("failed)", stderr);
+		fprintf(stderr, "failed (%d insterad of 0))", (int)result);
 		retval=1;
 	} else {
 		fputs("ok)", stderr);
 	}
 
 	fputs("  (positive: ", stderr);
-	if ((result=mixAddAbs16SS(samples_positive, 5))!=10)
+	if ((result=mixAddAbs16SS(samples_positive, 5))!=3)
 	{
-		fputs("failed)", stderr);
+		fprintf(stderr, "failed (%d instead of 3))", (int)result);
 		retval=1;
 	} else {
 		fputs("ok)", stderr);
 	}
 
 	fputs("  (negative: ", stderr);
-	if ((result=mixAddAbs16SS(samples_negative, 5))!=10)
+	if ((result=mixAddAbs16SS(samples_negative, 5))!=3)
 	{
-		fputs("failed)", stderr);
+		fprintf(stderr, "failed (%d instead of 3))", (int)result);
 		retval=1;
 	} else {
 		fputs("ok)", stderr);
