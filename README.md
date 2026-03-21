@@ -1,6 +1,6 @@
 # Open Cubic Player
 
-Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL/SDL2. It can be compiled on various different Unix-based operating systems.
+Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL. It can be compiled on various different Unix-based operating systems.
 
 ![Screenshot](doc/screenshot-01.png)
 
@@ -60,6 +60,8 @@ Supported Audio-CD files:
 Extension | Notes
 :-------- | :----
 `*.CDA`   | Linux support only, using digital read out API.
+`*.CUE`   | [Cue sheet metadata](https://en.wikipedia.org/wiki/Cue_sheet_(computing))
+`*.TOC`   | [CD recorder disc-at-once (cdrdao)](https://en.wikipedia.org/wiki/Cdrdao)
 
 Supported files using fork of [TiMidity++](http://timidity.sourceforge.net/):
 
@@ -115,7 +117,7 @@ Available in [Debian manpages](https://manpages.debian.org/testing/opencubicplay
 
 Keys | Description
 :--- | :----------
-<kbd>esc</kbd><kbd>esc</kbd> | Eexit the program.
+<kbd>esc</kbd><kbd>esc</kbd> | Exit the program.
 <kbd>alt</kbd> + <kbd>k</kbd> | List available key shortcuts in the current view.
 
 ### While playing
@@ -176,7 +178,7 @@ See: <https://repology.org/project/ocp-open-cubic-player/versions>
 
 ## Unifont.ttf?
 
-When you compile/install and have enabled X11/SDL/SDL2 support, the unifont TTF files are needed. This is a 8x16 font that has a main goal of being UTF-8/Unicode complete.
+When you compile/install and have enabled X11/SDL support, the unifont TTF files are needed. This is a 8x16 font that has a main goal of being UTF-8/Unicode complete.
 
 For special scripts it will look incorrect, but the character-set should be complete.
 
@@ -219,7 +221,7 @@ Refer to the [README file](https://github.com/hhromic/opencubicplayer-docker?tab
 * <https://modarchive.org/>
 * <http://www.chiptune.com/>
 * <http://www.keygenmusic.net/>
-* <https://ftp.hornet.org/pub/demos/music/contests/>
+* <https://hornet.org/music/>
 * <https://modland.com/pub/modules/>
 
 ## IRC
