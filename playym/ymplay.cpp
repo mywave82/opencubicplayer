@@ -414,7 +414,7 @@ static void ymIdler(struct cpifaceSessionAPI_t *cpifaceSession)
 			slot->level_b = pMusic->readYmRegister(9); /* volume B */
 			slot->level_c = pMusic->readYmRegister(10); /* volume C */
 			slot->envelope_period = pMusic->readYmRegister(11)|(pMusic->readYmRegister(12)<<8); /* frequency envelope */
-			slot->envelope_period = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
+			slot->envelope_shape = pMusic->readYmRegister(13) & 0x0f;  /* envelope shape */
 			slot->inymbuf = 1;
 			slot->plrDevAPI = cpifaceSession->plrDevAPI;
 			cpifaceSession->ringbufferAPI->add_tail_callback_samples (ymbufpos, 0, register_delay_callback_from_ymbuf, slot);
