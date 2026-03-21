@@ -67,7 +67,7 @@ Supported files using fork of [TiMidity++](http://timidity.sourceforge.net/):
 
 Extension | Notes
 :-------- | :----
-`*.MID`   | [MIDI format](https://en.wikipedia.org/wiki/MIDI#General_MIDI)
+`*.MID`   | [General MIDI](https://en.wikipedia.org/wiki/MIDI#General_MIDI)
 
 Supported files using [AdPlug](http://adplug.github.io/), for formats designed for the [OPL2](https://en.wikipedia.org/wiki/Yamaha_YM3812)/[OPL3](https://en.wikipedia.org/wiki/Yamaha_YMF262) AdLib sound chips:
 
