@@ -682,7 +682,7 @@ OCP_INTERNAL int it_load (struct cpifaceSessionAPI_t *cpifaceSession, struct it_
 			uint64_t result = file->read (file, sip->ptr, len);
 			if (result != len)
 			{
-				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #14 (sip-ptr=%p sip->length=%u 16bit=%d stereo=%d, got=%u)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit), !!(sip->type&mcpSampStereo, (int)result));
+				cpifaceSession->cpiDebug (cpifaceSession, "[IT] read() failed #14 (sip-ptr=%p sip->length=%u 16bit=%d stereo=%d, got=%u)\n", sip->ptr, (int)sip->length, !!(sip->type&mcpSamp16Bit), !!(sip->type&mcpSampStereo), (int)result);
 				memset ((uint8_t *)sip->ptr + result, (sip->type & mcpSampUnsigned) ? 0x80 : 0x00, len - result);
 			}
 		}
