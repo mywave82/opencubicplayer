@@ -83,6 +83,8 @@ static int Width, Height;
 
 static int fixbadgraphic;
 
+static int rxvt_styled_shift_f;
+
 #ifdef HAVE_NCURSESW
 static int useunicode = 0;
 #endif
@@ -688,6 +690,14 @@ static int ncurses_HasKey (uint16_t key)
 		case KEY_ALT_ENTER: return 1; /* curses does not fetch this, but our filter does */
 	}
 
+	if (rxvt_styled_shift_f)
+	{
+		if (key == KEY_SHIFT_F(1)) return 0;
+		if (key == KEY_SHIFT_F(2)) return 0;
+		if (key == KEY_CTRL_SHIFT_F(1)) return 0;
+		if (key == KEY_CTRL_SHIFT_F(2)) return 0;
+	}
+
 	return !!keybound (key, 0);
 }
 #endif
@@ -807,6 +817,25 @@ static void ncurses_RefreshScreen (void)
 static int buffer = ERR;
 static int sigintcounter = 0;
 
+static int fix_getch(void)
+{
+	ncurses_block_signals ();
+
+	int retval = getch();
+
+	ncurses_unblock_signals ();
+
+	/* rxvt maps shift F1, onto F10 and upwards, instead of ANSI doing F13 and upwards */
+	if ( rxvt_styled_shift_f &&
+	    ( ((retval >= KEY_SHIFT_F(1)) && (retval <= KEY_SHIFT_F(10))) ||
+	      ((retval >= KEY_CTRL_SHIFT_F(1)) && (retval <= KEY_CTRL_SHIFT_F(10))) ))
+	{
+		retval += 2;
+	}
+
+	return retval;
+}
+
 static int ncurses_ekbhit (void)
 {
 	if (sigintcounter)
@@ -821,7 +850,7 @@ static int ncurses_ekbhit (void)
 
 	ncurses_block_signals ();
 
-	buffer=getch();
+	buffer = fix_getch();
 	if (buffer!=ERR)
 	{
 		ncurses_unblock_signals ();
@@ -855,7 +884,7 @@ static int ncurses_egetch (void)
 
 		return retval;
 	}
-	retval=getch();
+	retval = fix_getch();
 
 	ncurses_unblock_signals ();
 
@@ -1418,6 +1447,19 @@ no_translit:
 	}
 
 	ncurses_consoleRestore ();
+
+	{ /* keybound() only works after ncurses_consoleSave(), but that will hide the output; so we waited till after ncurses_consoleRestore() too */
+		const char *test;
+		if ((test = keybound (KEY_F(13), 0)))
+		{
+			if (!strcmp (test, "\x1b[25~"))
+			{
+				fprintf (stderr, "curses: Terminal likely maps shift+f1->f12 onto f10->f22. Will not be able to separate F11 from shift+F1 and F12 from shift+F2\n");
+				/* rxvt maps shift F1, onto F10 and upwards, instead of ANSI doing F13 and upwards */
+				rxvt_styled_shift_f = 1;
+			}
+		}
+	}
 
 	return 0;
 }
