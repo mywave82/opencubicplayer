@@ -183,15 +183,17 @@ Keys | Description
 
 See: <https://repology.org/project/ocp-open-cubic-player/versions>
 
-## Unifont.ttf?
+## GNU Unifont
 
-When you compile/install and have enabled X11/SDL support, the unifont TTF files are needed. This is a 8x16 font that has a main goal of being UTF-8/Unicode complete.
-
+[GNU Unifont files](https://unifoundry.com/unifont/) are required when X11/SDL support is enabled.
+This is an 8x16 font that has the main goal of being UTF-8/Unicode complete.
 For special scripts it will look incorrect, but the character-set should be complete.
 
-In most systems this font will be installed in `/usr/share/fonts/truetype/unifont/` or `/usr/share/fonts/opentype/unifont/`. If this path is different for your system, you can provide the correct path with `./configure --with-unifontdir-ttf=/your/path` and/or `./configure --with-unifontdir-otf=/your/path`.
+In most systems, Unifont files will be installed in `/usr/share/fonts/truetype/unifont/` or `/usr/share/fonts/opentype/unifont/`.
+If this path is different for your system, you can configure the correct path using `--with-unifontdir-ttf=/your/path` and/or `--with-unifontdir-otf=/your/path` when invoking `./configure`.
 
-If the font-files on your system is not named exactly `unifont.ttf`, `unifont_csur.ttf` and `unifont_upper.ttf`, you can configure alternative filenames using `./configure --with-unifont-ttf=/your/path/UniFont.ttf --with-unifont-csur-ttf=/your/path/UniFont-CSUR.ttf --with-unifont-upper-ttf=/your/path/UniFont-Upper.ttf`. Same for opentype version of the files by using `--with-unifont-otf`, `--with-unifont-csur-otf` and `--with-unifont-upper-otf`.
+If the Unifont files on your system are not named exactly `unifont.ttf`, `unifont_csur.ttf` and `unifont_upper.ttf`, the filenames can be configured using `--with-unifont-ttf=/your/path/UniFont.ttf`, `--with-unifont-csur-ttf=/your/path/UniFont-CSUR.ttf` and/or `--with-unifont-upper-ttf=/your/path/UniFont-Upper.ttf`.
+For the OpenType version of the files, use `--with-unifont-otf`, `--with-unifont-csur-otf` and/or `--with-unifont-upper-otf`.
 
 If the filenames on your system contains version numbers, we ask you to fill a bug-report to your system provider and ask them to add symlinks without version numbers in them.
 
