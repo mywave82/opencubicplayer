@@ -73,12 +73,19 @@ Supported files using [AdPlug](http://adplug.github.io/), for formats designed f
 
 Extension | Notes
 :-------- | :----
-`*.HSC`   |
-`*.SNG`   |
-`*.D00`   |
-`*.ADL`   |
-`*.VGM`   |
+`*.A2M`, `*.A2T` | [AdLib Tracker 2 by subz3ro](https://www.adlibtracker.net/)
+`*.ADL`   | Coktel Vision Adlib Music
+`*.AMD`   | Amusic tracker by Elyssis
+`*.BAM`   | [Bob's Adlib Music](https://rpg.hamsterrepublic.com/ohrrpgce/BAM_Format)
+`*.CMF`   | [Creative Music File Format by Creative Technology](https://www.vgmpf.com/Wiki/index.php?title=CMF)
+`*.D00`   | EdLib
+`*.HSC`   | HSC Adlib Composer by Hannes Seifert, [HSC-Tracker by Electronic Rats](https://demozoo.org/productions/293837/)
+`*.IMF`, `*.WLF`, `*.ADLIB` | Apogee IMF, game music
 `*.RAD`   | [Reality AdLib Tracker](https://www.3eality.com/productions/reality-adlib-tracker)
+`*.SNG`   | SNGPlay by BUGSY of OBSESSION
+`*.SNG`   | Adlib Tracker 1.0 by Dj-Tj
+`*.VGM`   |
+`*.XMS`   | XMS-Tracker by MaDoKaN/E.S.G
 
 Supported files for [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
 
