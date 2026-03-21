@@ -109,7 +109,7 @@ static int sndhTrackGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct c
 	q->hgtmin = 4;
 	if (q->hgtmin > q->hgtmax)
 	{
-		q->hgtmax = q->hgtmin;
+		q->hgtmin = q->hgtmax;
 	}
 
 	q->xmode=1;
