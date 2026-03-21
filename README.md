@@ -210,6 +210,14 @@ To get curses up and running with colors, you need to run ocp like this
 
 `TERM=xterm-color ocp-curses`
 
+# Docker images
+
+Files for building Docker images for Open Cubic Player are available in [this repository](https://github.com/hhromic/opencubicplayer-docker).
+
+Ready to use images can be pulled directly from the GitHub Container Registry of the repository.
+
+Refer to the [README file](https://github.com/hhromic/opencubicplayer-docker?tab=readme-ov-file#readme) for usage information and more details.
+
 # Sample sources of where to find music
 
 https://modarchive.org/
