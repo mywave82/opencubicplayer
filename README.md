@@ -113,7 +113,8 @@ Extension | Notes
 
 Built into the file-browser is support for directly browsing <https://modland.com> utilizing `curl`.
 
-You need to initially fetch the database containing all the file names. This is available via `modland.com/setup.dev` inside the built-in file browser.
+An initial fetch of the database containing all the file names is required for this feature to work.
+This is available in the `modland.com/setup.dev` option inside of the built-in file browser.
 
 ## Manual Page
 
