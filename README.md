@@ -1,6 +1,8 @@
 # Open Cubic Player
 
-Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views. Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL. It can be compiled on various different Unix-based operating systems.
+Unix port of [Open Cubic Player](https://www.cubic.org/player/), which is a text-based player with some few graphical views.
+Visual output can be done through nCurses, Linux console (VCSA + FrameBuffer), X11 or SDL.
+This port can be compiled for various different Unix-based operating systems, including MinGW compilers.
 
 ![Screenshot](doc/screenshot-01.png)
 
