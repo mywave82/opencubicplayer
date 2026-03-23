@@ -77,17 +77,50 @@ Extension | Notes
 :-------- | :----
 `*.A2M`, `*.A2T` | [AdLib Tracker 2 by subz3ro](https://www.adlibtracker.net/)
 `*.ADL`   | Coktel Vision Adlib Music
+`*.ADL`   | Westwood ADL
 `*.AMD`   | Amusic tracker by Elyssis
 `*.BAM`   | [Bob's Adlib Music](https://rpg.hamsterrepublic.com/ohrrpgce/BAM_Format)
+`*.CFF`   | BoomTracker 4.0 by CUD
 `*.CMF`   | [Creative Music File Format by Creative Technology](https://www.vgmpf.com/Wiki/index.php?title=CMF)
+`*.CMF`   | [SoundFX Macs Opera tracker by Linel](https://www.vgmpf.com/Wiki/index.php?title=CMF_\(MACS_Opera\))
 `*.D00`   | EdLib
+`*.DFM`   | Digital-FM by R.Verhaag
+`*.DMO`   | Twin TrackPlayer by TwinTeam
+`*.DRO`   | DOSBox Raw OPL
+`*.DTM`   | DeFy Adlib Tracker by DeFy
+`*.GOT`   | [God Of Thunder Music by Roy Davis of Adept Software](https://moddingwiki.shikadi.net/wiki/God_of_Thunder)
 `*.HSC`   | HSC Adlib Composer by Hannes Seifert, [HSC-Tracker by Electronic Rats](https://demozoo.org/productions/293837/)
+`*.HSQ`, `*.SQX`, `*.SDB`, `*.AGD`, `*.HA2` | Herbulot AdLib System (HERAD) by Remi Herbulot
+`*.HSP`   | HSC Packed by Number Six / Aegis Corp.
 `*.IMF`, `*.WLF`, `*.ADLIB` | Apogee IMF, game music
+`*.JBM`   | JBM (Johannes Bjerregaard's) Adlib Music Format
+`*.KSM`   | [Ken Silverman](https://advsys.net/ken/)'s Music Format
+`*.LDS`   | LOUDNESS Sound System <!-- https://ocremix.org/artist/230/andras-molnar https://tyrian.fandom.com/wiki/Andreas_Molnar http://www.loudness.de/ -->
+`*.M`     | Ultima 6 Music
+`*.MAD`   | Mlat Adlib Tracker
+`*.MDI`   | AdLib MIDIPlay File Format by Ad Lib Inc.
+`*.MID`, `*.SCI`, `*.LAA` | Sierra's AdLib Audio File Format, MIDI Audio File Format, LucasArts AdLib Audio File Format by LucasArts
+`*.MKJ`   | MKJamz by M \ K Productions
+`*.MSC`   | Adlib MSC Player <!-- Likely refers to software that was buneled with Adlib MSC 16 cards, JukeBox Playback Program https://www.opl3.com/wp-content/uploads/2019/08/amsc-JukeBox-Playback-Program.pdf -->
+`*.MTK`   | MPU-401 Trakker by SuBZeR0
+`*.MTR`   | Arkham Master Tracker 2.4
+`*.MUS`, `*.MDY`, `*.IMS` | AdLib MIDI Music Format by Ad Lib Inc., IMPlay Song Format
+`*.PIS`   | Beni Tracker PIS Player
+`*.PLX`   | PALLADIX Sound System
+`*.RAC`, `*.RAW` | Raw AdLib Capture
 `*.RAD`   | [Reality AdLib Tracker](https://www.3eality.com/productions/reality-adlib-tracker)
-`*.SNG`   | SNGPlay by BUGSY of OBSESSION
+`*.RIX`, `*.MKF` | Softstar RIX OPL Music
+`*.ROL`   | [Adlib Visual Composer by AdLib Inc.](https://www.vgmpf.com/Wiki/index.php/AdLib_Visual_Composer_\(DOS\))
+`*.S3M`, `*.AS3M` | [Scream Tracker 3](https://en.wikipedia.org/wiki/Scream_Tracker)
+`*.SA2`, `*.SAT` | [Surprise! Adlib Tracker 2](https://www.pouet.net/prod.php?which=70029) by Surprise! Productions
 `*.SNG`   | Adlib Tracker 1.0 by Dj-Tj
-`*.VGM`   |
+`*.SNG`   | [Faust Music Creator](https://www.pouet.net/prod.php?which=55235) by FAUST
+`*.SNG`   | SNGPlay by BUGSY of OBSESSION
+`*.SOP`   | Note Sequencer by Lee Ho Bum (sopepos)
+`*.VGM`, `*.VGZ` | [Video Game Music](https://www.vgmpf.com/Wiki/index.php?title=VGM)
+`*.XAD`   | Various eXotic ADlib Formats by Riven the Mage
 `*.XMS`   | XMS-Tracker by MaDoKaN/E.S.G
+`*.XSM`   | eXtra Simple Music by Davey W Taylor
 
 Supported files for [HivelyTracker](http://www.hivelytracker.co.uk/) tracked music, using code from the original tracker repository:
 
