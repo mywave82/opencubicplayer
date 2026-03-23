@@ -61,7 +61,7 @@ Supported Audio-CD files:
 
 Extension | Notes
 :-------- | :----
-`*.CDA`   | Linux support only, using digital read out API.
+`*.CDA`   | Linux support only, using `ioctl()` for [digital audio extraction](https://docs.kernel.org/userspace-api/ioctl/cdrom.html).
 `*.CUE`   | [Cue sheet metadata](https://en.wikipedia.org/wiki/Cue_sheet_(computing))
 `*.TOC`   | [CD recorder disc-at-once (cdrdao)](https://en.wikipedia.org/wiki/Cdrdao)
 
