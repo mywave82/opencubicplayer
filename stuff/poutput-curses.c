@@ -702,25 +702,6 @@ static int ncurses_HasKey (uint16_t key)
 }
 #endif
 
-static void ncurses_SetTextMode (uint8_t x)
-{
-	unsigned int i;
-
-	// If we make a stackable curses driver, we will need this
-	//Console.Driver->SetGraphMode (-1);
-
-	___setup_key (ncurses_ekbhit, ncurses_egetch);
-
-	Console.TextHeight = Height;
-	Console.TextWidth = Width;
-	Console.CurrentMode = 0;
-
-	for (i = 0; i < Console.TextHeight; i++)
-	{
-		ncurses_DisplayVoid (i, 0, Console.TextWidth);
-	}
-}
-
 #if (defined(NCURSES_VERSION_MAJOR)&&((NCURSES_VERSION_MAJOR<5)||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR<9))||((NCURSES_VERSION_MAJOR==5)&&(NCURSES_VERSION_MINOR==9)&&(NCURSES_VERSION_PATCH<20150103))))
 
 #warning NCURSES_VERSION <= 5.9-20150103 has broken write() when using TIMERS, disabling SIGALRM curing ncurses library calls
@@ -814,7 +795,27 @@ static void ncurses_RefreshScreen (void)
 	ncurses_unblock_signals ();
 }
 
-static int buffer = ERR;
+static void ncurses_SetTextMode (uint8_t x)
+{
+	unsigned int i;
+
+	// If we make a stackable curses driver, we will need this
+	//Console.Driver->SetGraphMode (-1);
+
+	pollClose (pollTypeVideo);
+	___setup_key (ncurses_ekbhit, ncurses_egetch);
+	pollInit (ncurses_RefreshScreen, pollTypeVideo);
+
+	Console.TextHeight = Height;
+	Console.TextWidth = Width;
+	Console.CurrentMode = 0;
+
+	for (i = 0; i < Console.TextHeight; i++)
+	{
+		ncurses_DisplayVoid (i, 0, Console.TextWidth);
+	}
+}
+
 static int sigintcounter = 0;
 
 static int fix_getch(void)
@@ -838,60 +839,31 @@ static int fix_getch(void)
 
 static int ncurses_ekbhit (void)
 {
+	int retval = 0;
+	int buffer;
+
 	if (sigintcounter)
 	{
+		___push_key (27);
+		sigintcounter = 0;
 		return 1;
 	}
 
-	if (buffer!=ERR)
-	{
-		return 1;
-	}
+	do {
+		buffer = fix_getch();
+		if (buffer != ERR)
+		{
+			___push_key (buffer);
+			retval = 1;
+		}
+	} while (buffer != ERR);
 
-	ncurses_block_signals ();
-
-	buffer = fix_getch();
-	if (buffer!=ERR)
-	{
-		ncurses_unblock_signals ();
-		return 1;
-	}
-	ncurses_RefreshScreen();
-
-	ncurses_unblock_signals ();
-	return 0;
+	return retval;
 }
 
 static int ncurses_egetch (void)
 {
-	int retval;
-
-	if (sigintcounter)
-	{
-		sigintcounter--;
-		return 27;
-	}
-
-	ncurses_block_signals ();
-
-	ncurses_RefreshScreen();
-	if (buffer!=ERR)
-	{
-		retval=buffer;
-		buffer=ERR;
-
-		ncurses_unblock_signals ();
-
-		return retval;
-	}
-	retval = fix_getch();
-
-	ncurses_unblock_signals ();
-
-	if (retval==ERR)
-		retval=0;
-
-	return retval;
+	return 0; // all pushed via ncurses_ekbhit()
 }
 
 static void ncurses_SetCursorPosition (uint16_t y, uint16_t x)
@@ -910,6 +882,7 @@ static int ncurses_consoleRestore (void)
 {
 	if (!conactive)
 		return 0;
+	ncurses_ekbhit(); // clear the stdin buffer
 	endwin();
 	conactive=0;
 	return 0;
@@ -964,7 +937,7 @@ static void ncurses_plDosShell (void)
 				if (errno==EINTR)
 					continue;
 				usleep (20000); /* 20ms, 50 FPS */
-				tmTimerHandler ();
+				tmTimerHandler (pollTypeAudio);
 			} else {
 				break;
 			}
@@ -1398,6 +1371,7 @@ no_translit:
 
 	Console.Driver = &ncursesConsoleDriver;
 	___setup_key (ncurses_ekbhit, ncurses_egetch); /* filters in more keys */
+	pollInit (ncurses_RefreshScreen, pollTypeVideo);
 
 	start_color();
 
@@ -1466,6 +1440,8 @@ no_translit:
 
 void curses_done (void)
 {
+	pollClose (pollTypeVideo);
+
 	if (utf8_to_native != (iconv_t)-1)
 	{
 		iconv_close (utf8_to_native);

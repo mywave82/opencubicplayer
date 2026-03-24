@@ -45,21 +45,52 @@
 #include "imsrtns.h"
 #include "poll.h"
 
-static void (*tmTimerRoutineSlave)()=NULL;
+static void (*tmTimerRoutineSlaveAudio)()=NULL;
+static void (*tmTimerRoutineSlaveVideo)()=NULL;
 
-void tmTimerHandler(void)
+
+void tmTimerHandler(enum pollType type)
 {
-	if (tmTimerRoutineSlave)
-		tmTimerRoutineSlave();
+	if (type == pollTypeAudio)
+		if (tmTimerRoutineSlaveAudio)
+			tmTimerRoutineSlaveAudio();
+
+	if (type == pollTypeVideo)
+		if (tmTimerRoutineSlaveVideo)
+			tmTimerRoutineSlaveVideo();
+
 }
 
-int pollInit(void (*f)(void))
+int pollInit(void (*f)(void), enum pollType type)
 {
-	tmTimerRoutineSlave=f;
+	if (type == pollTypeAudio)
+	{
+		if (tmTimerRoutineSlaveAudio && f)
+		{
+			fprintf (stderr, "pollInit: A Audio callback already registered\n");
+		}
+		tmTimerRoutineSlaveAudio = f;
+	}
+	if (type == pollTypeVideo)
+	{
+		if (tmTimerRoutineSlaveVideo && f)
+		{
+			fprintf (stderr, "pollInit: A Video callback already registered\n");
+		}
+
+		tmTimerRoutineSlaveVideo = f;
+	}
 	return 1;
 }
 
-void pollClose(void)
+void pollClose (enum pollType type)
 {
-	tmTimerRoutineSlave=0;
+	if (type == pollTypeAudio)
+	{
+		tmTimerRoutineSlaveAudio = 0;
+	}
+	if (type == pollTypeVideo)
+	{
+		tmTimerRoutineSlaveVideo = 0;
+	}
 }

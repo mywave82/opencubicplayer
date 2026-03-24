@@ -152,6 +152,7 @@ poutput-sdl.o: poutput-sdl.c \
 	../boot/psetting.h \
 	../stuff/framelock.h \
 	../stuff/imsrtns.h \
+	../stuff/poll.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \
 	../stuff/poutput-keyboard.h \
@@ -167,6 +168,7 @@ poutput-sdl2.o: poutput-sdl2.c \
 	../boot/psetting.h \
 	../stuff/framelock.h \
 	../stuff/imsrtns.h \
+	../stuff/poll.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \
 	../stuff/poutput-keyboard.h \
@@ -182,6 +184,7 @@ poutput-sdl3.o: poutput-sdl3.c \
 	../boot/psetting.h \
 	../stuff/framelock.h \
 	../stuff/imsrtns.h \
+	../stuff/poll.h \
 	../stuff/poutput.h \
 	../stuff/poutput-fontengine.h \
 	../stuff/poutput-keyboard.h \

@@ -33,6 +33,7 @@
 #include "cpiface/cpiface.h"
 #include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
+#include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/poutput-fontengine.h"
 #include "stuff/poutput-keyboard.h"
@@ -1225,16 +1226,19 @@ static int utf8_encode (char *dst, uint32_t codepoint)
 	return 0;
 }
 
-static int ekbhit_sdldummy(void)
+static void sdlVideoTimer(void)
 {
-	SDL_Event event;
-
 	if (Console.CurrentMode < 8)
 	{
 		RefreshScreenText();
 	} else {
 		RefreshScreenGraph();
 	}
+}
+
+static int ekbhit_sdldummy(void)
+{
+	SDL_Event event;
 
 	while(SDL_PollEvent(&event))
 	{
@@ -1507,6 +1511,7 @@ int sdl_init(void)
 
 	Console.Driver = &sdlConsoleDriver;
 	___setup_key(ekbhit_sdldummy, ekbhit_sdldummy);
+	pollInit (sdlVideoTimer, pollTypeVideo);
 
 	Console.TextGUIOverlay = 0;
 
@@ -1521,6 +1526,8 @@ error_out:
 
 void sdl_done(void)
 {
+	pollClose (pollTypeVideo);
+
 	if (!need_quit)
 		return;
 

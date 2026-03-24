@@ -59,12 +59,12 @@
 #include "cpiface/cpiface.h"
 #include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
+#include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/poutput-fontengine.h"
 #include "stuff/poutput-keyboard.h"
 #include "stuff/poutput-swtext.h"
 #include "stuff/poutput-x11.h"
-#include "stuff/poll.h"
 #include "stuff/x11-common.h"
 #include "desktop/opencubicplayer-48x48.xpm"
 
@@ -958,7 +958,7 @@ static void x11_common_event_loop(void)
 						___push_key((uint8_t)buf[i]);
 					}
 				}
-				if ((n_chars==1)/*&&(buf[0]>=32*/)
+				if (n_chars==1)
 				{
 					/* fprintf (stderr, "PRESS: %d %c, ShiftMask=%d, ControlMask=%d, Mod1Mask=%d\n", buf[0], buf[0], event.xkey.state & ShiftMask, event.xkey.state & ControlMask, event.xkey.state & Mod1Mask); */
 					if (ks == XK_Delete)
@@ -1378,8 +1378,6 @@ static int x11_SetGraphMode (int high)
 		return 0;
 	}
 
-	//___setup_key(ekbhit_x11dummy, ekbhit_x11dummy);
-
 	if (high==13)
 	{
 		Console.CurrentMode = 13;
@@ -1455,8 +1453,6 @@ static void x11_SetTextMode (unsigned char x)
 	set_state = set_state_textmode;
 	WindowResized = WindowResized_Textmode;
 
-	//___setup_key(ekbhit_x11dummy, ekbhit_x11dummy);
-
 	if (x == Console.CurrentMode)
 	{
 		memset (Console.VidMem, 0, Console.GraphBytesPerLine * Console.GraphLines);
@@ -1515,8 +1511,8 @@ static void x11_SetTextMode (unsigned char x)
 	if (x>7)
 	{
 		x=8;
-		Console.TextHeight = Textmode_Window_Height / (x11_CurrentFontWanted == _16x32 ) ? 32 : (x11_CurrentFontWanted == _8x16) ? 16 : 8;
-		Console.TextWidth = Textmode_Window_Width / (x11_CurrentFontWanted == _16x32 ? 16 : 8);
+		Console.TextHeight = Textmode_Window_Height / ( (x11_CurrentFontWanted == _16x32 ) ? 32 : (x11_CurrentFontWanted == _8x16) ? 16 : 8 );
+		Console.TextWidth = Textmode_Window_Width / ( x11_CurrentFontWanted == _16x32 ? 16 : 8 );
 
 		Console.GraphBytesPerLine = Textmode_Window_Width;
 		Console.GraphLines = Textmode_Window_Height;
@@ -1950,17 +1946,21 @@ static void RefreshScreenText (void)
 
 static int ekbhit_x11dummy (void)
 {
+	x11_common_event_loop();
+
+	return 0;
+}
+
+static void x11VideoTimer (void)
+{
 	if (Console.CurrentMode < 9)
 	{
 		RefreshScreenText();
 	} else {
 		RefreshScreenGraph();
 	}
-
-	x11_common_event_loop();
-
-	return 0;
 }
+
 static int x11_consoleRestore (void)
 {
 	return 0;
@@ -2019,7 +2019,7 @@ static void x11_DosShell (void)
 				if (errno==EINTR)
 					continue;
 				usleep (20000); /* 20ms, 50 FPS */
-				tmTimerHandler ();
+				tmTimerHandler (pollTypeAudio);
 			} else {
 				break;
 			}
@@ -2352,6 +2352,7 @@ int x11_init(int use_explicit)
 
 	Console.Driver = &x11ConsoleDriver;
 	___setup_key(ekbhit_x11dummy, ekbhit_x11dummy); /* filters in more keys */
+	pollInit (x11VideoTimer, pollTypeVideo);
 
 	x11_SetTextMode (saturate(cfGetProfileInt(cfScreenSec, "screentype", 7, 10), 0, 8));
 
@@ -2362,6 +2363,8 @@ int x11_init(int use_explicit)
 
 void x11_done(void)
 {
+	pollClose (pollTypeVideo);
+
 	if (!mDisplay)
 		return;
 

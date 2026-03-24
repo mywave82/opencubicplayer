@@ -36,6 +36,8 @@
 
 static int Current = 0;
 static int PendingPoll = 0;
+static int PendingDraw = 0;
+
 int fsFPS=25;
 int fsFPSCurrent=0;
 
@@ -57,11 +59,11 @@ static void AudioPoll(struct timeval *curr)
 	{
 		targetAudioPoll.tv_sec = curr->tv_sec;
 		targetAudioPoll.tv_usec = 1000000/50;
-		tmTimerHandler ();
+		tmTimerHandler (pollTypeAudio);
 	} else if (curr->tv_usec >= targetAudioPoll.tv_usec)
 	{
 		targetAudioPoll.tv_usec += 1000000/50;
-		tmTimerHandler ();
+		tmTimerHandler (pollTypeAudio);
 	}
 }
 
@@ -70,6 +72,7 @@ void framelock(void)
 	struct timeval curr;
 
 	PendingPoll = 0;
+	PendingDraw = 0;
 
 rerun:
 	gettimeofday(&curr, 0);
@@ -79,7 +82,7 @@ rerun:
 		AudioPoll (&curr);
 	}
 
-	if (curr.tv_sec!=targetFPS.tv_sec)
+	if (curr.tv_sec != targetFPS.tv_sec)
 	{
 		fsFPSCurrent=Current;
 		Current=1;
@@ -87,12 +90,14 @@ rerun:
 		targetFPS.tv_usec=1000000/fsFPS;
 		if (fsFPS >= 50)
 		{
-			tmTimerHandler();
+			tmTimerHandler (pollTypeAudio);
 		}
+		tmTimerHandler (pollTypeVideo);
 		return;
 	} else if ((fsFPS >= 50) || (targetFPS.tv_usec <= targetAudioPoll.tv_usec))
 	{
 		/* target will hit before audio */
+		tmTimerHandler (pollTypeVideo);
 		if (curr.tv_usec<targetFPS.tv_usec)
 		{
 			usleep(targetFPS.tv_usec-curr.tv_usec);
@@ -107,7 +112,7 @@ rerun:
 	}
 	if (fsFPS >= 50)
 	{
-		tmTimerHandler();
+		tmTimerHandler (pollTypeAudio);
 	}
 	Current++;
 }
@@ -121,7 +126,7 @@ void preemptive_framelock (void)
 
 	AudioPoll (&curr);
 
-	if (curr.tv_sec!=targetFPS.tv_sec)
+	if (curr.tv_sec != targetFPS.tv_sec)
 	{ /* seconds has rolled, new frame for sure */
 		fsFPSCurrent=Current;
 		Current=1;
@@ -145,21 +150,30 @@ int poll_framelock(void)
 
 	gettimeofday(&curr, 0);
 
+	if (PendingDraw)
+	{ /* previous call returned 1, so a refresh of video buffers has occured */
+		PendingDraw = 0;
+		tmTimerHandler (pollTypeVideo);
+	}
+
 	AudioPoll (&curr);
 
-	if (curr.tv_sec!=targetFPS.tv_sec)
+	if (curr.tv_sec != targetFPS.tv_sec)
 	{ /* seconds has rolled over, so new frame for sure */
 		fsFPSCurrent=Current;
 		Current=1;
 		targetFPS.tv_sec=curr.tv_sec;
 		targetFPS.tv_usec=1000000/fsFPS;
+		tmTimerHandler (pollTypeVideo);
 		PendingPoll = 0;
+		PendingDraw = 1;
 		return 1;
 	} else if (curr.tv_usec<targetFPS.tv_usec)
 	{ /* we have not reached the next frame yet */
 		if (PendingPoll)
 		{ /* but we did hit it with a non-painting event, only audio was handled */
 			PendingPoll = 0;
+			PendingDraw = 1;
 			return 1;
 		}
 		return 0; /* we were suppose to sleep */
@@ -169,5 +183,6 @@ int poll_framelock(void)
 
 	Current++;
 	PendingPoll = 0;
+	PendingDraw = 1;
 	return 1;
 }

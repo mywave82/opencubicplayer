@@ -42,8 +42,6 @@ static int(*driver_getch)(void);
 
 void ___setup_key(int(*kbhit)(void), int(*getch)(void))
 {
-	ring_head=0;
-	ring_tail=0;
 	driver_kbhit=kbhit;
 	driver_getch=getch;
 }
@@ -51,7 +49,7 @@ void ___setup_key(int(*kbhit)(void), int(*getch)(void))
 void ___push_key(uint16_t key)
 {
 #ifdef KEYBOARD_DEBUG
-	fprintf(stderr, "___push_key %d/%c\n", key, (unsigned char)key);
+	fprintf(stderr, "___push_key %d/%c\n", key, ((key>32) && (key < 127)) ? key : '?');
 #endif
 	if (!key)
 		return;
@@ -497,7 +495,7 @@ int egetch (void)
 		return egetch();
 	}
 #ifdef KEYBOARD_DEBUG
-	fprintf(stderr, "gave result %04x\n", retval);
+	fprintf(stderr, "gave result %04x\n\n", retval);
 #endif
 	return retval;
 }

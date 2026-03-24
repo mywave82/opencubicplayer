@@ -2265,6 +2265,7 @@ static void plmpPreClose(struct PluginCloseAPI_t *API)
 
 static void cpifaceIdle (void)
 {
+	/* process audio */
 	if (cpifaceSessionAPI.mcpPauseFadeDirection)
 	{
 		mcpDoPauseFade (&cpifaceSessionAPI.Public);
@@ -2413,7 +2414,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 		return 1;
 	}
 
-	pollInit (cpifaceIdle);
+	pollInit (cpifaceIdle, pollTypeAudio);
 
 	for (mod=cpiDefModes; mod; mod=mod->nextdef)
 		cpiRegisterMode(mod);
@@ -2430,7 +2431,7 @@ static int plmpOpenFile(struct moduleinfostruct *info, struct ocpfilehandle_t *f
 
 static void plmpCloseFile (void)
 {
-	pollClose ();
+	pollClose (pollTypeAudio);
 
 	if (curplayer)
 	{

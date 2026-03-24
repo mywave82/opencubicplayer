@@ -1,9 +1,15 @@
 #ifndef _POLL_H
 #define _POLL_H
 
-int pollInit(void (*)(void));
-void pollClose(void);
+enum pollType
+{
+	pollTypeAudio = 0,
+	pollTypeVideo = 1,
+};
 
-void tmTimerHandler(void);
+int pollInit (void (*)(void), enum pollType type);
+void pollClose (enum pollType type);
+
+void tmTimerHandler (enum pollType type);
 
 #endif

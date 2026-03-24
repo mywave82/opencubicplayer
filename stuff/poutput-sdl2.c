@@ -31,6 +31,7 @@
 #include "cpiface/cpiface.h"
 #include "stuff/framelock.h"
 #include "stuff/imsrtns.h"
+#include "stuff/poll.h"
 #include "stuff/poutput.h"
 #include "stuff/poutput-fontengine.h"
 #include "stuff/poutput-keyboard.h"
@@ -1320,7 +1321,7 @@ static void RefreshScreenGraph(void)
 	}
 }
 
-void RefreshScreenText(void)
+static void RefreshScreenText(void)
 {
 	if (!current_texture)
 		return;
@@ -1335,16 +1336,19 @@ void RefreshScreenText(void)
 	swtext_cursor_eject();
 }
 
-static int ekbhit_sdl2dummy(void)
+static void sdl2VideoTimer (void)
 {
-	SDL_Event event;
-
 	if (Console.CurrentMode <= 8)
 	{
 		RefreshScreenText();
 	} else {
 		RefreshScreenGraph();
 	}
+}
+
+static int ekbhit_sdl2dummy(void)
+{
+	SDL_Event event;
 
 	while(SDL_PollEvent(&event))
 	{
@@ -1689,6 +1693,7 @@ int sdl2_init(void)
 
 	Console.Driver = &sdl2ConsoleDriver;
 	___setup_key(ekbhit_sdl2dummy, ekbhit_sdl2dummy);
+	pollInit (sdl2VideoTimer, pollTypeVideo);
 
 	Console.TextGUIOverlay = 1;
 
@@ -1705,6 +1710,8 @@ error_out:
 
 void sdl2_done(void)
 {
+	pollClose (pollTypeVideo);
+
 	sdl2_close_window ();
 
 	if (!need_quit)
