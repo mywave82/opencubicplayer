@@ -384,7 +384,7 @@ static void PlayNote(struct cpifaceSessionAPI_t *cpifaceSession, struct channel 
 	if (ismod && !procnot && procins && ch->chCurIns!=ch->chLastIns)
 		procnot=ch->curnote;
 
-	if (procins && !keyoff && !delaytmp)
+	if ((procins || procnot) && !keyoff && !delaytmp)
 		ch->chSustain=1;
 
 	if (procnot && !delaytmp)
