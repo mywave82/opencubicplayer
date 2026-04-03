@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include "types.h"
 
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -49,7 +51,6 @@
 #endif
 
 #include "psgplay-git/include/internal/psgplay.h"
-
 static struct psgplay *pp;
 static struct file f;
 static jmp_buf psg_jmp;
@@ -69,6 +70,11 @@ static int                  sndh_subtunes;
 static uint32_t             sndh_Rate;
 float time_stop; //OPTION_TIME_UNDEFINED, OPTION_STOP_NEVER or use sndh_tag_subtune_time()
 struct sndhMeta_t          *sndh_Meta;
+
+static enum sndhStereoModels                 sndh_StereoModel = STEREO_EMPIRIC;
+static struct psgplay_psg_stereo_empiric_lpf sndh_StereoEmpiricLPF;
+static int                                   sndh_StereoEmpiricLPF_cutoff = 880;
+static int                                   sndh_StereoEmpiricLPF_Qpct = 100;
 
 #define TIMESLOTS 128
 static struct timeslot
@@ -355,18 +361,66 @@ OCP_INTERNAL void sndhClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static psgplay_digital_to_stereo_cb ocp_psg_mix_option (void)
 {
-#warning Stereo model
-	return psgplay_digital_to_stereo_empiric;
-	//return psgplay_digital_to_stereo_linear;
-	//return psgplay_digital_to_stereo_balance;
-	//return psgplay_digital_to_stereo_volume;
+	switch (sndh_StereoModel)
+	{
+		case STEREO_LINEAR: return psgplay_digital_to_stereo_linear;
+		default:
+		case STEREO_EMPIRIC: return psgplay_digital_to_stereo_empiric;
+		case STEREO_EMPIRIC_LPF: return psgplay_digital_to_stereo_empiric_lpf;
+		//return psgplay_digital_to_stereo_balance;
+		//return psgplay_digital_to_stereo_volume;
+	}
 }
 
 static void *ocp_psg_mix_arg(void)
 {
-        return NULL;
-	/* return &option.psg_balance; */
-	/* return &option.psg_volume; */
+	switch (sndh_StereoModel)
+	{
+		case STEREO_LINEAR: return NULL;
+		default:
+		case STEREO_EMPIRIC: return NULL;
+		case STEREO_EMPIRIC_LPF: return &sndh_StereoEmpiricLPF;
+		/* return &option.psg_balance; */
+		/* return &option.psg_volume; */
+	}
+}
+
+OCP_INTERNAL void sndhGetStereoModel (enum sndhStereoModels *StereoModel,
+                                      int                   *StereoEmpiricLPF_cutoff,
+                                      int                   *StereoEmpiricLPF_Qpct)
+{
+	*StereoModel = sndh_StereoModel;
+	*StereoEmpiricLPF_cutoff = sndh_StereoEmpiricLPF_cutoff;
+	*StereoEmpiricLPF_Qpct = sndh_StereoEmpiricLPF_Qpct;
+}
+
+OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession,
+                                      enum sndhStereoModels       StereoModel,
+                                      int                         StereoEmpiricLPF_cutoff,
+                                      int                         StereoEmpiricLPF_Qpct)
+{
+	int save = 0;
+	if ((StereoEmpiricLPF_cutoff != sndh_StereoEmpiricLPF_cutoff) ||
+	    (StereoEmpiricLPF_Qpct != sndh_StereoEmpiricLPF_Qpct))
+	{
+		sndh_StereoEmpiricLPF_cutoff = StereoEmpiricLPF_cutoff;
+		sndh_StereoEmpiricLPF_Qpct = StereoEmpiricLPF_Qpct;
+		psgplay_calculate_empiric_lpf (&sndh_StereoEmpiricLPF, sndh_StereoEmpiricLPF_cutoff, sndh_Rate, (float)sndh_StereoEmpiricLPF_Qpct / 100.0f);
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "lpf_frequency", sndh_StereoEmpiricLPF_cutoff, 10);
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "lpf_Qpct", sndh_StereoEmpiricLPF_Qpct, 10);
+		save = 1;
+	}
+	if (StereoModel != sndh_StereoModel)
+	{
+		sndh_StereoModel = StereoModel;
+		psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
+		cpifaceSession->configAPI->SetProfileString ("sndh", "stereomodel", (sndh_StereoModel == STEREO_LINEAR) ? "linear" : (sndh_StereoModel == STEREO_EMPIRIC) ? "empiric" : "empiric+lpf");	
+		save = 1;
+	}
+	if (save)
+	{
+		cpifaceSession->configAPI->StoreConfig();
+	}
 }
 
 void pr_bug(const char *file, int line,
@@ -963,6 +1017,7 @@ iceout:
 		sndhClosePlayer (cpifaceSession);
 		return errGen;
 	}
+	psgplay_calculate_empiric_lpf (&sndh_StereoEmpiricLPF, sndh_StereoEmpiricLPF_cutoff, sndh_Rate, (float)sndh_StereoEmpiricLPF_Qpct / 100.0f);
 	psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
 
 #ifdef PLAYSNDH_DEBUG
@@ -1112,3 +1167,37 @@ OCP_INTERNAL struct sndhMeta_t *sndhGetMeta (void)
 	return sndh_Meta;
 }
 
+OCP_INTERNAL void sndh_load_config (struct PluginInitAPI_t *API)
+{
+	const char *stereomodel = API->configAPI->GetProfileString ("sndh", "stereomodel", "empiric");
+	if ((!strcasecmp (stereomodel, "linear")) ||
+	   (!strcasecmp (stereomodel, "0")))
+	{
+		sndh_StereoModel = STEREO_LINEAR;
+	}
+	if ((!strcasecmp (stereomodel, "empiric+lpf")) ||
+	   (!strcasecmp (stereomodel, "1")))
+	{
+		sndh_StereoModel = STEREO_EMPIRIC_LPF;
+	} else {
+		sndh_StereoModel = STEREO_EMPIRIC;
+	}
+
+	sndh_StereoEmpiricLPF_cutoff = API->configAPI->GetProfileInt ("sndh", "lpf_frequency", 880, 10);
+	if (sndh_StereoEmpiricLPF_cutoff < LPF_FREQ_MIN)
+	{
+		sndh_StereoEmpiricLPF_cutoff = LPF_FREQ_MIN;
+	} else if (sndh_StereoEmpiricLPF_cutoff > LPF_FREQ_MAX)
+	{
+		sndh_StereoEmpiricLPF_cutoff = LPF_FREQ_MAX;
+	}
+
+	sndh_StereoEmpiricLPF_Qpct = API->configAPI->GetProfileInt ("sndh", "lpf_Qpct", 100, 10);
+	if (sndh_StereoEmpiricLPF_Qpct < LPF_FREQ_MIN)
+	{
+		sndh_StereoEmpiricLPF_Qpct = LPF_QPCT_MIN;
+	} else if (sndh_StereoEmpiricLPF_Qpct > LPF_QPCT_MAX)
+	{
+		sndh_StereoEmpiricLPF_Qpct = LPF_QPCT_MAX;
+	}
+}

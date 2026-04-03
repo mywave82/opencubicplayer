@@ -32,7 +32,7 @@ sndhtype.o: sndhtype.c \
 	psgplay-git/include/ice/ice.h
 	$(CC) $< -o $@ -c
 
-playsndh_so=sndhtype.o sndhplay.o sndhpplay.o sndhtracks.o \
+playsndh_so=sndhconfig.o sndhtype.o sndhplay.o sndhpplay.o sndhtracks.o \
 	atari_bus.o \
 	atari_cpu.o \
 	atari_dac.o \
@@ -86,6 +86,16 @@ playsndh$(LIB_SUFFIX): $(playsndh_so)
 #	../stuff/poutput.h
 #	$(CC) -o $@ aychan.c -c
 
+sndhconfig.o: sndhconfig.c \
+	sndhplay.h \
+	../config.h \
+	../types.h \
+	../stuff/compat.h \
+	../stuff/imsrtns.h \
+	../stuff/poutput.h \
+	../cpiface/cpiface.h
+	$(CC) $< -o $@ -c
+
 sndhpplay.o: sndhpplay.c sndhplay.h \
 	../config.h \
 	../types.h \
@@ -105,6 +115,8 @@ sndhpplay.o: sndhpplay.c sndhplay.h \
 sndhplay.o: sndhplay.c sndhplay.h sndhtype.h \
 	../config.h \
 	../types.h \
+	../boot/plinkman.h \
+	../boot/psetting.h \
 	../cpiface/cpiface.h \
 	../dev/mcp.h \
 	../dev/player.h \

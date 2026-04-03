@@ -44,6 +44,7 @@
 
 static void sndhCloseFile (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	sndhConfigDone (cpifaceSession);
 	sndhTrackDone (cpifaceSession);
 	sndhClosePlayer (cpifaceSession);
 }
@@ -491,12 +492,14 @@ static int sndhOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct modu
 #endif
 
 	sndhTrackInit (cpifaceSession);
+	sndhConfigInit (cpifaceSession);
 
 	return errOk;
 }
 
 static int sndhPluginInit (struct PluginInitAPI_t *API)
 {
+	sndh_load_config(API);
 	return sndh_type_init (API);
 }
 

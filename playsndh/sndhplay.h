@@ -2,6 +2,7 @@
 #define _SNDHPLAY_H
 
 struct ocpfilehandle_t;
+struct PluginInitAPI_t;
 struct cpifaceSessionAPI_t;
 OCP_INTERNAL int sndhOpenPlayer (struct ocpfilehandle_t *, struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void sndhClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession);
@@ -40,10 +41,34 @@ OCP_INTERNAL struct channel_info_t *sndhRegisters(void);
 
 OCP_INTERNAL int sndhGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, unsigned int ch, int16_t *s, unsigned int len, uint32_t rate, int opt);
 
+OCP_INTERNAL void sndh_load_config (struct PluginInitAPI_t *API);
 OCP_INTERNAL void sndhTrackInit (struct cpifaceSessionAPI_t *cpifaceSession);
 OCP_INTERNAL void sndhTrackDone (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void sndhConfigInit (struct cpifaceSessionAPI_t *cpifaceSession);
+OCP_INTERNAL void sndhConfigDone (struct cpifaceSessionAPI_t *cpifaceSession);
 
 struct sndhMeta_t;
 OCP_INTERNAL struct sndhMeta_t *sndhGetMeta (void);
+
+enum sndhStereoModels
+{
+	STEREO_LINEAR,
+	STEREO_EMPIRIC,
+	STEREO_EMPIRIC_LPF, /* Low Pass Filter */
+};
+
+#define LPF_FREQ_MIN 50
+#define LPF_FREQ_MAX 4000
+#define LPF_QPCT_MIN 10
+#define LPF_QPCT_MAX 200
+
+OCP_INTERNAL void sndhGetStereoModel (enum sndhStereoModels *StereoModel,
+                                      int                   *StereoEmpiricLPF_cutoff,
+                                      int                   *StereoEmpiricLPF_Qpct);
+
+OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession,
+                                      enum sndhStereoModels       StereoModel,
+                                      int                         StereoEmpiricLPF_cutoff,
+                                      int                         StereoEmpiricLPF_Qpct);
 
 #endif
