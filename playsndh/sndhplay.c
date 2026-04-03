@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include "types.h"
 
+#include "boot/plinkman.h"
+#include "boot/psetting.h"
 #include "cpiface/cpiface.h"
 #include "dev/mcp.h"
 #include "dev/player.h"
@@ -49,7 +51,6 @@
 #endif
 
 #include "psgplay-git/include/internal/psgplay.h"
-
 static struct psgplay *pp;
 static struct file f;
 static jmp_buf psg_jmp;
@@ -69,6 +70,13 @@ static int                  sndh_subtunes;
 static uint32_t             sndh_Rate;
 float time_stop; //OPTION_TIME_UNDEFINED, OPTION_STOP_NEVER or use sndh_tag_subtune_time()
 struct sndhMeta_t          *sndh_Meta;
+
+static enum sndhStereoModels                 sndh_StereoModel = STEREO_EMPIRIC;
+static int                                   sndh_LowPassFIRLength = 8;
+static int                                   sndh_StereoBalanceA;
+static int                                   sndh_StereoBalanceB;
+static int                                   sndh_StereoBalanceC;
+static struct psgplay_psg_stereo_balance     sndh_StereoBalance;
 
 #define TIMESLOTS 128
 static struct timeslot
@@ -355,18 +363,113 @@ OCP_INTERNAL void sndhClosePlayer (struct cpifaceSessionAPI_t *cpifaceSession)
 
 static psgplay_digital_to_stereo_cb ocp_psg_mix_option (void)
 {
-#warning Stereo model
-	return psgplay_digital_to_stereo_empiric;
-	//return psgplay_digital_to_stereo_linear;
-	//return psgplay_digital_to_stereo_balance;
-	//return psgplay_digital_to_stereo_volume;
+	switch (sndh_StereoModel)
+	{
+		case STEREO_BALANCE: return psgplay_digital_to_stereo_balance;
+		case STEREO_LINEAR: return psgplay_digital_to_stereo_linear;
+		default:
+		case STEREO_EMPIRIC: return psgplay_digital_to_stereo_empiric;
+		//return psgplay_digital_to_stereo_balance;
+		//return psgplay_digital_to_stereo_volume;
+	}
 }
 
 static void *ocp_psg_mix_arg(void)
 {
-        return NULL;
-	/* return &option.psg_balance; */
-	/* return &option.psg_volume; */
+	switch (sndh_StereoModel)
+	{
+		case STEREO_BALANCE: return &sndh_StereoBalance;
+		case STEREO_LINEAR: return NULL;
+		default:
+		case STEREO_EMPIRIC: return NULL;
+		/* return &option.psg_volume; */
+	}
+}
+
+OCP_INTERNAL void sndhGetStereoModel (enum sndhStereoModels *StereoModel,
+                                      int                   *LowPassFIRLength,
+                                      int                   *StereoBalanceA,
+                                      int                   *StereoBalanceB,
+                                      int                   *StereoBalanceC)
+{
+	*StereoModel = sndh_StereoModel;
+	*LowPassFIRLength = sndh_LowPassFIRLength;
+	*StereoBalanceA = sndh_StereoBalanceA;
+	*StereoBalanceB = sndh_StereoBalanceB;
+	*StereoBalanceC = sndh_StereoBalanceC;
+}
+
+OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession,
+                                      enum sndhStereoModels       StereoModel,
+                                      int                         LowPassFIRLength,
+                                      int                         StereoBalanceA,
+                                      int                         StereoBalanceB,
+                                      int                         StereoBalanceC)
+{
+	int save = 0;
+	if (LowPassFIRLength != sndh_LowPassFIRLength)
+	{
+		sndh_LowPassFIRLength = LowPassFIRLength;
+		psgplay_set_digital_lowpass_length (pp, sndh_LowPassFIRLength);
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "FIR_length", sndh_LowPassFIRLength, 10);
+		save = 1;
+	}
+
+	if (StereoBalanceA != sndh_StereoBalanceA)
+	{
+		sndh_StereoBalanceA = StereoBalanceA;
+		if (sndh_StereoBalanceA < BALANCE_PCT_MIN)
+		{
+			sndh_StereoBalanceA = BALANCE_PCT_MIN;
+		} else if (sndh_StereoBalanceA > BALANCE_PCT_MAX)
+		{
+			sndh_StereoBalanceA = BALANCE_PCT_MAX;
+		}
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "balance_a", sndh_StereoBalanceA, 10);
+		sndh_StereoBalance.a = (float)sndh_StereoBalanceA / 100.0f;
+		save = 1;
+	}
+	if (StereoBalanceB != sndh_StereoBalanceB)
+	{
+		sndh_StereoBalanceB = StereoBalanceB;
+		if (sndh_StereoBalanceB < BALANCE_PCT_MIN)
+		{
+			sndh_StereoBalanceB = BALANCE_PCT_MIN;
+		} else if (sndh_StereoBalanceB > BALANCE_PCT_MAX)
+		{
+			sndh_StereoBalanceB = BALANCE_PCT_MAX;
+		}
+		sndh_StereoBalance.b = (float)sndh_StereoBalanceB / 100.0f;
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "balance_b", sndh_StereoBalanceB, 10);
+		save = 1;
+	}
+	if (StereoBalanceC != sndh_StereoBalanceC)
+	{
+		sndh_StereoBalanceC = StereoBalanceC;
+		if (sndh_StereoBalanceC < BALANCE_PCT_MIN)
+		{
+			sndh_StereoBalanceC = BALANCE_PCT_MIN;
+		} else if (sndh_StereoBalanceC > BALANCE_PCT_MAX)
+		{
+			sndh_StereoBalanceC = BALANCE_PCT_MAX;
+		}
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "balance_c", sndh_StereoBalanceC, 10);
+		sndh_StereoBalance.c = (float)sndh_StereoBalanceC / 100.0f;
+		save = 1;
+	}
+
+	if (StereoModel != sndh_StereoModel)
+	{
+		sndh_StereoModel = StereoModel;
+		psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
+		cpifaceSession->configAPI->SetProfileString ("sndh", "stereomodel", (sndh_StereoModel == STEREO_LINEAR) ? "linear" : "empiric");
+		save = 1;
+	}
+
+	if (save)
+	{
+		cpifaceSession->configAPI->StoreConfig();
+	}
 }
 
 void pr_bug(const char *file, int line,
@@ -964,6 +1067,7 @@ iceout:
 		return errGen;
 	}
 	psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
+	psgplay_set_digital_lowpass_length (pp, sndh_LowPassFIRLength);
 
 #ifdef PLAYSNDH_DEBUG
 	fprintf (stderr, "OPTION_TIME_UNDEFINED=%d\n", OPTION_TIME_UNDEFINED);
@@ -1118,3 +1222,55 @@ OCP_INTERNAL struct sndhMeta_t *sndhGetMeta (void)
 	return sndh_Meta;
 }
 
+OCP_INTERNAL void sndh_load_config (struct PluginInitAPI_t *API)
+{
+	const char *stereomodel = API->configAPI->GetProfileString ("sndh", "stereomodel", "empiric");
+	if ((!strcasecmp (stereomodel, "balance")) ||
+	   (!strcasecmp (stereomodel, "0")))
+	{
+		sndh_StereoModel = STEREO_BALANCE;
+	} else if ((!strcasecmp (stereomodel, "linear")) ||
+	          (!strcasecmp (stereomodel, "1")))
+	{
+		sndh_StereoModel = STEREO_LINEAR;
+	} else {
+		sndh_StereoModel = STEREO_EMPIRIC;
+	}
+
+	sndh_StereoBalanceA = API->configAPI->GetProfileInt ("sndh", "balance_a", BALANCE_PCT_MIN, 10);
+	if (sndh_StereoBalanceA < BALANCE_PCT_MIN)
+	{
+		sndh_StereoBalanceA = BALANCE_PCT_MIN;
+	} else if (sndh_StereoBalanceA > BALANCE_PCT_MAX)
+	{
+		sndh_StereoBalanceA = BALANCE_PCT_MAX;
+	}
+	sndh_StereoBalanceB = API->configAPI->GetProfileInt ("sndh", "balance_b", 0, 10);
+	if (sndh_StereoBalanceB < BALANCE_PCT_MIN)
+	{
+		sndh_StereoBalanceB = BALANCE_PCT_MIN;
+	} else if (sndh_StereoBalanceB > BALANCE_PCT_MAX)
+	{
+		sndh_StereoBalanceB = BALANCE_PCT_MAX;
+	}
+	sndh_StereoBalanceC = API->configAPI->GetProfileInt ("sndh", "balance_c", BALANCE_PCT_MAX, 10);
+	if (sndh_StereoBalanceC < BALANCE_PCT_MIN)
+	{
+		sndh_StereoBalanceC = BALANCE_PCT_MIN;
+	} else if (sndh_StereoBalanceC > BALANCE_PCT_MAX)
+	{
+		sndh_StereoBalanceC = BALANCE_PCT_MAX;
+	}
+	sndh_StereoBalance.a = (float)sndh_StereoBalanceA / 100.0f;
+	sndh_StereoBalance.b = (float)sndh_StereoBalanceB / 100.0f;
+	sndh_StereoBalance.c = (float)sndh_StereoBalanceC / 100.0f;
+
+	sndh_LowPassFIRLength = API->configAPI->GetProfileInt ("sndh", "FIR_length", 8, 10);
+	if (sndh_LowPassFIRLength < 1)
+	{
+		sndh_LowPassFIRLength = 1;
+	} else if (sndh_LowPassFIRLength > 16)
+	{
+		sndh_LowPassFIRLength = 16;
+	}
+}
