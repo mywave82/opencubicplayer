@@ -55,22 +55,31 @@ enum sndhStereoModels
 	STEREO_BALANCE,
 	STEREO_LINEAR,
 	STEREO_EMPIRIC,
+	STEREO_EMPIRIC_LPF, /* Low Pass Filter */
 };
 
 #define BALANCE_PCT_MIN -100
 #define BALANCE_PCT_MAX 100
+#define LPF_FREQ_MIN 50
+#define LPF_FREQ_MAX 4000
+#define LPF_QPCT_MIN 10
+#define LPF_QPCT_MAX 200
 
 OCP_INTERNAL void sndhGetStereoModel (enum sndhStereoModels *StereoModel,
                                       int                   *LowPassFIRLength,
                                       int                   *StereoBalanceA,
                                       int                   *StereoBalanceB,
-                                      int                   *StereoBalanceC);
+                                      int                   *StereoBalanceC,
+                                      int                   *StereoEmpiricLPF_cutoff,
+                                      int                   *StereoEmpiricLPF_Qpct);
 
 OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession,
                                       enum sndhStereoModels       StereoModel,
                                       int                         LowPassFIRLength,
                                       int                         StereoBalanceA,
                                       int                         StereoBalanceB,
-                                      int                         StereoBalanceC);
+                                      int                         StereoBalanceC,
+                                      int                         StereoEmpiricLPF_cutoff,
+                                      int                         StereoEmpiricLPF_Qpct);
 
 #endif
