@@ -77,6 +77,9 @@ static int                                   sndh_StereoBalanceA;
 static int                                   sndh_StereoBalanceB;
 static int                                   sndh_StereoBalanceC;
 static struct psgplay_psg_stereo_balance     sndh_StereoBalance;
+static struct psgplay_psg_stereo_empiric_lpf sndh_StereoEmpiricLPF;
+static int                                   sndh_StereoEmpiricLPF_cutoff = 880;
+static int                                   sndh_StereoEmpiricLPF_Qpct = 100;
 
 #define TIMESLOTS 128
 static struct timeslot
@@ -369,6 +372,7 @@ static psgplay_digital_to_stereo_cb ocp_psg_mix_option (void)
 		case STEREO_LINEAR: return psgplay_digital_to_stereo_linear;
 		default:
 		case STEREO_EMPIRIC: return psgplay_digital_to_stereo_empiric;
+		case STEREO_EMPIRIC_LPF: return psgplay_digital_to_stereo_empiric_lpf;
 		//return psgplay_digital_to_stereo_balance;
 		//return psgplay_digital_to_stereo_volume;
 	}
@@ -382,6 +386,7 @@ static void *ocp_psg_mix_arg(void)
 		case STEREO_LINEAR: return NULL;
 		default:
 		case STEREO_EMPIRIC: return NULL;
+		case STEREO_EMPIRIC_LPF: return &sndh_StereoEmpiricLPF;
 		/* return &option.psg_volume; */
 	}
 }
@@ -390,13 +395,17 @@ OCP_INTERNAL void sndhGetStereoModel (enum sndhStereoModels *StereoModel,
                                       int                   *LowPassFIRLength,
                                       int                   *StereoBalanceA,
                                       int                   *StereoBalanceB,
-                                      int                   *StereoBalanceC)
+                                      int                   *StereoBalanceC,
+                                      int                   *StereoEmpiricLPF_cutoff,
+                                      int                   *StereoEmpiricLPF_Qpct)
 {
 	*StereoModel = sndh_StereoModel;
 	*LowPassFIRLength = sndh_LowPassFIRLength;
 	*StereoBalanceA = sndh_StereoBalanceA;
 	*StereoBalanceB = sndh_StereoBalanceB;
 	*StereoBalanceC = sndh_StereoBalanceC;
+	*StereoEmpiricLPF_cutoff = sndh_StereoEmpiricLPF_cutoff;
+	*StereoEmpiricLPF_Qpct = sndh_StereoEmpiricLPF_Qpct;
 }
 
 OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession,
@@ -404,7 +413,9 @@ OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession
                                       int                         LowPassFIRLength,
                                       int                         StereoBalanceA,
                                       int                         StereoBalanceB,
-                                      int                         StereoBalanceC)
+                                      int                         StereoBalanceC,
+                                      int                         StereoEmpiricLPF_cutoff,
+                                      int                         StereoEmpiricLPF_Qpct)
 {
 	int save = 0;
 	if (LowPassFIRLength != sndh_LowPassFIRLength)
@@ -458,11 +469,22 @@ OCP_INTERNAL void sndhSetStereoModel (struct cpifaceSessionAPI_t *cpifaceSession
 		save = 1;
 	}
 
+	if ((StereoEmpiricLPF_cutoff != sndh_StereoEmpiricLPF_cutoff) ||
+	    (StereoEmpiricLPF_Qpct != sndh_StereoEmpiricLPF_Qpct))
+	{
+		sndh_StereoEmpiricLPF_cutoff = StereoEmpiricLPF_cutoff;
+		sndh_StereoEmpiricLPF_Qpct = StereoEmpiricLPF_Qpct;
+		psgplay_calculate_empiric_lpf (&sndh_StereoEmpiricLPF, sndh_StereoEmpiricLPF_cutoff, sndh_Rate, (float)sndh_StereoEmpiricLPF_Qpct / 100.0f);
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "lpf_frequency", sndh_StereoEmpiricLPF_cutoff, 10);
+		cpifaceSession->configAPI->SetProfileInt ("sndh", "lpf_Qpct", sndh_StereoEmpiricLPF_Qpct, 10);
+		save = 1;
+	}
+
 	if (StereoModel != sndh_StereoModel)
 	{
 		sndh_StereoModel = StereoModel;
 		psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
-		cpifaceSession->configAPI->SetProfileString ("sndh", "stereomodel", (sndh_StereoModel == STEREO_LINEAR) ? "linear" : "empiric");
+		cpifaceSession->configAPI->SetProfileString ("sndh", "stereomodel", (sndh_StereoModel == STEREO_LINEAR) ? "linear" : (sndh_StereoModel == STEREO_EMPIRIC) ? "empiric" : "empiric+lpf");
 		save = 1;
 	}
 
@@ -1066,6 +1088,7 @@ iceout:
 		sndhClosePlayer (cpifaceSession);
 		return errGen;
 	}
+	psgplay_calculate_empiric_lpf (&sndh_StereoEmpiricLPF, sndh_StereoEmpiricLPF_cutoff, sndh_Rate, (float)sndh_StereoEmpiricLPF_Qpct / 100.0f);
 	psgplay_digital_to_stereo_callback (pp, ocp_psg_mix_option(), ocp_psg_mix_arg());
 	psgplay_set_digital_lowpass_length (pp, sndh_LowPassFIRLength);
 
@@ -1233,6 +1256,10 @@ OCP_INTERNAL void sndh_load_config (struct PluginInitAPI_t *API)
 	          (!strcasecmp (stereomodel, "1")))
 	{
 		sndh_StereoModel = STEREO_LINEAR;
+	} if ((!strcasecmp (stereomodel, "empiric+lpf")) ||
+	   (!strcasecmp (stereomodel, "2")))
+	{
+		sndh_StereoModel = STEREO_EMPIRIC_LPF;
 	} else {
 		sndh_StereoModel = STEREO_EMPIRIC;
 	}
@@ -1264,6 +1291,24 @@ OCP_INTERNAL void sndh_load_config (struct PluginInitAPI_t *API)
 	sndh_StereoBalance.a = (float)sndh_StereoBalanceA / 100.0f;
 	sndh_StereoBalance.b = (float)sndh_StereoBalanceB / 100.0f;
 	sndh_StereoBalance.c = (float)sndh_StereoBalanceC / 100.0f;
+
+	sndh_StereoEmpiricLPF_cutoff = API->configAPI->GetProfileInt ("sndh", "lpf_frequency", 880, 10);
+	if (sndh_StereoEmpiricLPF_cutoff < LPF_FREQ_MIN)
+	{
+		sndh_StereoEmpiricLPF_cutoff = LPF_FREQ_MIN;
+	} else if (sndh_StereoEmpiricLPF_cutoff > LPF_FREQ_MAX)
+	{
+		sndh_StereoEmpiricLPF_cutoff = LPF_FREQ_MAX;
+	}
+
+	sndh_StereoEmpiricLPF_Qpct = API->configAPI->GetProfileInt ("sndh", "lpf_Qpct", 100, 10);
+	if (sndh_StereoEmpiricLPF_Qpct < LPF_FREQ_MIN)
+	{
+		sndh_StereoEmpiricLPF_Qpct = LPF_QPCT_MIN;
+	} else if (sndh_StereoEmpiricLPF_Qpct > LPF_QPCT_MAX)
+	{
+		sndh_StereoEmpiricLPF_Qpct = LPF_QPCT_MAX;
+	}
 
 	sndh_LowPassFIRLength = API->configAPI->GetProfileInt ("sndh", "FIR_length", 8, 10);
 	if (sndh_LowPassFIRLength < 1)

@@ -133,6 +133,8 @@ static void sndhConfigDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focu
 	int StereoBalanceA;
 	int StereoBalanceB;
 	int StereoBalanceC;
+	int StereoEmpiricLPF_cutoff;
+	int StereoEmpiricLPF_Qpct;
 	int line = 0;
 	int skip;
 
@@ -146,11 +148,17 @@ static void sndhConfigDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focu
 		skip = 0;
 	}
 
-	sndhGetStereoModel (&StereoModel, &FIR_length, &StereoBalanceA, &StereoBalanceB, &StereoBalanceC);
+	sndhGetStereoModel (&StereoModel, &FIR_length, &StereoBalanceA, &StereoBalanceB, &StereoBalanceC, &StereoEmpiricLPF_cutoff, &StereoEmpiricLPF_Qpct);
 
 	if (StereoModel == STEREO_BALANCE)
 	{
 		if (sndhConfigSelected >= 5)
+		{
+			sndhConfigSelected = 0;
+		}
+	} else if (StereoModel == STEREO_EMPIRIC_LPF)
+	{
+		if (sndhConfigSelected >= 4)
 		{
 			sndhConfigSelected = 0;
 		}
@@ -168,9 +176,9 @@ static void sndhConfigDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focu
 
 	if ((sndhConfigHeight >= 6) || (sndhConfigSelected == 0))
 	{
-		const char *models[] = {"Balance", "Linear", "Empiric"};
+		const char *models[] = {"Balance", "Linear", "Empiric", "Empiric+LPF"};
 		cpifaceSession->console->Driver->DisplayStr (sndhConfigFirstLine + line, 0, (focus && (sndhConfigSelected == 0)) ? 0x07 : 0x08, &"  StereoModel:"[2 - skip], 27 + skip);
-		DrawItems (cpifaceSession, focus, sndhConfigFirstLine + line, 0 + 27 + skip, sndhConfigWidth - 27 - skip, models, 3, StereoModel, sndhConfigSelected==0, 0);
+		DrawItems (cpifaceSession, focus, sndhConfigFirstLine + line, 0 + 27 + skip, sndhConfigWidth - 27 - skip, models, 4, StereoModel, sndhConfigSelected==0, 0);
 		line++;
 		if (line >= sndhConfigHeight)
 		{
@@ -214,6 +222,28 @@ static void sndhConfigDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focu
 		{
 			cpifaceSession->console->Driver->DisplayStr (sndhConfigFirstLine + line, 0, (focus && (sndhConfigSelected == 4)) ? 0x07 : 0x08, &"  Balance PSG.C:"[2 - skip], 27 + skip);
 			DrawBar (cpifaceSession, focus, sndhConfigFirstLine + line, 0 + 27 + skip, sndhConfigWidth - 27 - skip, 1, "", BALANCE_PCT_MIN, BALANCE_PCT_MAX, StereoBalanceC, sndhConfigSelected == 4, StereoModel != STEREO_BALANCE);
+			line++;
+			if (line >= sndhConfigHeight)
+			{
+				return;
+			}
+		}
+	} else if (StereoModel == STEREO_EMPIRIC_LPF)
+	{
+		if ((sndhConfigHeight >= 3) || (sndhConfigSelected == 2))
+		{
+			cpifaceSession->console->Driver->DisplayStr (sndhConfigFirstLine + line, 0, (focus && (sndhConfigSelected == 2)) ? 0x07 : 0x08, &"  LPF Frequency:"[2 - skip], 27 + skip);
+			DrawBar (cpifaceSession, focus, sndhConfigFirstLine + line, 0 + 27 + skip, sndhConfigWidth - 27 - skip, 1, "Hz", LPF_FREQ_MIN, LPF_FREQ_MAX, StereoEmpiricLPF_cutoff, sndhConfigSelected == 2, StereoModel != STEREO_EMPIRIC_LPF);
+			line++;
+			if (line >= sndhConfigHeight)
+			{
+				return;
+			}
+		}
+		if ((sndhConfigHeight >= 2) || (sndhConfigSelected == 3))
+		{
+			cpifaceSession->console->Driver->DisplayStr (sndhConfigFirstLine + line, 0, (focus&&(sndhConfigSelected == 3)) ? 0x07 : 0x08, &"  LPF Q-factor:"[2 - skip], 27 + skip);	
+			DrawBar (cpifaceSession, focus, sndhConfigFirstLine + line, 0 + 27 + skip, sndhConfigWidth - 27 - skip, 100, "", LPF_QPCT_MIN, LPF_QPCT_MAX, StereoEmpiricLPF_Qpct, sndhConfigSelected == 3, StereoModel != STEREO_EMPIRIC_LPF);
 			line++;
 			if (line >= sndhConfigHeight)
 			{
@@ -293,8 +323,10 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 	int StereoBalanceA;
 	int StereoBalanceC;
 	int StereoBalanceB;
+	int StereoEmpiricLPF_cutoff;
+	int StereoEmpiricLPF_Qpct;
 
-	sndhGetStereoModel (&StereoModel, &FIR_length, &StereoBalanceA, &StereoBalanceB, &StereoBalanceC);
+	sndhGetStereoModel (&StereoModel, &FIR_length, &StereoBalanceA, &StereoBalanceB, &StereoBalanceC, &StereoEmpiricLPF_cutoff, &StereoEmpiricLPF_Qpct);
 
 	static uint16_t lastkey = 0;
 	static uint32_t lastpress = 0;
@@ -358,6 +390,12 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 				{
 					sndhConfigSelected++;
 				}
+			} else if (StereoModel == STEREO_EMPIRIC_LPF)
+			{
+				if (sndhConfigSelected < 3)
+				{
+					sndhConfigSelected++;
+				}
 			} else {
 				if (sndhConfigSelected < 1)
 				{
@@ -389,6 +427,13 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 						{
 							StereoBalanceA = BALANCE_PCT_MIN;
 						}
+					} else if (StereoModel == STEREO_EMPIRIC_LPF)
+					{
+						StereoEmpiricLPF_cutoff -= repeat;
+						if (StereoEmpiricLPF_cutoff < LPF_FREQ_MIN)
+						{
+							StereoEmpiricLPF_cutoff = LPF_FREQ_MIN;
+						}
 					}
 					break;
 				case 3:
@@ -398,6 +443,13 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 						if (StereoBalanceB < BALANCE_PCT_MIN)
 						{
 							StereoBalanceB = BALANCE_PCT_MIN;
+						}
+					} else if (StereoModel == STEREO_EMPIRIC_LPF)
+					{
+						StereoEmpiricLPF_Qpct -= repeat;
+						if (StereoEmpiricLPF_Qpct < LPF_QPCT_MIN)
+						{
+							StereoEmpiricLPF_Qpct = LPF_QPCT_MIN;
 						}
 					}
 					break;
@@ -412,7 +464,7 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 					}
 					break;
 			}
-			sndhSetStereoModel (cpifaceSession, StereoModel, FIR_length, StereoBalanceA, StereoBalanceB, StereoBalanceC);
+			sndhSetStereoModel (cpifaceSession, StereoModel, FIR_length, StereoBalanceA, StereoBalanceB, StereoBalanceC, StereoEmpiricLPF_cutoff, StereoEmpiricLPF_Qpct);
 			break;
 
 		case KEY_RIGHT:
@@ -438,6 +490,13 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 						{
 							StereoBalanceA = BALANCE_PCT_MAX;
 						}
+					} else if (StereoModel == STEREO_EMPIRIC_LPF)
+					{
+						StereoEmpiricLPF_cutoff += repeat;
+						if (StereoEmpiricLPF_cutoff > LPF_FREQ_MAX)
+						{
+							StereoEmpiricLPF_cutoff = LPF_FREQ_MAX;
+						}
 					}
 					break;
 				case 3:
@@ -447,6 +506,13 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 						if (StereoBalanceB > BALANCE_PCT_MAX)
 						{
 							StereoBalanceB = BALANCE_PCT_MAX;
+						}
+					} else if (StereoModel == STEREO_EMPIRIC_LPF)
+					{
+						StereoEmpiricLPF_Qpct += repeat;
+						if (StereoEmpiricLPF_Qpct > LPF_QPCT_MAX)
+						{
+							StereoEmpiricLPF_Qpct = LPF_QPCT_MAX;
 						}
 					}
 					break;
@@ -461,7 +527,7 @@ static int sndhConfigAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, ui
 					}
 					break;
 			}
-			sndhSetStereoModel (cpifaceSession, StereoModel, FIR_length, StereoBalanceA, StereoBalanceB, StereoBalanceC);
+			sndhSetStereoModel (cpifaceSession, StereoModel, FIR_length, StereoBalanceA, StereoBalanceB, StereoBalanceC, StereoEmpiricLPF_cutoff, StereoEmpiricLPF_Qpct);
 			break;
 
 		default:
