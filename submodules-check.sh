@@ -27,4 +27,7 @@ if test "x$ANCIENT" != x"d52dc0c1eec35f14e0da78dd48836ac9542f2f0f"; then echo AN
 UNICODE_CASEFOLDING=`curl https://www.unicode.org/Public/latest/ 2> /dev/null|grep http|grep -i Public|head -n 1|sed -e 's/.*ublic\///' -e 's/\/.*//'`
 if test "x$UNICODE_CASEFOLDING" != x"17.0.0"; then echo Unicode CaseFolding needs to be verified; fi
 
+PSGPLAY=`git ls-remote https://github.com/frno7/psgplay.git refs/heads/main | sed -e 's/\t.*//'`
+if test "x$PSGPLAY" != x"c76403aa0e39e04b8319fb48380259bd461f76bc"; then echo PSG-play needs to be verified; fi
+
 # TIMIDITY

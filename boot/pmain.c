@@ -1088,9 +1088,21 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileInt ("fscolors", "SNDH", 13, 10);
 		}
 
-		if (epoch < 20260312)
+		if (epoch < 20260419)
 		{
-			cfSetProfileInt("version", "epoch", 20260312, 10);
+			fprintf(stderr, "ocp.ini update (3.3.0) add [sndh]\n");
+			cfSetProfileString ("sndh", "stereomodel", "empiric");
+			cfSetProfileInt ("sndh", "balance_a", -100, 10);
+			cfSetProfileInt ("sndh", "balance_b", 0, 10);
+			cfSetProfileInt ("sndh", "balance_c", 100, 10);
+			cfSetProfileInt ("sndh", "FIR_length", 8, 10);
+			cfSetProfileInt ("sndh", "lpf_frequency", 880, 10);
+			cfSetProfileInt ("sndh", "lpf_Qpct", 100, 10);
+		}
+
+		if (epoch < 20260419)
+		{
+			cfSetProfileInt("version", "epoch", 20260419, 10);
 			cfStoreConfig();
 #ifdef _WIN32
 			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
@@ -1107,17 +1119,17 @@ static int init_modules(int argc, char *argv[]
 #endif
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260312)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260419)
 	{
 #ifndef _WIN32
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260312\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260419\033[0m\n\n");
 			sleep(5);
 		} else
 #endif
 		{
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260312\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260419\n\n");
 		}
 	}
 

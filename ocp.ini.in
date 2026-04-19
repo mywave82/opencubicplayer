@@ -1,5 +1,5 @@
 [version]
-  epoch=20260312
+  epoch=20260419
 
 [general]
 ;link=
@@ -150,6 +150,19 @@
                           ; Woody is an OPL3 emulator by the DOSBox Team. It is a further development of Ken Silverman OPL2 emulator.
                           ; RetroWave OPL3 [Express] is an external USB device with real OPL3 hardware made by SudoMaker.
   retrowave=auto          ; Device to use, e.g. /dev/ttyACM0 /dev/cuaU0 /dev/dtyU0 /dev/cu.usbmodem0000001 COM1
+
+[sndh]
+stereomodel=empiric       ; "balance" "linear", "empiric" + "empiric+lpf"
+                          ; "balance" - lets you pan each of the three PSG channels between left and right.
+                          ; "linear" - the PSG chip is centered mono and all the three channels are linear and independent.
+                          ; "empiric" - the PSG chip is centered, but the three channels do influence each other as they do on the real hardware.
+                          ; "empiric+lpf" - adds an additional low-pass-filter on the PSG chip.
+balance_a=-100            ; For stereo model "balance", each of the PSG channels can be panned left (-100) or right (100)
+balance_b=0
+balance_c=100
+FIR_length=8              ; Built in FIR filter (Low-Pass filter) built into psgplay. By default it avarages samples in window if 8 samples in the PSG chip clock domain. This can be tuned from 1 (no filter) to 16 (maximum).
+lpf_frequency=880         ; For stereo model "empiric+lpf", this sets the cut-off frequency. Default value 880, range is 50 to 4000Hz.
+lpf_Qpct=100              ; For stereo model "empiric+lpf", this sets the Q value in percent. Default value is 100, range is 10 to 200.
 
 [devpALSA]
   card=default
