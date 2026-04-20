@@ -748,6 +748,11 @@ OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 
 	src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 
+	if (!length1)
+	{
+		return !!sidMuted[ch];
+	}
+
 	while (len)
 	{
 		if (stereo)
@@ -801,6 +806,11 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 
 	src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 
+	if (!length1)
+	{
+		return !!sidMuted[ch];
+	}
+
 	while (len)
 	{
 		if (ch)
@@ -841,7 +851,7 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 			}
 			if (!length1)
 			{
-				memset (s, 0, (len<<stereo)<<2);
+				memset (s, 0, len<<(stereo + 1));
 				return !!sidMuted[ch];
 			}
 		}
