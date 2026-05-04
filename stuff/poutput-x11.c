@@ -23,8 +23,6 @@
  *    -first release
  */
 
-#define ENABLE_SHM 1 /* makes it possible to disable XShmImage API, to test the classic non-shm path */
-
 #define _CONSOLE_DRIVER
 #include "config.h"
 #include <ctype.h>
@@ -37,11 +35,11 @@
 #include <X11/xpm.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/xf86vmode.h>
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 #include <X11/extensions/XShm.h>
 #endif
 #include <sys/ipc.h>
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 #include <sys/shm.h>
 #endif
 #include <stdio.h>
@@ -157,7 +155,7 @@ static Atom WM_DELETE_WINDOW;
 static int we_have_fullscreen;
 static int do_fullscreen=0;
 
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 static XShmSegmentInfo shminfo[1];
 static int shm_completiontype = -1;
 #endif
@@ -791,7 +789,7 @@ static void x11_common_event_loop(void)
 
 		XNextEvent(mDisplay, &event);
 
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 		if (event.type==shm_completiontype)
 			continue;
 #endif
@@ -1191,7 +1189,7 @@ static void create_window(void)
 
 static void create_image(void)
 {
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 	if (mLocalDisplay && XShmQueryExtension(mDisplay) )
 	{
 		if (image)
@@ -1300,7 +1298,7 @@ static void create_image(void)
 
 static void destroy_image(void)
 {
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 	if (shm_completiontype>=0)
 	{
 		if (image)
@@ -1909,7 +1907,7 @@ static void RefreshScreenGraph(void)
 		}
 	}
 
-#ifdef ENABLE_SHM
+#ifdef HAVE_X11_SHM
 	if (shm_completiontype>=0)
 		XShmPutImage(mDisplay, window, copyGC, image, 0, 0, 0, (Console.GraphLines == 240 ? 20 : 0), Console.GraphBytesPerLine, Console.GraphLines, True);
 	else

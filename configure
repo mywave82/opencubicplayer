@@ -737,6 +737,7 @@ SDL2_CFLAGS
 HAVE_SDL3
 SDL3_LIBS
 SDL3_CFLAGS
+HAVE_X11_SHM
 HAVE_X11
 HAVE_FLAC
 FLAC_LIBS
@@ -856,6 +857,7 @@ enable_option_checking
 with_debug
 with_builtin
 with_x11
+with_x11_shm
 with_mad
 with_libgme
 with_alsa
@@ -1589,6 +1591,7 @@ Optional Packages:
                           playback plugins, audio mixers and audio drivers are
                           always modules
   --with-x11              force/disable x11 support
+  --with-x11-shm          force/disable x11 SHM support
   --with-mad              force/disable mad mpeg audio support
   --with-libgme           force/disable libgme (Game Music Emulator support)
   --with-alsa             force/disable alsa support
@@ -8047,6 +8050,16 @@ else case e in #(
 esac
 fi
 
+
+# Check whether --with-x11_shm was given.
+if test ${with_x11_shm+y}
+then :
+  withval=$with_x11_shm;
+else case e in #(
+  e) with_x11_shm=auto ;;
+esac
+fi
+
 #AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 
 # Check whether --with-mad was given.
@@ -12195,7 +12208,7 @@ fi
 
 fi
 
-if test "x$with_x11" != "xno"
+if test "x$with_x11" != "xno" && test "x$with_x11_shm" != "xno"
 then :
 
 	ac_fn_c_check_header_compile "$LINENO" "X11/extensions/XShm.h" "ac_cv_header_X11_extensions_XShm_h" "#include <X11/Xlib.h>
@@ -12205,11 +12218,11 @@ if test "x$ac_cv_header_X11_extensions_XShm_h" = xyes
 then :
 
 else case e in #(
-  e)  if test "x$with_x11" = "xyes"
+  e)  if test "x$with_x11_shm" = "xyes"
 then :
   as_fn_error $? "\"XShm header files was not found\"" "$LINENO" 5
 else case e in #(
-  e) with_x11="no" ;;
+  e) with_x11_shm="no" ;;
 esac
 fi  ;;
 esac
@@ -12305,7 +12318,7 @@ fi
 
 fi
 
-if test "x$with_x11" != "xno"
+if test "x$with_x11" != "xno" && test "x$with_x11_shm" != "xno"
 then :
 
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for XShmQueryExtension in -lXext" >&5
@@ -12355,11 +12368,11 @@ if test "x$ac_cv_lib_Xext_XShmQueryExtension" = xyes
 then :
   X11_LIBS="-lXext $X11_LIBS"
 else case e in #(
-  e)  if test "x$with_x11" = "xyes"
+  e)  if test "x$with_x11_shm" = "xyes"
 then :
   as_fn_error $? "\"SHM/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
 else case e in #(
-  e) with_x11="no" ;;
+  e) with_x11_shm="no" ;;
 esac
 fi  ;;
 esac
@@ -12433,6 +12446,7 @@ fi
 
 fi
 
+
 if test "x$with_x11" = "xno"
 then :
 
@@ -12444,6 +12458,19 @@ else case e in #(
 	HAVE_X11=1
 	printf "%s\n" "#define HAVE_X11 1" >>confdefs.h
 
+	if test "x$with_x11_shm" = "xno"
+then :
+
+		HAVE_X11_SHM=
+
+else case e in #(
+  e)
+		HAVE_X11_SHM=1
+		printf "%s\n" "#define HAVE_X11_SHM 1" >>confdefs.h
+
+	 ;;
+esac
+fi
  ;;
 esac
 fi
@@ -23082,6 +23109,13 @@ then :
   echo "x11:               OFF"
 else case e in #(
   e) echo "x11:               ON" ;;
+esac
+fi
+if test "x$with_x11_shm"   = "xno"
+then :
+  echo "x11 SHM:           OFF"
+else case e in #(
+  e) echo "x11 SHM:           ON" ;;
 esac
 fi
 if test "x$with_sdl"       = "xno"

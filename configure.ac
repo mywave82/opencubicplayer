@@ -113,6 +113,7 @@ AC_DEFINE_UNQUOTED(LIB_SUFFIX, "$LIB_SUFFIX")
 AC_ARG_WITH([builtin],                 [AS_HELP_STRING([--with-builtin=core,auto,none],    [force/disable builtin plugins support. For now playback plugins, audio mixers and audio drivers are always modules])],
                                                                                                                                                                             [], [with_builtin=auto])
 AC_ARG_WITH([x11],                     [AS_HELP_STRING([--with-x11],                       [force/disable x11 support])],                                                   [], [with_x11=auto])
+AC_ARG_WITH([x11_shm],                 [AS_HELP_STRING([--with-x11-shm],                   [force/disable x11 SHM support])],                                               [], [with_x11_shm=auto])
 #AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 AC_ARG_WITH([mad],                     [AS_HELP_STRING([--with-mad],                       [force/disable mad mpeg audio support])],                                        [], [with_mad=auto])
 AC_ARG_WITH([libgme],                  [AS_HELP_STRING([--with-libgme],                    [force/disable libgme (Game Music Emulator support)])],                          [], [with_libgme=auto])
@@ -502,8 +503,8 @@ AS_IF([test "x$with_x11" != "xno"], [
 ])
 ])
 
-AS_IF([test "x$with_x11" != "xno"], [
-	AC_CHECK_HEADER([X11/extensions/XShm.h], [], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR("XShm header files was not found")], [with_x11="no"]) ],
+AS_IF([test "x$with_x11" != "xno" && test "x$with_x11_shm" != "xno"], [
+	AC_CHECK_HEADER([X11/extensions/XShm.h], [], [ AS_IF([test "x$with_x11_shm" = "xyes"], [AC_MSG_ERROR("XShm header files was not found")], [with_x11_shm="no"]) ],
 [#include <X11/Xlib.h>
 ])
 ])
@@ -519,8 +520,8 @@ AS_IF([test "x$with_x11" != "xno"], [
 	LIBS=$push_LIBS
 ])
 
-AS_IF([test "x$with_x11" != "xno"], [
-	AC_CHECK_LIB([Xext], [XShmQueryExtension], [X11_LIBS="-lXext $X11_LIBS"], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"])], [with_x11="no"]) ], [-lX11 -lXext -L/usr/X11R6/lib])
+AS_IF([test "x$with_x11" != "xno" && test "x$with_x11_shm" != "xno"], [
+	AC_CHECK_LIB([Xext], [XShmQueryExtension], [X11_LIBS="-lXext $X11_LIBS"], [ AS_IF([test "x$with_x11_shm" = "xyes"], [AC_MSG_ERROR(["SHM/X11 not found (expected to be found in /usr/X11R6/lib)"])], [with_x11_shm="no"]) ], [-lX11 -lXext -L/usr/X11R6/lib])
 	LIBS=$push_LIBS
 ])
 
@@ -529,12 +530,19 @@ AS_IF([test "x$with_x11" != "xno"], [
 	LIBS=$push_LIBS
 ])
 AC_SUBST(HAVE_X11)
+AC_SUBST(HAVE_X11_SHM)
 AS_IF([test "x$with_x11" = "xno"], [
 	X11_LIBS=
 	HAVE_X11=
 ],[
 	HAVE_X11=1
 	AC_DEFINE(HAVE_X11)
+	AS_IF([test "x$with_x11_shm" = "xno"], [
+		HAVE_X11_SHM=
+	],[
+		HAVE_X11_SHM=1
+		AC_DEFINE(HAVE_X11_SHM)
+	])
 ])
 
 AS_IF([test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"], [AC_MSG_ERROR("Can not use both --with-sdl and --with-sdl2")])
@@ -1246,6 +1254,7 @@ AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
 AS_IF([test "x$with_libgme"    = "xno" ], [echo "GME:               OFF"], [echo "GME:               ON"])
 AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON"])
+AS_IF([test "x$with_x11_shm"   = "xno" ], [echo "x11 SHM:           OFF"], [echo "x11 SHM:           ON"])
 AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON"])
 AS_IF([test "x$with_sdl2"      = "xno" ], [echo "SDL2:              OFF"], [echo "SDL2:              ON"])
 AS_IF([test "x$with_sdl3"      = "xno" ], [echo "SDL3:              OFF"], [echo "SDL3:              ON"])
