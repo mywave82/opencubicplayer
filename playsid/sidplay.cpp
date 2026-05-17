@@ -877,6 +877,15 @@ OCP_INTERNAL void sidSetFilterCurve6581 (double v)
 	mySidPlayer->SetFilterCurve6581 (v);
 }
 
+OCP_INTERNAL void sidSetEnableOld6581caps (bool enable)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetEnableOld6581caps (enable);
+}
+
 OCP_INTERNAL void sidSetFilterRange6581 (double v)
 {
 	if (!mySidPlayer)
@@ -972,7 +981,7 @@ OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSess
 
 	sid_clocks_per_row = mySidPlayer->GetVICIICyclesPerFrame();
 	sid_samples_per_row = (unsigned long long) sidRate * mySidPlayer->GetVICIICyclesPerFrame() / mySidPlayer->getMainCpuSpeed();
-	/* libsidplayfp will perform less samples than sid_samples_per_row when doing sid_clocks_per_row clock cycles..... go figure. If it was larger we would need to compensate */
+	/* libsidplayfp will perform fewer samples than sid_samples_per_row when doing sid_clocks_per_row clock cycles..... go figure. If it was larger we would need to compensate */
 
 #ifdef PLAYSID_DEBUG
 	fprintf (stderr, "GetVICIICyclesPerFrame()=%u\n", (unsigned int) mySidPlayer->GetVICIICyclesPerFrame());

@@ -75,6 +75,7 @@ static int config_CIA;
 static int config_filter;
 static int config_filtercurve6581;
 static int config_filterrange6581;
+static int config_enableOld6581caps;
 static int config_filtercurve8580;
 static int config_combinedwaveforms;
 static int config_digiboost;
@@ -291,13 +292,15 @@ static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const
  |  6: CIA:             [MOS6526] [MOS6526W4485] [MOS8521]                    | MOS6526 is the classic chip, MOS6526W4485 is a specific batch while MOS8521 is the modern chip
  |  7: filter:          [yes] [no]                                            |
  |  8: filtercurve6581:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
- |  9: filtercurve8580:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
- | 10: digiboost:       [yes] [no]                                            |
- | 11: kernal.rom:      sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | KERNEL.ROM images can be found online. Some SID files requires this file in order to play correctly
+ |  9: filterrange6581:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
+ | 10: enable 6581OldCaps yes] no]
+ | 11: filtercurve8580:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
+ | 12: digiboost:       [yes] [no]                                            |
+ | 13: kernal.rom:      sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | KERNEL.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjasdf                              |
- | 12: basic.rom:       sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | BASIC.ROM images can be found online. Some SID files requires this file in order to play correctly
+ | 14: basic.rom:       sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | BASIC.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjasdf                              |
- | 13: chargen.rom:     sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | CHARGEN.ROM images can be found online. Some SID files requires this file in order to play correctly
+ | 15: chargen.rom:     sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | CHARGEN.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjas                                |
  +----------------------------------------------------------------------------|
  |                                                                            |
@@ -310,7 +313,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	const int LINES_NOT_AVAILABLE_START = 3;
 	const int LINES_NOT_AVAILABLE_STOP = 4;
 	const int LINES_NOT_AVAILABLE = LINES_NOT_AVAILABLE_START + LINES_NOT_AVAILABLE_STOP;
-	const int maxcontentheight = 18;
+	const int maxcontentheight = 19;
 	      int contentheight = MIN(maxcontentheight, MAX(API->console->TextHeight - 1 - LINES_NOT_AVAILABLE, LINES_NOT_AVAILABLE + 1));
 	      int mlHeight = contentheight + LINES_NOT_AVAILABLE;
 	      int mlTop, mlLeft, mlWidth;
@@ -380,14 +383,15 @@ if (skip)                   \
 	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 7: filter", offon, 2, config_filter, EditPos==6, API);                           _B
 	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 8: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==7, API);  _B
 	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==8, API);  _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "10: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==9, API);  _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "11: CWS", combinedwaveforms, 3, config_combinedwaveforms, EditPos==10, API);      _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "12: digiboost", offon, 2, config_digiboost, EditPos==11, API);                    _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "13: kernal.rom:", EditPos==12, config_kernal, API);                               _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "10: Old 6581 Cap val:", offon, 2, config_enableOld6581caps, EditPos==9, API);     _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "11: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==10, API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "12: CWS", combinedwaveforms, 3, config_combinedwaveforms, EditPos==11, API);      _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "13: digiboost", offon, 2, config_digiboost, EditPos==12, API);                    _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "14: kernal.rom:", EditPos==13, config_kernal, API);                               _B
 	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_kernal.hash_8192, entry_kernal.hash_4096, 0, API);                           _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "14: basic.rom:", EditPos==13, config_basic, API);                                 _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "15: basic.rom:", EditPos==14, config_basic, API);                                 _B
 	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_basic.hash_8192, entry_basic.hash_4096, 1, API);                             _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "15: chargen.rom", EditPos==14, config_chargen, API);                              _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "16: chargen.rom", EditPos==15, config_chargen, API);                              _B
 	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_chargen.hash_8192, entry_chargen.hash_4096, 2, API);                         _B
 
 #undef _A
@@ -434,26 +438,30 @@ if (skip)                   \
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5%");
 			break;
 		case 9:
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Enable old value of 2200pF capacitors instead of");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 470pF, matching C64 Assembly 326298. Default is off.");
+			break;
+		case 10:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Value to use if SID is MOS8580.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5");
 			break;
-		case 10:
+		case 11:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Combined waveforms strength.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is average.");
 			break;
-		case 11:
+		case 12:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Digi-Boost is a hardware feature only available on MOS8580, where the");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " digital playback would be boosted.");
 			break;
-		case 12:
+		case 13:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " KERNEL.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
-		case 13:
+		case 14:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " BASIC.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
-		case 14:
+		case 15:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " CHARGEN.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
@@ -1044,6 +1052,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	config_filter =                            API->configAPI->GetProfileBool   ("libsidplayfp", "filter",          1, 1);
 	config_filtercurve6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
 	config_filterrange6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filterrange6581", "0.5"));
+	config_enableOld6581caps =                 API->configAPI->GetProfileBool   ("libsidplayfp", "enableOld6581caps", 0, 0);
 	config_filtercurve8580 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
 	config_combinedwaveforms = CWS_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "combinedwaveforms", "Strong"));
 	config_digiboost =                         API->configAPI->GetProfileBool   ("libsidplayfp", "digiboost",       0, 0);
@@ -1115,21 +1124,21 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 			switch (key)
 			{
 				case _KEY_ENTER:
-					if ((esel == 12) || (esel == 13) || (esel == 14))
+					if ((esel == 13) || (esel == 14) || (esel == 15))
 					{
 						uint32_t dir_ref;
 						int dsel = 0;
 						int inner = 1;
 
-						if (esel == 12)
+						if (esel == 13)
 						{
 							dir_ref = API->dirdb->GetParentAndRef (entry_kernal.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_kernal.dirdb_ref, &dsel, API);
-						} else if (esel == 13)
+						} else if (esel == 14)
 						{
 							dir_ref = API->dirdb->GetParentAndRef (entry_basic.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_basic.dirdb_ref, &dsel, API);
-						} else {
+						} else { /* 15 */
 							dir_ref = API->dirdb->GetParentAndRef (entry_chargen.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_chargen.dirdb_ref, &dsel, API);
 						}
@@ -1164,7 +1173,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 						while (inner)
 						{
 							API->fsDraw();
-							sidDrawDir (dsel, esel - 12, API);
+							sidDrawDir (dsel, esel - 13, API);
 							while (inner && API->console->KeyboardHit())
 							{
 								int key = API->console->KeyboardGetChar();
@@ -1239,21 +1248,21 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 											}
 											if (newpath)
 											{
-												if (esel == 12)
+												if (esel == 13)
 												{
 													API->dirdb->Unref (entry_kernal.dirdb_ref, dirdb_use_file);
 													entry_kernal = entries_data[dsel];
 													API->dirdb->Ref (entry_kernal.dirdb_ref, dirdb_use_file);
 													free (config_kernal);
 													config_kernal = newpath;
-												} else if (esel == 13)
+												} else if (esel == 14)
 												{
 													API->dirdb->Unref (entry_basic.dirdb_ref, dirdb_use_file);
 													entry_basic = entries_data[dsel];
 													API->dirdb->Ref (entry_basic.dirdb_ref, dirdb_use_file);
 													free (config_basic);
 													config_basic = newpath;
-												} else { /* esel == 14 */
+												} else { /* esel == 15 */
 													API->dirdb->Unref (entry_chargen.dirdb_ref, dirdb_use_file);
 													entry_chargen = entries_data[dsel];
 													API->dirdb->Ref (entry_chargen.dirdb_ref, dirdb_use_file);
@@ -1297,6 +1306,7 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				case 'B':
 				case 'C':
 				case 'D':
+				case 'E':
 					esel = key - 'A' + 9;
 					break;
 
@@ -1319,17 +1329,20 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 							if (config_filterrange6581 < 0) config_filterrange6581 = 0;
 							break;
 						case 9:
+							config_enableOld6581caps = 0;
+							break;
+						case 10:
 							config_filtercurve8580 -= repeat;
 							if (config_filtercurve8580 < 0) config_filtercurve8580 = 0;
 							break;
-						case 10:
+						case 11:
 							config_combinedwaveforms -= 1;
 							if (config_combinedwaveforms < 0) config_combinedwaveforms = 0;
 							break;
-						case 11: config_digiboost = 0; break;
-						case 12:
+						case 12: config_digiboost = 0; break;
 						case 13:
 						case 14:
+						case 15:
 							break;
 					}
 					break;
@@ -1352,22 +1365,25 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 							if (config_filterrange6581 > 100) config_filterrange6581 = 100;
 							break;
 						case 9:
+							config_enableOld6581caps = 1;
+							break;
+						case 10:
 							config_filtercurve8580 += repeat;
 							if (config_filtercurve8580 > 100) config_filtercurve8580 = 100;
 							break;
-						case 10:
+						case 11:
 							config_combinedwaveforms += 1;
 							if (config_combinedwaveforms > 2) config_combinedwaveforms = 2;
 							break;
-						case 11: config_digiboost = 1; break;
-						case 12:
+						case 12: config_digiboost = 1; break;
 						case 13:
 						case 14:
+						case 15:
 							break;
 					}
 					break;
 				case KEY_DOWN:
-					if (esel < 14)
+					if (esel < 15)
 					{
 						esel++;
 					}
@@ -1399,6 +1415,7 @@ superexit:
 	API->configAPI->SetProfileBool   ("libsidplayfp", "filter", config_filter);
 	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve6581", int_to_float100x(config_filtercurve6581));
 	API->configAPI->SetProfileString ("libsidplayfp", "filterrange6581", int_to_float100x(config_filterrange6581));
+	API->configAPI->SetProfileBool   ("libsidplayfp", "enableOld6581caps", config_enableOld6581caps);
 	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve8580", int_to_float100x(config_filtercurve8580));
 	API->configAPI->SetProfileString ("libsidplayfp", "combinedwaveforms", CWS_from_int (config_combinedwaveforms));
 	API->configAPI->SetProfileBool   ("libsidplayfp", "digiboost", config_digiboost);

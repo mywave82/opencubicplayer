@@ -48,6 +48,7 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 OCP_INTERNAL void sidSetFilter (bool enable);
 OCP_INTERNAL void sidSetFilterCurve6581 (double v);
 OCP_INTERNAL void sidSetFilterRange6581 (double v);
+OCP_INTERNAL void sidSetEnableOld6581caps (bool enable);
 OCP_INTERNAL void sidSetFilterCurve8580 (double v);
 OCP_INTERNAL void sidSetCombinedWaveformsStrength (int CWF);
 

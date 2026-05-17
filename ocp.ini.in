@@ -119,11 +119,14 @@
   filter=on
 ; filtercurve6581=0.5  Controls the filter curve for the MOS6581 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
-  filterrange6581=0.5
+  filtercurve6581=0.5
 ; filterrange6581=0.5  Controls the filter range for the MOS6581 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (dark) to 1.0 (bright), the default value is 0.5.
-  filtercurve6581=0.5
+  filterrange6581=0.5
 
+  enableOld6581caps=off
+; enableOld6581caps=off Enable old value of 2200pF capacitors instead of 470pF for MOS6581 SID
+;                       model if emulator=residfp. Enabling this matches C64 Assembly 326298.
 ; filtercurve8580=0.5  Controls the filter curve for the MOS8580 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
   filtercurve8580=0.5

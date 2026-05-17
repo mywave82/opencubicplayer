@@ -1102,6 +1102,12 @@ static int init_modules(int argc, char *argv[]
 
 		if (epoch < 20260419)
 		{
+			fprintf(stderr, "ocp.ini update (3.3.0) add [libsidplay] enableOld6581caps=off\n");
+			cfSetProfileBool ("libsidplayfp", "enableOld6581caps", 0);
+		}
+
+		if (epoch < 20260419)
+		{
 			cfSetProfileInt("version", "epoch", 20260419, 10);
 			cfStoreConfig();
 #ifdef _WIN32

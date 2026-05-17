@@ -222,8 +222,6 @@ namespace libsidplayfp
 
 		m_engCfg.frequency = rate;
 
-		m_engCfg.playback = SidConfig::STEREO;
-
 		m_filter.enabled = configAPI->GetProfileBool("libsidplayfp", "filter", 1, 0);
 		//fprintf (stderr, "filter=%d\n", m_filter.enabled);
 
@@ -266,6 +264,8 @@ namespace libsidplayfp
 		} else {
 			//fprintf (stderr, "filtercurve8580=%lf\n", m_filter.filterCurve8580);
 		}
+
+		m_filter.enableOld6581caps = configAPI->GetProfileBool ("libsidplayfp", "enableOld6581caps", 0, 0);
 
 		const char *CWS = configAPI->GetProfileString("libsidplayfp", "combinedwaveforms", "Average");
 		if (!strcasecmp(CWS, "Weak"))
@@ -411,6 +411,7 @@ namespace libsidplayfp
 				m_engCfg.sidEmulation = rs;
 				rs->filter6581Curve(m_filter.filterCurve6581);
 				rs->filter6581Range(m_filter.filterRange6581);
+				rs->enableOld6581caps(m_filter.enableOld6581caps);
 				rs->filter8580Curve(m_filter.filterCurve8580);
 				rs->combinedWaveformsStrength(m_filter.combinedWaveforms);
 
@@ -557,6 +558,11 @@ namespace libsidplayfp
 			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
 			if (rs)
 			{
+#warning Temporary upper-limit due to https://github.com/libsidplayfp/libresidfp/issues/19
+				if (v > 0.86)
+				{
+					v = 0.86;
+				}
 				rs->filter6581Curve (v);
 			}
 		} else if (m_residfp == 2)
@@ -577,6 +583,22 @@ namespace libsidplayfp
 			if (rs)
 			{
 				rs->filter6581Range (v);
+			}
+		} else if (m_residfp == 2)
+		{
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+			/* TODO: no parameters available in crSID (sidlite) */
+		}
+	}
+
+	void ConsolePlayer::SetEnableOld6581caps (bool v)
+	{
+		if (m_residfp == 1)
+		{
+			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+			if (rs)
+			{
+				rs->enableOld6581caps (v);
 			}
 		} else if (m_residfp == 2)
 		{
