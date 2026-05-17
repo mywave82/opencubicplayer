@@ -1567,7 +1567,7 @@ int sdl3_init(void)
 {
 	if (!SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO))
 	{
-		fprintf(stderr, "[SDL3 video] Unable to init SDL: %s\n", SDL_GetError());
+		fprintf(stderr, "[SDL3-video] Unable to init SDL: %s\n", SDL_GetError());
 		SDL_ClearError();
 		return 1;
 	}
@@ -1585,7 +1585,7 @@ int sdl3_init(void)
 
 	if (!current_window)
 	{
-		fprintf(stderr, "[SDL3 video] Unable to create window: %s\n", SDL_GetError());
+		fprintf(stderr, "[SDL3-video] Unable to create window: %s\n", SDL_GetError());
 		goto error_out;
 	}
 

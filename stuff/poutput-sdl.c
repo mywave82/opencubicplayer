@@ -398,18 +398,18 @@ static void FindFullscreenModes_SDL(Uint32 flags)
 
 	if (modes == (SDL_Rect**)0)
 	{
-		fprintf(stderr, "[SDL video] No modes available!\n");
+		fprintf(stderr, "[SDL-video] No modes available!\n");
 		return;
 	}
 
 	if (modes == (SDL_Rect**)-1)
 	{
-		fprintf(stderr, "[SDL video] All resolutions available, wierd\n");
+		fprintf(stderr, "[SDL-video] All resolutions available, wierd\n");
 	} else{
 		for (i=0; modes[i]; ++i)
 		{
 #ifdef SDL_DEBUG
-			fprintf(stderr, "[SDL video] have %d x %d\n", modes[i]->w, modes[i]->h);
+			fprintf(stderr, "[SDL-video] have %d x %d\n", modes[i]->w, modes[i]->h);
 #endif
 			for (j=0;j<MODE_BIGGEST;j++)
 			{
@@ -1434,7 +1434,7 @@ int sdl_init(void)
 {
 	if ( SDL_Init(/*SDL_INIT_AUDIO|*/SDL_INIT_VIDEO) < 0 )
 	{
-		fprintf(stderr, "[SDL video] Unable to init SDL: %s\n", SDL_GetError());
+		fprintf(stderr, "[SDL-video] Unable to init SDL: %s\n", SDL_GetError());
 		return 1;
 	}
 
@@ -1452,7 +1452,7 @@ int sdl_init(void)
 	{
 		char buffer[256];
 		if (!SDL_VideoDriverName(buffer, sizeof(buffer)))
-			fprintf(stderr, "[SDL video] Unable to retrieve the SDL video driver name: %s\n", SDL_GetError());
+			fprintf(stderr, "[SDL-video] Unable to retrieve the SDL video driver name: %s\n", SDL_GetError());
 		else
 			fprintf(stderr, "[SDL-video] Video driver name: %s\n", buffer);
 	}
@@ -1461,21 +1461,21 @@ int sdl_init(void)
 	info = SDL_GetVideoInfo();
 	if (!info)
 	{
-		fprintf(stderr, "[SDL video] Unable to retrieve video info: %s\n", SDL_GetError());
+		fprintf(stderr, "[SDL-video] Unable to retrieve video info: %s\n", SDL_GetError());
 		goto error_out;
 	}
 #ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] Video-info:\n");
+	fprintf(stderr, "[SDL-video] Video-info:\n");
 	Dump_SDL_VideoInfo(info);
 #endif
 
 
 #ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN|SDL_HWSURFACE:\n");
+	fprintf(stderr, "[SDL-video] check SDL_FULLSCREEN|SDL_HWSURFACE:\n");
 #endif
 	FindFullscreenModes_SDL(SDL_FULLSCREEN|SDL_HWSURFACE);
 #ifdef SDL_DEBUG
-	fprintf(stderr, "[SDL video] check SDL_FULLSCREEN:\n");
+	fprintf(stderr, "[SDL-video] check SDL_FULLSCREEN:\n");
 #endif
 	FindFullscreenModes_SDL(SDL_FULLSCREEN);
 
@@ -1484,18 +1484,18 @@ int sdl_init(void)
 		int i;
 		for (i=0;i<MODE_BIGGEST;i++)
 		{
-			fprintf(stderr, "[SDL video] has_%d_%d_fullscreen: %d\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].is_possible);
+			fprintf(stderr, "[SDL-video] has_%d_%d_fullscreen: %d\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].is_possible);
 			if (fullscreen_info[i].is_possible)
-				fprintf(stderr, "[SDL video] %d_%d_fullscreen: %d x %d (0x%x)\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].resolution.w, fullscreen_info[i].resolution.h, (int)fullscreen_info[i].flags);
+				fprintf(stderr, "[SDL-video] %d_%d_fullscreen: %d x %d (0x%x)\n", mode_gui_data[i].width, mode_gui_data[i].height, fullscreen_info[i].resolution.w, fullscreen_info[i].resolution.h, (int)fullscreen_info[i].flags);
 		}
 	}
-	fprintf(stderr, "[SDL video] has_text_fullscreen: %d\n", fullscreen_info[MODE_BIGGEST].is_possible);
+	fprintf(stderr, "[SDL-video] has_text_fullscreen: %d\n", fullscreen_info[MODE_BIGGEST].is_possible);
 	if (fullscreen_info[MODE_BIGGEST].is_possible)
-		fprintf(stderr, "[SDL video] text_fullscreen: %d x %d (0x%x)\n", fullscreen_info[MODE_BIGGEST].resolution.w, fullscreen_info[MODE_BIGGEST].resolution.h, (int)fullscreen_info[MODE_BIGGEST].flags);
+		fprintf(stderr, "[SDL-video] text_fullscreen: %d x %d (0x%x)\n", fullscreen_info[MODE_BIGGEST].resolution.w, fullscreen_info[MODE_BIGGEST].resolution.h, (int)fullscreen_info[MODE_BIGGEST].flags);
 #endif
 
 	if (!fullscreen_info[MODE_BIGGEST].is_possible)
-		fprintf(stderr, "[SDL video] Unable to find a fullscreen mode\n");
+		fprintf(stderr, "[SDL-video] Unable to find a fullscreen mode\n");
 
 	sdl_CurrentFontWanted = Console.CurrentFont = cfGetProfileInt(cfScreenSec, "fontsize", _8x16, 10);
 	if (Console.CurrentFont > _FONT_MAX)
