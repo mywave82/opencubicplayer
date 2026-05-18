@@ -380,6 +380,7 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 				data[0]=curcmd[4];
 				data[1]=curcmd[3];
 
+				/* command Ex are special, the upper byte in data nibble contain the remaining command */
 				if (command[0]==0xE)
 				{
 					command[0]=(data[0]&0xF0)|0xE;
@@ -390,6 +391,7 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 					command[1]=(data[1]&0xF0)|0xE;
 					data[1]&=0xF;
 				}
+				/* command 5x are special, the upper byte in data nibble contain the remaining command */
 				if (command[0]==0x5)
 				{
 					command[0]=(data[0]&0xF0)|0x5;
@@ -401,19 +403,23 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 					data[1]&=0xF;
 				}
 
+				/* insert PAN commands for initial row/pattern */
 				if (!row&&(t==orders[0]))
 					pan=panpos[q]*0x11;
 
+				/* command C is volume */
 				if (command[0]==0xC)
 					vol=data[0];
 				if (command[1]==0xC)
 					vol=data[1];
 
-				if (command[0]==0xB)
+				/* command B0 is balance (pan) */
+				if ((command[0]==0xB) && (!(data[0] & 0xf0)))
 					pan=data[0]*0x11;
-				if (command[1]==0xB)
+				if ((command[1]==0xB) && (!(data[1] & 0xf0)))
 					pan=data[1]*0x11;
 
+				/* special-case not mentioned in ULTRA_E.DOC */
 				if (((command[0]==0x3)||(command[1]==0x3))&&(nte!=-1))
 					nte|=128;
 
@@ -456,6 +462,10 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 				{
 					switch (command[f])
 					{
+						case 0x0:
+							if (data[f])
+								putcmd(&cp, cmdArpeggio, data[f]);
+							break;
 						case 0x1:
 							if (data[f])
 								putcmd(&cp, cmdPitchSlideUp, data[f]);
@@ -470,13 +480,35 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 						case 0x4:
 							putcmd(&cp, cmdPitchVibrato, data[f]);
 							break;
+						case 0x5:
+							/* TODO handle x5 special commands*/
+							break;
+						case 0x7:
+							putcmd(&cp, cmdVolVibrato, data[f]);
+							break;
+						case 0x9:
+							// we could add MP_OFFSETDIV4, or we do this instead, giving target 1024 samples value instead of 256 */
+							if (data[f] & 0xc0)
+							{
+								putcmd(&cp, cmdOffsetHigh, data[f] >> 6);
+							}
+							putcmd(&cp, cmdOffset, data[f]<<2);
+							break;
 						case 0xA:
+							/* can not slide both up and down */
 							if ((data[f]&0x0F)&&(data[f]&0xF0))
 								data[f]=0;
+
 							if (data[f]&0xF0)
-								putcmd(&cp, cmdVolSlideUp, data[f]>>4);
+								putcmd(&cp, cmdVolSlideUp, (data[f]>>4) << 2);
 							else if (data[f]&0x0F)
-								putcmd(&cp, cmdVolSlideDown, data[f]&0xF);
+								putcmd(&cp, cmdVolSlideDown, (data[f]&0xF) << 2);
+							break;
+						case 0xB: /* BALANCE, handled further up */
+							break;
+						case 0xC: /* VOLUME, handled further up */
+							break;
+						case 0xD: /* BREAK, handled further down */
 							break;
 						case 0x1E:
 							if (data[f])
@@ -486,21 +518,31 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 							if (data[f])
 								putcmd(&cp, cmdRowPitchSlideDown, data[f]<<4);
 							break;
+						case 0x8e:
+							/* PATTERN DELAY, handled further down */
+							break;
 						case 0x9E:
 							if (data[f])
 								putcmd(&cp, cmdRetrig, data[f]);
 							break;
 						case 0xAE:
 							if (data[f])
-								putcmd(&cp, cmdRowVolSlideUp, data[f]);
+								putcmd(&cp, cmdRowVolSlideUp, data[f] << 2);
 							break;
 						case 0xBE:
 							if (data[f])
-								putcmd(&cp, cmdRowVolSlideDown, data[f]);
+								putcmd(&cp, cmdRowVolSlideDown, data[f] << 2);
 							break;
 						case 0xCE:
 							putcmd(&cp, cmdNoteCut, data[f]);
 							break;
+						case 0xDE:
+							putcmd(&cp, cmdPlayDelay, data[f]);
+							break;
+						case 0xF: /* SPEED AND TEMP, handled further down */
+							break;
+
+
 					}
 				}
 				if (cp!=(tp+2))
@@ -570,13 +612,20 @@ OCP_INTERNAL int LoadULT (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 								data[f]=0;
 							putcmd(&cp, cmdBreak, (data[f]&0xF)+(data[f]>>4)*10);
 							break;
+						case 0xE:
+							if ((data[f] & 0xf0) == 0x80)
+								if (data[f] & 0x0f)
+									putcmd(&cp, cmdPatDelay, data[f] & 0x0f);
+							break;
 						case 0xF:
 							if (data[f])
 							{
 								if (data[f]<=0x20)
+								{
 									putcmd(&cp, cmdTempo, data[f]);
-								else
+								} else {
 									putcmd(&cp, cmdSpeed, data[f]);
+								}
 							}
 							break;
 					}
