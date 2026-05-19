@@ -1098,25 +1098,14 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				repeat = 1;
 			} else {
 				uint32_t newpress = clock_ms();
-				if ((newpress-lastpress) > 250) /* 125 ms */
+				if ((newpress-lastpress) > 150) /* ms */
 				{
 					repeat = 1;
 				} else {
-					/*
-					if (esel == 7)
+					if (repeat < 4)
 					{
-						if (repeat < 20)
-						{
-							repeat += 1;
-						}
-					} else
-					*/ {
-						if (repeat < 5)
-						{
-							repeat += 1;
-						}
+						repeat += 1;
 					}
-
 				}
 				lastpress = newpress;
 			}

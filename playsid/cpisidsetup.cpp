@@ -240,21 +240,13 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 		repeat = 1;
 	} else {
 		uint32_t newpress = clock_ms();
-		if ((newpress-lastpress) > 250) /* 250 ms */
+		if ((newpress-lastpress) > 150) /* ms */
 		{
 			repeat = 1;
 		} else {
-			if (SidSetupEditPos==1)
+			if (repeat < 4)
 			{
-				if (repeat < 20)
-				{
-					repeat += 1;
-				}
-			} else {
-				if (repeat < 5)
-				{
-					repeat += 1;
-				}
+				repeat += 1;
 			}
 		}
 		lastpress = newpress;

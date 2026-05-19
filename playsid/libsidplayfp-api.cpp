@@ -558,11 +558,6 @@ namespace libsidplayfp
 			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
 			if (rs)
 			{
-#warning Temporary upper-limit due to https://github.com/libsidplayfp/libresidfp/issues/19
-				if (v > 0.86)
-				{
-					v = 0.86;
-				}
 				rs->filter6581Curve (v);
 			}
 		} else if (m_residfp == 2)

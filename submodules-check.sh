@@ -19,7 +19,7 @@ LIBSIDPLAYFP=`git ls-remote https://github.com/libsidplayfp/libsidplayfp.git ref
 if test "x$LIBSIDPLAYFP" != x"c3298f2b20949c512ecdf7db52f850fd9df40506"; then echo LIBSIDPLAYFP needs to be verified \($LIBSIDPLAYFP\); fi
 
 LIBRESIDFP=`git ls-remote https://github.com/libsidplayfp/libresidfp.git refs/heads/main | sed -e 's/\t.*//'`
-if test "x$LIBRESIDFP" != x"b11bc4300c42679a05ff90d6b0ea37aa7eaa9665"; then echo LIBRESIDFP needs to be verified \($LIBRESIDFP\); fi
+if test "x$LIBRESIDFP" != x"8243cb5e8a04e17b742f1b11bceaa5fab098e155"; then echo LIBRESIDFP needs to be verified \($LIBRESIDFP\); fi
 
 ANCIENT=`git ls-remote https://github.com/temisu/ancient.git refs/heads/master | sed -e 's/\t.*//'`
 if test "x$ANCIENT" != x"d52dc0c1eec35f14e0da78dd48836ac9542f2f0f"; then echo ANCIENT needs to be verified; fi
