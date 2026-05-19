@@ -4,7 +4,7 @@ HIVELYTRACKER=`git ls-remote https://github.com/pete-gordon/hivelytracker.git re
 if test "x$HIVELYTRACKER" != x"f393ca7c6416f00bcb574b334a7e8b57dcb19eb2"; then echo HIVELYTRACKER needs to be verified; fi
 
 QOA=`git ls-remote https://github.com/phoboslab/qoa refs/heads/master | sed -e 's/\t.*//'`
-if test "x$QOA" != x"7abe23987a11d60dfcf1a37a095af834dde245ac"; then echo QOA needs to be verified; fi
+if test "x$QOA" != x"1bf9bc04673df55dc554021b768006836f69d53a"; then echo QOA needs to be verified \($QOA\); fi
 
 ADPLUGDB=`git ls-remote https://github.com/adplug/database.git refs/heads/master | sed -e 's/\t.*//'`
 if test "x$ADPLUGDB" != x"7ac0819ec55d6dd1ffe42890f82c3ada05d101b5"; then echo ADPLUGDB needs to be verified; fi
