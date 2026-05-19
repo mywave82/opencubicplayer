@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.2.0
+%define version 3.3.0
 
 Name: %{name}
 Version: %{version}
@@ -34,56 +34,59 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
-Changes from version 3.1.3 to 3.2.0:
+Changes from version 3.2.3 to 3.3.0:
 
- * [SDL] Add support for SDL3 (>= 3.2.0).
- * [mingw] Update libpng to latest version (1.6.55), and SDL from 2.x.x to to
-   latest version (3.4.2).
- * Update libsidplayfp to latest version, includes a faster integer SID emulator
-   crSID.
- * [CDA]
-  * On Linux CDROM driver - silence two valgrind warnings (non-initialized
-    fields in IOCTL, but they are output only fields)
-  * Do not assert (and exit program) if attempting to play a DATA-only CD.
- * [ocp.ini]
-  * Add support for extra file extensions the file-browser accepts in addition
-    to those provided by the plugins. This can be edited from ALT-C dialog,
-    option E.
-  * Increase the line-buffer from 1024 bytes to 65536, and also allow for up to
-    64K bytes of string data.
- * [M15,M31] adjust detection to not rely on filenames ending with .MOD, inspect
-   instrument volumes and orderlength.
- * [NCurses] Default to the cursor being hidden.
- * Use strverscmp when sorting files in the file-browser
- * [SDL2/SDL3 video] If 320x200 is streetched to 640x200, request 640x400
-   instead so we keep the original ratio.
- * [wurfel animation and background pictures]
-  * Search in ZIP files
-  * Allow animations to end with .ANI
-  * File discovery message needs to use fwprintf() on Windows
-  * Filenames with extensions longer or fewer than 3 characters were blindly
-    accepted instead of rejected as background picture
-  * .spec file now sources the historically files from https mirror instead ftp
-  * Include the historically files in the windows build.
- * [ADPLUG, SID, YM, QOA, WAV, FLAC] Master balance was inverted
- * [XM] Improve the loader when the files have incorrect instrument sizes /
-   samples truncated.
- * [IT]
-  * Allow to load files with does does not contain all the sample data.
-  * Remake tracker detection for the file comment in the file-browser - based on
-    Schism tracker source code.
- * [dirdb] Use sorted lists and binary search instead of single-linked lists;
-   Speeds up operations on the tree a lot.
- * [ZIP,TAR] Directory list is now stored in a sorted list instead of linked
-   list - and searches are now performed with binary search.
- * [SID, Windows]
-   * If browsing ROM files outside %APPDATA%OpenCubicPlayer/Data, the resulting
-     path did not contain a drive and had slashes in the wrong direction.
-   * If ROM filepath contained any non-ASCII characters, they would fail to open
-     for usage in playback.
- * [CDFS] Protect against recursive directories and high directory depths.
- * [Archive Cache Database] BinarySearch was done 32bit instead of 64bit,
-   causing assertion on large files.
+[SID]
+ * Update libsidplayfp to v3.0.0
+ * Update libresidfp to latest master
+ * Adjust keyboard repeat detection for accelerating adjusting the filters.
+ * enableOld6581caps option for C64 Assembly 326298
+ * Fix potential crashes in 'o' and 'b' modes.
+
+[ULT]
+ * Adjust cmdVolSlide to be 4 times as powerful. Also add minor missing effects/commands.
+
+[SNDH]
+ * Add support for SNDH files using psgplay
+
+[XM]
+ * Give warning if tune contains non-standard non-supported ADPCM sample
+ * After a ECx, a note without an instrument should unmute the channel. (#176)
+
+[HVL]
+ * Fix potential crashes in 'o' and 'b' modes.
+
+[modland.com]
+ * no longer hosts playsid directory, and update the list of unknown directories
+
+[channel viewer]
+ * a DC bias should not produce volume-bars active
+
+[YM]
+ * Update register to frequency logic to match SNDH. (Fixes a bug where the HI part of the registers ended up being ignored)
+
+[nCurses]
+ * Try to support rxvt styled terminals regarding SHIFT+F(n) keys.
+ * Do not purge keyboard input buffer on conRestore/conSave
+ * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
+
+[X11]
+ * allow to enable/disable X11 SHM extension API during ./configure (for docker container)
+ * Do not purge keyboard input buffer on conRestore/conSave
+ * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
+
+[SDL]
+ * With SDL3, scrollwheel now works as UP/DOWN keys - usefull in filebrowser.
+ * install icons when building with SDL3.
+ * Do not purge keyboard input buffer on conRestore/conSave
+ * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
+
+[mingw]
+ * update support-libraries to latest versions.
+ * devpdisk, file-creation failed due to filename being in LFN syntax, but without any drive and directory.
+
+[QOA]
+ * Update to latest git (no impact for OCP)
 
 %prep
 %setup -q -n %{name}-%{version}
