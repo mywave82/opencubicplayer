@@ -142,6 +142,13 @@ Extension | Notes
 `*.SPC`   | [Super Nintendo / Super Famicom SPC-700 co-processor](http://vspcplay.raphnet.net/spc_file_format.txt)
 `*.VGM`, `*.VGZ` | [Video Game Music](https://vgmrips.net/wiki/VGM_File_Format)
 
+Supported files using the [PSG play](https://github.com/frno7/psgplay) (Atari ST Programmable Sound Generator):
+
+Extension | Notes
+:-------- | :----
+`*.SNDH`  | [Atari SoundHeader](http://justsolve.archiveteam.org/wiki/Atari_SoundHeader) files can be found at [sndh.atari.org](https://sndh.atari.org/)
+
+
 ## Integrated support for modland.com
 
 Built into the file-browser is support for directly browsing <https://modland.com> utilizing `curl`.
