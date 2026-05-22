@@ -1842,6 +1842,8 @@ OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 		return;
 	}
 
+	cpifaceSession->plrDevAPI->Idle();
+
 	if (cpifaceSession->InPause || (gmi_looped && gmi_eof))
 	{
 		cpifaceSession->plrDevAPI->Pause (1);
@@ -2029,8 +2031,13 @@ OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
                                            ---->| output catching up with samples_commited
 */
 	{
-		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
+		uint64_t _commited, _processed;
+
+		cpifaceSession->plrDevAPI->GetStats (&_commited, &_processed);
+
+		uint64_t delay = _commited - _processed;
 		uint64_t new_ui = samples_committed - delay;
+
 		if (new_ui < samples_lastui)
 		{
 			samples_lastdelay = samples_committed - samples_lastui;

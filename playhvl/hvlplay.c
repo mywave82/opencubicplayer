@@ -444,8 +444,10 @@ OCP_INTERNAL void hvlIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 	}
 
 	{
-		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
-		uint64_t new_ui = samples_committed - delay;
+		uint64_t new_ui;
+
+		cpifaceSession->plrDevAPI->GetStats (0, &new_ui);
+
 		if (new_ui > samples_lastui)
 		{
 			cpifaceSession->ringbufferAPI->tail_consume_samples (hvl_buf_pos, new_ui - samples_lastui);

@@ -810,7 +810,13 @@ static int oggGet (struct cpifaceSessionAPI_t *cpifaceSession, int ch, int opt)
 
 OCP_INTERNAL ogg_int64_t oggGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
-	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - cpifaceSession->plrDevAPI->Idle())%ogglen;
+	uint64_t commited, processed, delay;
+
+	cpifaceSession->plrDevAPI->GetStats (&commited, &processed);
+
+	delay = commited - processed;
+
+	return (ogglen + ogglen + oggpos - cpifaceSession->ringbufferAPI->get_tail_available_samples(oggbufpos) - delay) % ogglen;
 }
 
 OCP_INTERNAL void oggGetInfo (struct cpifaceSessionAPI_t *cpifaceSession, struct ogginfo *info)
