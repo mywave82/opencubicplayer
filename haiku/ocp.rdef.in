@@ -84,6 +84,7 @@ resource file_types message {
        "types" = "audio/x-sa2",
        "types" = "audio/x-sap",
        "types" = "audio/x-sng",
+       "types" = "audio/x-sndh",
        "types" = "audio/x-sop",
        "types" = "audio/x-spc",
        "types" = "audio/x-stm",

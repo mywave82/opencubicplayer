@@ -506,4 +506,12 @@
   <glob pattern="*.ym"/>
   <glob pattern="*.mix"/>
  </mime-type>
+
+ <mime-type type="audio/x-sndh">
+  <comment>Atari PSG audio program</comment>
+  <magic priority="5">
+   <match type="string" value="SNDH" offset="12"/>
+  </magic>
+  <glob pattern="*.sndh"/>
+ </mime-type>
 </mime-info>
