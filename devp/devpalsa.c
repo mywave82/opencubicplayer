@@ -672,6 +672,7 @@ static unsigned int devpALSAIdle(void)
 
 	if (odelay>kernlen)
 	{
+		debug_printf("ALSA: reported delay is longer than currently known commited data, overriding odelay=kernlen\n");
 		odelay=kernlen;
 	} else if (odelay<kernlen)
 	{
