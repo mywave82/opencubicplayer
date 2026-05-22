@@ -361,7 +361,8 @@ static void timidity_append_EventDelayed_PlrBuf (struct cpifaceSessionAPI_t *cpi
 		// just in case above assert do hit, we ensure that the events the cue are in rising order
 		if (self->delay_samples < EventDelayed_PlrBuf_tail->delay_samples)
 		{
-			EventDelayed_PlrBuf_tail->delay_samples = self->delay_samples;
+			_PRINT ("WARNING; we got an event younger ( %d ) than the last on queue ( %d ), adjusting delay\n", self->delay_samples, EventDelayed_PlrBuf_tail->delay_samples);
+			self->delay_samples = EventDelayed_PlrBuf_tail->delay_samples;
 		}
 #endif
 		EventDelayed_PlrBuf_tail->next = self;
@@ -434,6 +435,12 @@ static void timidity_append_EventDelayed_gmibuf (CtlEvent *event)
 
 static void timidity_play_source_EventDelayed_gmibuf (struct cpifaceSessionAPI_t *cpifaceSession, uint32_t samplesin, uint32_t samplesout)
 {
+   /* samplesin = how many samples have been consumed from gmibufpos
+    * samplesout = how many samples have been added to plrDevAPI
+    * these can deviate if sample-rates are not 1:1
+    *
+    * This function should move events from EventDelayed_gmibuf_* onto EventDelayed_PlrBuf_*
+    */
 	CtlEventDelayed *iter, *next;
 
 	for (iter = EventDelayed_gmibuf_head; iter; iter = next)
@@ -452,7 +459,15 @@ static void timidity_play_source_EventDelayed_gmibuf (struct cpifaceSessionAPI_t
 			} else {
 				iter->next = 0;
 			}
-			timidity_append_EventDelayed_PlrBuf (cpifaceSession, iter, (int)samples_lastdelay + samplesout - (samplesin - iter->delay_samples));
+			uint32_t overshoot_gmibuf = (samplesin - iter->delay_samples);
+			uint32_t overshoot_plrbuf;
+			if (samplesout != 0)
+			{
+				overshoot_plrbuf = 0;
+			} else {
+				overshoot_plrbuf = (uint64_t)overshoot_gmibuf * samplesout / samplesin;
+			}
+			timidity_append_EventDelayed_PlrBuf (cpifaceSession, iter, (int)samples_lastdelay + samplesout - overshoot_plrbuf);
 		} else {
 			iter->delay_samples -= samplesin;
 		}
@@ -2006,16 +2021,28 @@ OCP_INTERNAL void timidityIdle (struct cpifaceSessionAPI_t *cpifaceSession)
 			gmibuffree+=accumulated_source;
 		} /* if (targetlength) */
 	}
-
+/*
+                                             samples_delay   samples_commited     gmibuf
+                                                                |*******************|
+                                                     delay      |                   |
+                                                |---------------|                   |
+                                           ---->| output catching up with samples_commited
+*/
 	{
 		uint64_t delay = cpifaceSession->plrDevAPI->Idle();
 		uint64_t new_ui = samples_committed - delay;
-		if (new_ui > samples_lastui)
+		if (new_ui < samples_lastui)
 		{
-			timidity_play_target_EventDelayed_gmibuf (cpifaceSession, new_ui - samples_lastui);
-			samples_lastui = new_ui;
+			samples_lastdelay = samples_committed - samples_lastui;
+			_PRINT ("BUG, time is going backwards, adjusting samples_lastdelay=%"PRIu64"\n", samples_lastdelay);
+		} else {
+			if (new_ui > samples_lastui)
+			{
+				timidity_play_target_EventDelayed_gmibuf (cpifaceSession, new_ui - samples_lastui);
+				samples_lastui = new_ui;
+			}
+			samples_lastdelay = delay;
 		}
-		samples_lastdelay = delay;
 	}
 
 	clipbusy--;
