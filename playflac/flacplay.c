@@ -90,9 +90,9 @@ static void add_comment2(const char *title, const char *value, const uint32_t va
 		if (res == 0)
 		{
 			// append to at this point
-			flac_comments[n] = realloc (flac_comments[n], sizeof (flac_comments[n]) + sizeof (flac_comments[n]->value[0]) * (flac_comments[n]->value_count + 1));
-			flac_comments[n]->value[flac_comments[n]->value_count++] = malloc (valuelen + 1);
-			memcpy (flac_comments[n]->value[flac_comments[n]->value_count++], value, valuelen);
+			flac_comments[n] = realloc (flac_comments[n], sizeof (*flac_comments[n]) + sizeof (flac_comments[n]->value[0]) * (flac_comments[n]->value_count + 1));
+			flac_comments[n]->value[flac_comments[n]->value_count] = malloc (valuelen + 1);
+			memcpy (flac_comments[n]->value[flac_comments[n]->value_count], value, valuelen);
 			flac_comments[n]->value[flac_comments[n]->value_count++][valuelen] = 0;
 			return;
 		}
