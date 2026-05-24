@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.3.0
+%define version 3.3.1
 
 Name: %{name}
 Version: %{version}
@@ -34,6 +34,21 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
+Changes from version 3.3.0 to 3.3.1:
+
+[FLAC]
+ * Multiple metra-entries with same key caused crash.
+
+[SNDH]
+ * Add missing MIME type: audio/x-sndh
+
+[HVL, OGG, TIMIDITY]
+ * Used plrDevAPI->Idle() that returns available free space, instead of plrDevAPI->GetStats() to retrieve the current audio-delay.
+
+[TIMIDITY]
+ * Harden logic that delays events for UI.
+
+
 Changes from version 3.2.3 to 3.3.0:
 
 [SID]

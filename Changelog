@@ -1,3 +1,20 @@
+Version 3.3.1
+=============
+Bugfix release
+
+[flac]
+ * Multiple metra-entries with same key caused crash.
+
+[sndh]
+ * Add missing MIME type: audio/x-sndh
+
+[hvl, ogg, timidity]
+ * Used plrDevAPI->Idle() that returns available free space, instead of plrDevAPI->GetStats() to retrieve the current audio-delay.
+
+[timidity]
+ * Harden logic that delays events for UI.
+
+
 Version 3.3.0
 =============
 Added support for *.sndh files using psgplay and bugfixes.
