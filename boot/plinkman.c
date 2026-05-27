@@ -137,6 +137,10 @@ static int _lnkDoLoad(char *file)
 	uint32_t size = 0;
 	const struct linkinfostruct *info;
 
+#ifdef LD_DEBUG
+	fprintf (stderr, "[lnk] _lnkDoLoad(\"%s\")\n", file);
+#endif
+
 	for (i=0; i < loadlist_n; i++)
 	{
 		if (loadlist[i].file && (!strcmp (loadlist[i].file, file)))
@@ -565,15 +569,39 @@ int lnkGetLinkInfo(struct linkinfostruct *l, uint32_t *size, int index)
 int lnkInitAll (void)
 {
 	int i;
+#ifdef LD_DEBUG
+	fprintf (stderr, "[lnk] lnkInitAll()\n");
+#endif
 
 	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->PreInit ? "calling PreInit" : "(no PreInit)");
+#endif
 		if (loadlist[i].info->PreInit)
 			if (loadlist[i].info->PreInit(&configAPI)<0)
+			{
+#ifdef LD_DEBUG
+				fprintf (stderr, "  PreInit failed\n");
+#endif
 				return 1;
+			}
+	}
+
 	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->Init ? "calling Init" : "(no Init)");
+#endif
 		if (loadlist[i].info->Init)
 			if (loadlist[i].info->Init(&configAPI)<0)
+			{
+#ifdef LD_DEBUG
+				fprintf (stderr, "  Init failed\n");
+#endif
 				return 1;
+			}
+	}
 	return 0;
 }
 
@@ -581,15 +609,39 @@ int lnkPluginInitAll (struct PluginInitAPI_t *API)
 {
 	int i;
 
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->PluginInit)
-			if (loadlist[i].info->PluginInit(API)<0)
-				return 1;
+#ifdef LD_DEBUG
+	fprintf (stderr, "[lnk] lnkPluginInitAll()\n");
+#endif
 
 	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->PluginInit ? "calling PluginInit" : "(no PluginInit)");
+#endif
+		if (loadlist[i].info->PluginInit)
+			if (loadlist[i].info->PluginInit(API)<0)
+			{
+#ifdef LD_DEBUG
+				fprintf (stderr, "  PluginInit failed\n");
+#endif
+				return 1;
+			}
+	}
+
+	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->LateInit ? "calling LateInit" : "(no LateInit)");
+#endif
 		if (loadlist[i].info->LateInit)
 			if (loadlist[i].info->LateInit(API)<0)
+			{
+#ifdef LD_DEBUG
+				fprintf (stderr, "  LateInit failed\n");
+#endif
 				return 1;
+			}
+	}
 
 	return 0;
 }
@@ -598,25 +650,53 @@ void lnkPluginCloseAll (struct PluginCloseAPI_t *API)
 {
 	int i;
 
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->PreClose)
-			loadlist[i].info->PreClose(API);
+#ifdef LD_DEBUG
+	fprintf (stderr, "[lnk] lnkPluginCloseAll()\n");
+#endif
 
 	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->PreClose ? "calling PreClose" : "(no PreClose)");
+#endif
+		if (loadlist[i].info->PreClose)
+			loadlist[i].info->PreClose(API);
+	}
+
+	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->PluginInit ? "calling PluginClose" : "(no PluginClose)");
+#endif
 		if (loadlist[i].info->PluginClose)
 			loadlist[i].info->PluginClose(API);
+	}
 }
 
 void lnkCloseAll (void)
 {
 	int i;
 
-	for (i=0;i<loadlist_n;i++)
-		if (loadlist[i].info->Close)
-			loadlist[i].info->Close();
+#ifdef LD_DEBUG
+	fprintf (stderr, "[lnk] lnkCloseAll()\n");
+#endif
 
 	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->Close ? "calling Close" : "(no Close)");
+#endif
+		if (loadlist[i].info->Close)
+			loadlist[i].info->Close();
+	}
+
+	for (i=0;i<loadlist_n;i++)
+	{
+#ifdef LD_DEBUG
+		fprintf (stderr, " %02d \"%s\" %s\n", i, loadlist[i].info->name, loadlist[i].info->LateClose ? "calling LateClose" : "(no LateClose)");
+#endif
 		if (loadlist[i].info->LateClose)
 			loadlist[i].info->LateClose();
+	}
 }
 

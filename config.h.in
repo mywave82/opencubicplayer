@@ -182,7 +182,7 @@
 /* #define FILEHANDLE_CACHE_DEBUG */
 /* #define FILEHANDLE_CACHE_DISABLE */
 /* #define INITCLOSE_DEBUG 1*/
-/* #define LD_DEBUG 1 */
+#define LD_DEBUG 1
 /* #define OSS_DEBUG 1 */
 /* #define ALSA_DEBUG 1 */
 /* #define OSS_LOCK_DEBUG 1 */
