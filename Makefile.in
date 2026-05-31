@@ -8,6 +8,9 @@ endif
 ifeq ($(HAVE_LIBGME),1)
 SUBDIRS+=playgme
 endif
+ifeq ($(HAVE_WAVPACK),1)
+SUBDIRS+=playwavpack
+endif
 SUBDIRS+=playsid playwav playxm playym stuff
 SUBDIRS+=mingw
 

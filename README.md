@@ -56,6 +56,7 @@ Extension | Notes
 `*.MP3`   | [MPEG-1 Audio Layer III or MPEG-2 Audio Layer III](https://en.wikipedia.org/wiki/MP3) using [MAD: MPEG Audio Decoder](https://www.underbit.com/products/mad/)
 `*.QOA`   | [Quite OK Audio](https://qoaformat.org/)
 `*.WAV`   | [Waveform Audio File Format](https://en.wikipedia.org/wiki/WAV), only integer PCM is implemented
+`*.WV`    | [WavPack](https://www.wavpack.com/)
 
 Supported Audio-CD files:
 

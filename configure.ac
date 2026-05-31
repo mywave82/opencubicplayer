@@ -117,6 +117,7 @@ AC_ARG_WITH([x11_shm],                 [AS_HELP_STRING([--with-x11-shm],        
 #AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 AC_ARG_WITH([mad],                     [AS_HELP_STRING([--with-mad],                       [force/disable mad mpeg audio support])],                                        [], [with_mad=auto])
 AC_ARG_WITH([libgme],                  [AS_HELP_STRING([--with-libgme],                    [force/disable libgme (Game Music Emulator support)])],                          [], [with_libgme=auto])
+AC_ARG_WITH([wavpack],                 [AS_HELP_STRING([--with-wavpack],                   [force/disable wavpack audio support])],                                         [], [with_wavpack=auto])
 AC_ARG_WITH([alsa],                    [AS_HELP_STRING([--with-alsa],                      [force/disable alsa support])],                                                  [], [with_alsa=auto])
 AC_ARG_WITH([oss],                     [AS_HELP_STRING([--with-oss],                       [force/disable oss support])],                                                   [], [with_oss=auto])
 AC_ARG_WITH([lzw],                     [AS_HELP_STRING([--with-lzw],                       [force/disable lzw support (enabled by default)])],                              [], [with_lzw=yes])
@@ -547,6 +548,33 @@ AS_IF([test "x$with_flac" != "xno"],[
 	])
 ])
 AS_IF([test "x$with_flac" = "xno"], [HAVE_FLAC=], [HAVE_FLAC=1])
+
+org_cflags="$CFLAGS"
+org_cppflags="$CPPFLAGS"
+push_LIBS="$LIBS"
+AC_SUBST(WAVPACK_CFLAGS)
+AC_SUBST(WAVPACK_LIBS)
+AC_SUBST(HAVE_WAVPACK)
+AS_IF([test "xwith_wavpack" != "xno"],[
+	PKG_CHECK_MODULES([WAVPACK], [wavpack],
+		[AS_ECHO("wavpack flags ... $WAVPACK_CFLAGS $WAVPACK_LIBS")],
+		[AS_IF([test "x$with_wavpack" = "xyes"], [AC_MSG_ERROR("libwavpack not found")], [with_wavpack="no"])]
+	)
+])
+AS_IF([test "x$with_wavpack" != "xno"],[
+	AC_CHECK_HEADER([wavpack/wavpack.h], [],
+		[AS_IF([test "x$with_wavpack" = "xyes"], [AC_MSG_ERROR("libwavpack header file not found")], [with_wavpack="no"]) ]
+	)
+])
+AS_IF([test "x$with_wavpack" != "xno"],[
+	AC_CHECK_LIB([wavpack], [WavpackOpenFileInputEx64], [],
+		[AS_IF([test "x$with_wavpack" = "xyes"], [AC_MSG_ERROR(["WavpackOpenFileInputEx64 not found in libwavpack, available since version 5.0"])], [with_wavpack="no"]) ]
+	)
+])
+AS_IF([test "x$with_wavpack" = "xno"], [HAVE_WAVPACK=], [HAVE_WAVPACK=1])
+CFLAGS="$org_cflags"
+CPPFLAGS="$org_cppflags"
+LIBS="$push_LIBS"
 
 AS_IF([test "x$with_x11" != "xno"], [
 	AC_CHECK_HEADER([X11/extensions/xf86vmode.h], [], [ AS_IF([test "x$with_x11" = "xyes"], [AC_MSG_ERROR("xvidmode header files was not found")], [with_x11="no"]) ],
@@ -1304,6 +1332,7 @@ AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo
                                            echo "sidplayfp:         GIT/builtin"
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
 AS_IF([test "x$with_libgme"    = "xno" ], [echo "GME:               OFF"], [echo "GME:               ON"])
+AS_IF([test "x$with_wavpack"   = "xno" ], [echo "WAVPACK:           OFF"], [echo "WAVPACK:           ON"])
 AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON"])
 AS_IF([test "x$with_x11_shm"   = "xno" ], [echo "x11 SHM:           OFF"], [echo "x11 SHM:           ON"])
 AS_IF([test "x$with_sdl"       = "xno" ], [echo "SDL:               OFF"], [echo "SDL:               ON"])

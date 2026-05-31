@@ -94,3 +94,8 @@ UNIFONT_LATEST_VERSION=`curl -s https://unifoundry.com/unifont/index.html|grep -
 if [ f"$UNIFONT_VERSION" != f"$UNIFONT_LATEST_VERSION" ]; then
 	echo UNIFONT version should have been $UNIFONT_LATEST_VERSION
 fi
+
+WAVPACK_LATEST_VERSION=`curl -s https://github.com/dbry/WavPack/releases|grep -m 1 "Link--primary Link.*>WavPack "|sed -e 's/.*"Link--primary Link">WavPack //'|sed -e 's/<.*//'`
+if [ f"$WAVPACK_VERSION" != f"$WAVPACK_LATEST_VERSION" ]; then
+	echo WavPack version should have been $WAVPACK_LATEST_VERSION
+fi

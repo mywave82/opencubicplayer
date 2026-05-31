@@ -201,6 +201,7 @@
 /* #define PLAYSNDH_DEBUG 1 */
 /* #define PLAYTIMIDITY_DEBUG */
 /* #define PLAYWAVE_DEBUG 1 */
+/* #define PLAYWAVPACK_DEBUG 1 */
 /* #define PSETTING_DEBUG 1 */
 /* #define XM_LOAD_DEBUG 1 */
 /* #define IT_LOAD_DEBUG 1 */

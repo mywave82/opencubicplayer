@@ -104,6 +104,7 @@ test -f game-music-emu-$GAMEMUSICEMU_VERSION.tar.gz || $WGET https://github.com/
 test -f unifont-$UNIFONT_VERSION.otf                || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont-$UNIFONT_VERSION.otf       -O unifont-$UNIFONT_VERSION.otf                                      || rm unifont-$UNIFONT_VERSION.otf                || false
 test -f unifont_csur-$UNIFONT_VERSION.otf           || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_csur-$UNIFONT_VERSION.otf  -O unifont_csur-$UNIFONT_VERSION.otf                                 || rm unifont_csur-$UNIFONT_VERSION.otf           || false
 test -f unifont_upper-$UNIFONT_VERSION.otf          || $WGET https://unifoundry.com/pub/unifont/unifont-$UNIFONT_VERSION/font-builds/unifont_upper-$UNIFONT_VERSION.otf -O unifont_upper-$UNIFONT_VERSION.otf                                || rmunifont_upper-$UNIFONT_VERSION.otf           || false
+test -f wavpack-$WAVPACK_VERSION.tar.xz             || $WGET https://github.com/dbry/WavPack/releases/download/$WAVPACK_VERSION/wavpack-$WAVPACK_VERSION.tar.xz         -O wavpack-$WAVPACK_VERSION.tar.xz                                   || rm wavpack-$WAVPACK_VERSION.tar.xz             || false
 
 #wget https://zlib.net/zlib-1.2.13.tar.gz
 #tar xfz zlib-1.2.13.tar.gz
@@ -496,6 +497,17 @@ if ! test -f $prefix/build-game-music-emu-$GAMEMUSICEMU_VERSION; then
 	touch $prefix/build-game-music-emu-$GAMEMUSICEMU_VERSION
 fi
 
+########## WavPack ##########
+if ! test -f $prefix/build-wavpack-$WAVPACK_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'wavpack-*'` && rm -Rf $dirs
+	tar xfJ wavpack-$WAVPACK_VERSION.tar.xz
+	cd wavpack-$WAVPACK_VERSION
+		./configure --host $host --prefix=$prefix --enable-legacy
+		make all install
+	cd ..
+	touch $prefix/build-wavpack-$WAVPACK_VERSION
+fi
+
 ######### compile and install ##########
 
 cd ..
@@ -539,6 +551,7 @@ cp $prefix/lib/bz2.dll              \
    $prefix/bin/SDL3.dll             \
    $prefix/bin/vorbis.dll           \
    $prefix/bin/vorbisfile.dll       \
+   $prefix/bin/libwavpack-1.dll     \
    /usr/lib/gcc/$host/$gccversion/libssp-0.dll       \
    /usr/lib/gcc/$host/$gccversion/libstdc++-6.dll    \
    /usr/$host/lib/libwinpthread-1.dll             \

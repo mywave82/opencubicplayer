@@ -224,6 +224,7 @@ lpf_Qpct=100              ; For stereo model "empiric+lpf", this sets the Q valu
   STM=2
   ULT=5
   WAV=14
+  WV=14
   WOW=4
   YM=6
   XM=3

@@ -93,6 +93,7 @@ resource file_types message {
        "types" = "audio/x-vgm",
        "types" = "audio/x-vgz",
        "types" = "audio/x-wav",
+       "types" = "audio/x-wavpack",
        "types" = "audio/x-xad-bmf",
        "types" = "audio/x-xad-flash",
        "types" = "audio/x-xad-hybrid",

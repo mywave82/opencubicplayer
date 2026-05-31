@@ -739,6 +739,9 @@ SDL3_LIBS
 SDL3_CFLAGS
 HAVE_X11_SHM
 HAVE_X11
+HAVE_WAVPACK
+WAVPACK_LIBS
+WAVPACK_CFLAGS
 HAVE_FLAC
 FLAC_LIBS
 FLAC_CFLAGS
@@ -860,6 +863,7 @@ with_x11
 with_x11_shm
 with_mad
 with_libgme
+with_wavpack
 with_alsa
 with_oss
 with_lzw
@@ -932,6 +936,8 @@ VORBISFILE_CFLAGS
 VORBISFILE_LIBS
 FLAC_CFLAGS
 FLAC_LIBS
+WAVPACK_CFLAGS
+WAVPACK_LIBS
 SDL3_CFLAGS
 SDL3_LIBS
 SDL2_FRAMEWORK
@@ -1596,6 +1602,7 @@ Optional Packages:
   --with-x11-shm          force/disable x11 SHM support
   --with-mad              force/disable mad mpeg audio support
   --with-libgme           force/disable libgme (Game Music Emulator support)
+  --with-wavpack          force/disable wavpack audio support
   --with-alsa             force/disable alsa support
   --with-oss              force/disable oss support
   --with-lzw              force/disable lzw support (enabled by default)
@@ -1713,6 +1720,10 @@ Some influential environment variables:
               linker flags for VORBISFILE, overriding pkg-config
   FLAC_CFLAGS C compiler flags for FLAC, overriding pkg-config
   FLAC_LIBS   linker flags for FLAC, overriding pkg-config
+  WAVPACK_CFLAGS
+              C compiler flags for WAVPACK, overriding pkg-config
+  WAVPACK_LIBS
+              linker flags for WAVPACK, overriding pkg-config
   SDL3_CFLAGS C compiler flags for SDL3, overriding pkg-config
   SDL3_LIBS   linker flags for SDL3, overriding pkg-config
   SDL2_FRAMEWORK
@@ -8087,6 +8098,16 @@ esac
 fi
 
 
+# Check whether --with-wavpack was given.
+if test ${with_wavpack+y}
+then :
+  withval=$with_wavpack;
+else case e in #(
+  e) with_wavpack=auto ;;
+esac
+fi
+
+
 # Check whether --with-alsa was given.
 if test ${with_alsa+y}
 then :
@@ -12285,6 +12306,200 @@ else case e in #(
   e) HAVE_FLAC=1 ;;
 esac
 fi
+
+org_cflags="$CFLAGS"
+org_cppflags="$CPPFLAGS"
+push_LIBS="$LIBS"
+
+
+
+if test "xwith_wavpack" != "xno"
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for wavpack" >&5
+printf %s "checking for wavpack... " >&6; }
+
+if test -n "$WAVPACK_CFLAGS"; then
+    pkg_cv_WAVPACK_CFLAGS="$WAVPACK_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"wavpack\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "wavpack") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_WAVPACK_CFLAGS=`$PKG_CONFIG --cflags "wavpack" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$WAVPACK_LIBS"; then
+    pkg_cv_WAVPACK_LIBS="$WAVPACK_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"wavpack\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "wavpack") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_WAVPACK_LIBS=`$PKG_CONFIG --libs "wavpack" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        WAVPACK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "wavpack" 2>&1`
+        else
+	        WAVPACK_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "wavpack" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$WAVPACK_PKG_ERRORS" >&5
+
+	if test "x$with_wavpack" = "xyes"
+then :
+  as_fn_error $? "\"libwavpack not found\"" "$LINENO" 5
+else case e in #(
+  e) with_wavpack="no" ;;
+esac
+fi
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	if test "x$with_wavpack" = "xyes"
+then :
+  as_fn_error $? "\"libwavpack not found\"" "$LINENO" 5
+else case e in #(
+  e) with_wavpack="no" ;;
+esac
+fi
+
+else
+	WAVPACK_CFLAGS=$pkg_cv_WAVPACK_CFLAGS
+	WAVPACK_LIBS=$pkg_cv_WAVPACK_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+	printf "%s\n" "wavpack flags ... $WAVPACK_CFLAGS $WAVPACK_LIBS"
+fi
+
+fi
+if test "x$with_wavpack" != "xno"
+then :
+
+	ac_fn_c_check_header_compile "$LINENO" "wavpack/wavpack.h" "ac_cv_header_wavpack_wavpack_h" "$ac_includes_default"
+if test "x$ac_cv_header_wavpack_wavpack_h" = xyes
+then :
+
+else case e in #(
+  e) if test "x$with_wavpack" = "xyes"
+then :
+  as_fn_error $? "\"libwavpack header file not found\"" "$LINENO" 5
+else case e in #(
+  e) with_wavpack="no" ;;
+esac
+fi
+	 ;;
+esac
+fi
+
+
+fi
+if test "x$with_wavpack" != "xno"
+then :
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for WavpackOpenFileInputEx64 in -lwavpack" >&5
+printf %s "checking for WavpackOpenFileInputEx64 in -lwavpack... " >&6; }
+if test ${ac_cv_lib_wavpack_WavpackOpenFileInputEx64+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lwavpack  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char WavpackOpenFileInputEx64 (void);
+int
+main (void)
+{
+return WavpackOpenFileInputEx64 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_wavpack_WavpackOpenFileInputEx64=yes
+else case e in #(
+  e) ac_cv_lib_wavpack_WavpackOpenFileInputEx64=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_wavpack_WavpackOpenFileInputEx64" >&5
+printf "%s\n" "$ac_cv_lib_wavpack_WavpackOpenFileInputEx64" >&6; }
+if test "x$ac_cv_lib_wavpack_WavpackOpenFileInputEx64" = xyes
+then :
+  printf "%s\n" "#define HAVE_LIBWAVPACK 1" >>confdefs.h
+
+  LIBS="-lwavpack $LIBS"
+
+else case e in #(
+  e) if test "x$with_wavpack" = "xyes"
+then :
+  as_fn_error $? "\"WavpackOpenFileInputEx64 not found in libwavpack, available since version 5.0\"" "$LINENO" 5
+else case e in #(
+  e) with_wavpack="no" ;;
+esac
+fi
+	 ;;
+esac
+fi
+
+
+fi
+if test "x$with_wavpack" = "xno"
+then :
+  HAVE_WAVPACK=
+else case e in #(
+  e) HAVE_WAVPACK=1 ;;
+esac
+fi
+CFLAGS="$org_cflags"
+CPPFLAGS="$org_cppflags"
+LIBS="$push_LIBS"
 
 if test "x$with_x11" != "xno"
 then :
@@ -23203,6 +23418,13 @@ then :
   echo "GME:               OFF"
 else case e in #(
   e) echo "GME:               ON" ;;
+esac
+fi
+if test "x$with_wavpack"   = "xno"
+then :
+  echo "WAVPACK:           OFF"
+else case e in #(
+  e) echo "WAVPACK:           ON" ;;
 esac
 fi
 if test "x$with_x11"       = "xno"
