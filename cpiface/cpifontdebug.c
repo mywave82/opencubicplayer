@@ -104,7 +104,7 @@ static int fontdebugIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uin
 	switch (key)
 	{
 		case 'R':
-			cpiSetMode("FontDebug");
+			cpiSetMode("FontDbg");
 			break;
 		default:
 		return 0;
@@ -314,7 +314,7 @@ static int fontdebugEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	}
 }
 
-struct cpimoderegstruct cpiModeFontDebug = {"FontDebug", fontdebugSetMode, fontdebugDraw, fontdebugIProcessKey, fontdebugAProcessKey, fontdebugEvent CPIMODEREGSTRUCT_TAIL};
+struct cpimoderegstruct cpiModeFontDebug = {"FontDbg", fontdebugSetMode, fontdebugDraw, fontdebugIProcessKey, fontdebugAProcessKey, fontdebugEvent CPIMODEREGSTRUCT_TAIL};
 
 static int FontDebugInit(struct PluginInitAPI_t *API)
 {
