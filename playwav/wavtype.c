@@ -58,7 +58,7 @@ static int RIFF_INFO (struct ocpfilehandle_t *fp, uint32_t len, char *dst, int d
 		toread = len;
 		toskip = 0;
 	}
-	if (fp->read (fp, dst, toread))
+	if (fp->read (fp, dst, toread) != toread)
 	{
 		return 1;
 	}
@@ -67,7 +67,7 @@ static int RIFF_INFO (struct ocpfilehandle_t *fp, uint32_t len, char *dst, int d
 	{
 		if (fp->seek_set (fp, fp->getpos (fp) + toskip))
 		{
-			return -1;
+			return 1;
 		}
 	}
 	return 0;
@@ -94,11 +94,19 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		*(uint16_t *)(buf+20+14),
 		m->channels==1?"mono":"stereo");
 
-	if (*(uint32_t *)(buf+20+16)==uint32_little(61746164)) // "data"
+	if (*(uint32_t *)(buf+20+16)==uint32_little(0x61746164)) // "data"
 	{
 		uint32_t datalen = uint32_little(*(uint32_t *)(buf+20+20));
-		uint32_t LIST, LISTlen;
-		m->playtime = datalen / uint32_little(*(uint32_t *)(buf+20+8));
+		uint32_t LIST, LISTlen, INFO;
+
+		if ((!memcmp (buf+0x2c, "wvpk", 4)) && /* signature */
+                    (((unsigned char)buf[0x34]) <= 3) && (buf[0x35] == 0x00) /* version */
+		   )
+		{
+			m->modtype.integer.i = MODULETYPE("WV"); /* nasty hack for old legacy WavPack files */
+		} else {
+			m->playtime = datalen / uint32_little(*(uint32_t *)(buf+20+8));
+		}
 
 		if (fp->seek_set (fp, 20 + 20 + 4 + datalen) ||
 		    ocpfilehandle_read_uint32_le (fp, &LIST) ||
@@ -110,6 +118,20 @@ static int wavReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *fp, c
 		{
 			goto out;
 		}
+		if (LISTlen < 12)
+		{
+			goto out;
+		}
+		if (ocpfilehandle_read_uint32_le (fp, &INFO))
+		{
+			goto out;
+		}
+		LISTlen -= 4;
+		if (INFO != uint32_little (0x4f464e49))  // "INFO"
+		{
+			goto out;
+		}
+
 		while (LISTlen >= 8)
 		{
 			uint32_t CHUNK;
