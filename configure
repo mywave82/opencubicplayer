@@ -883,6 +883,7 @@ with_unifontdir_otf
 with_unifont_otf
 with_unifont_csur_otf
 with_unifont_upper_otf
+with_strip_lto_flags
 with_lto_check
 with_timidity_default_path
 with_ncurses
@@ -1657,6 +1658,7 @@ Optional Packages:
   --with-unifont-upper-otf=/path
                           the full path to unifont_upper.otf (default is
                           UNIFONTDIR/unifont_upper.otf)
+  --with-strip_lto_flags  Strip away -flto flags in CFLAGS/CXXFLAGS/LDFLAGS.
   --without-lto_check     Do not check for -flto in CFLAGS/CXXFLAGS/LDFLAGS.
                           Only use if you know what you are doing
   --with-timidity-default-path=DIR
@@ -8479,6 +8481,40 @@ fi
 
 
 
+# Check whether --with-strip_lto_flags was given.
+if test ${with_strip_lto_flags+y}
+then :
+  withval=$with_strip_lto_flags;
+fi
+
+if test "x$with_strip_lto_flags" = "xyes"
+then :
+
+	NEW_CFLAGS=""
+	for flag in $CFLAGS; do
+	    if  ! echo "$flag" | grep -- '-flto'>/dev/null ; then
+	        NEW_CFLAGS="$NEW_CFLAGS $flag"
+	    fi
+	done
+	CFLAGS=$NEW_CFLAGS
+	NEW_CXXFLAGS=""
+	for flag in $CXXFLAGS; do
+	    if  ! echo "$flag" | grep -- '-flto'>/dev/null ; then
+	        NEW_CXXFLAGS="$NEW_CXXFLAGS $flag"
+	    fi
+	done
+	CXXFLAGS=$NEW_CXXFLAGS
+	NEW_LDFLAGS=""
+	for flag in $LDFLAGS; do
+	    if  ! echo "$flag" | grep -- '-flto'>/dev/null ; then
+	        NEW_LDFLAGS="$NEW_LDFLAGS $flag"
+	    fi
+	done
+	LDFLAGS=$NEW_LDFLAGS
+
+fi
+
+
 # Check whether --with-lto_check was given.
 if test ${with_lto_check+y}
 then :
@@ -8500,7 +8536,9 @@ CFLAGS contains -flto, this is known to create problems with the list of built-i
 If you really want lto, you will need to provide a linker-script and update DLLEXTINFO_END_PREFIX
 and ensure that the plugin_list is terminated correctly.
 
-Add --without-lto_check if you really are sure you want this." "$LINENO" 5
+Add --without-lto_check if you really are sure you want this.
+
+Or add --with-strip_lto_flags and let this configure script remove the options" "$LINENO" 5
 
 fi
 		if echo "$CXXFLAGS"|grep -- '-flto'>/dev/null
@@ -8513,7 +8551,9 @@ CXXLAGS contains -flto, this is known to create problems with the list of built-
 If you really want lto, you will need to provide a linker-script and update DLLEXTINFO_END_PREFIX
 and ensure that the plugin_list is terminated correctly.
 
-Add --without-lto_check if you really are sure you want this." "$LINENO" 5
+Add --without-lto_check if you really are sure you want this.
+
+Or add --with-strip_lto_flags and let this configure script remove the options" "$LINENO" 5
 
 fi
 		if echo "$LDFLAGS"|grep -- '-flto'>/dev/null
@@ -8526,14 +8566,15 @@ LDFLAGS contains -flto, this is known to create problems with the list of built-
 If you really want lto, you will need to provide a linker-script and update DLLEXTINFO_END_PREFIX
 and ensure that the plugin_list is terminated correctly.
 
-Add --without-lto_check if you really are sure you want this." "$LINENO" 5
+Add --without-lto_check if you really are sure you want this.
+
+Or add --with-strip_lto_flags and let this configure script remove the options" "$LINENO" 5
 
 fi
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not detected in CFLAGS, CXXFLAGS and LDFLAGS" >&5
 printf "%s\n" "not detected in CFLAGS, CXXFLAGS and LDFLAGS" >&6; }
 
 fi
-
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PIC" >&5
 printf %s "checking for PIC... " >&6; }
