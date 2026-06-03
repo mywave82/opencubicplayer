@@ -46,7 +46,7 @@ struct consoleDriver_t
         void (* DrawBar)       (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
         void (*iDrawBar)       (uint16_t x, uint16_t yb, uint16_t yh, uint32_t hgt, uint32_t c);
 
-	void *(*TextOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+	void *(*TextOverlayAddBGRA)(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra);
 	void  (*TextOverlayRemove) (void *handle);
 
 	int (*SetGraphMode) (int size);

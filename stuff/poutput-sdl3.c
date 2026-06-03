@@ -111,7 +111,7 @@ static int sdl3_HasKey (uint16_t key);
 static void sdl3_gFlushPal (void);
 static void sdl3_gUpdatePal (uint8_t color, uint8_t _red, uint8_t _green, uint8_t _blue);
 
-static void *sdl3_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void *sdl3_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra);
 static void sdl3_TextOverlayRemove (void *handle);
 
 static const struct consoleDriver_t sdl3ConsoleDriver;
@@ -1066,12 +1066,12 @@ static int sdl3_HasKey (uint16_t key)
 
 struct SDL3ScrTextGUIOverlay_t
 {
-	unsigned int x;
-	unsigned int y;
-	unsigned int width;
-	unsigned int height;
-	unsigned int pitch;
-	uint8_t     *data_bgra;
+	unsigned int   x;
+	unsigned int   y;
+	unsigned int   width;
+	unsigned int   height;
+	unsigned int   pitch;
+	const uint8_t *data_bgra;
 
 };
 
@@ -1079,7 +1079,7 @@ static struct SDL3ScrTextGUIOverlay_t **SDL3ScrTextGUIOverlays;
 static int                              SDL3ScrTextGUIOverlays_count;
 static int                              SDL3ScrTextGUIOverlays_size;
 
-static void *sdl3_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+static void *sdl3_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra)
 {
 	struct SDL3ScrTextGUIOverlay_t *e = malloc (sizeof (*e));
 	e->x = x;
@@ -1160,7 +1160,8 @@ static void RefreshScreenGraph(void)
 			for (; y < ty; y++)
 			{
 				int tx, x;
-				uint8_t *src, *dst;
+				const uint8_t *src;
+				uint8_t *dst;
 
 				if (y >= Console.GraphLines) { break; }
 

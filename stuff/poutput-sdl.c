@@ -122,7 +122,7 @@ static uint32_t sdl_palette[256];
 
 static uint8_t *virtual_framebuffer = 0;
 
-static void *sdl_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void *sdl_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra);
 static void sdl_TextOverlayRemove (void *handle);
 
 static const struct consoleDriver_t sdlConsoleDriver;
@@ -922,20 +922,19 @@ static int sdl_HasKey (uint16_t key)
 
 struct SDLScrTextGUIOverlay_t
 {
-	unsigned int x;
-	unsigned int y;
-	unsigned int width;
-	unsigned int height;
-	uint8_t     *data_bgra;
-	SDL_Surface *surface;
-
+	unsigned int   x;
+	unsigned int   y;
+	unsigned int   width;
+	unsigned int   height;
+	const uint8_t *data_bgra;
+	SDL_Surface   *surface;
 };
 
 static struct SDLScrTextGUIOverlay_t **SDLScrTextGUIOverlays;
 static int                             SDLScrTextGUIOverlays_count;
 static int                             SDLScrTextGUIOverlays_size;
 
-static void *sdl_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+static void *sdl_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra)
 {
 	struct SDLScrTextGUIOverlay_t *e = malloc (sizeof (*e));
 	e->x = x;

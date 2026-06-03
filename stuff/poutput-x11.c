@@ -79,7 +79,7 @@ static XSizeHints Textmode_SizeHints;
 static unsigned long Textmode_Window_Width;
 static unsigned long Textmode_Window_Height;
 
-static void *x11_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra);
+static void *x11_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra);
 static void x11_TextOverlayRemove(void *handle);
 
 static XIM im;
@@ -1542,20 +1542,19 @@ static void x11_SetTextMode (unsigned char x)
 
 struct X11ScrTextGUIOverlay_t
 {
-	unsigned int x;
-	unsigned int y;
-	unsigned int width;
-	unsigned int height;
-	unsigned int pitch;
-	uint8_t     *data_bgra;
-
+	unsigned int   x;
+	unsigned int   y;
+	unsigned int   width;
+	unsigned int   height;
+	unsigned int   pitch;
+	const uint8_t *data_bgra;
 };
 
 static struct X11ScrTextGUIOverlay_t **X11ScrTextGUIOverlays;
 static int                             X11ScrTextGUIOverlays_count;
 static int                             X11ScrTextGUIOverlays_size;
 
-static void *x11_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, uint8_t *data_bgra)
+static void *x11_TextOverlayAddBGRA (unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned int pitch, const uint8_t *data_bgra)
 {
 	struct X11ScrTextGUIOverlay_t *e = malloc (sizeof (*e));
 	e->x = x;
@@ -1700,7 +1699,8 @@ static void RefreshScreenGraph(void)
 				for (; y < ty; y++)
 				{
 					int tx, x;
-					uint8_t *src, *dst;
+					const uint8_t *src;
+					uint8_t *dst;
 
 					if (y >= Console.GraphLines) { break; }
 
@@ -1750,7 +1750,8 @@ static void RefreshScreenGraph(void)
 				for (; y < ty; y++)
 				{
 					int tx, x;
-					uint8_t *src, *dst;
+					const uint8_t *src;
+					uint8_t *dst;
 
 					if (y >= Console.GraphLines) { break; }
 
@@ -1798,7 +1799,8 @@ static void RefreshScreenGraph(void)
 				for (; y < ty; y++)
 				{
 					int tx, x;
-					uint8_t *src, *dst;
+					const uint8_t *src;
+					uint8_t *dst;
 
 					if (y >= Console.GraphLines) { break; }
 
@@ -1856,7 +1858,8 @@ static void RefreshScreenGraph(void)
 				for (; y < ty; y++)
 				{
 					int tx, x;
-					uint8_t *src, *dst;
+					const uint8_t *src;
+					uint8_t *dst;
 
 					if (y >= Console.GraphLines) { break; }
 
