@@ -1143,12 +1143,18 @@ OCP_INTERNAL int mpegOpenPlayer (struct ocpfilehandle_t *mpegfile, struct cpifac
 	}
 	mpegbufrate=imuldiv(65536, mpegrate, mpegRate);
 
-	if (!(mpegbuf=malloc(32768)))
+	uint32_t buffer_length = mpegrate / 4; /* 250 ms, in addition to devp */
+	if (buffer_length < 8192)
+	{
+		buffer_length = 8192;
+	}
+	mpegbuf = malloc(buffer_length * sizeof (int16_t) * 2 /* stereo */);
+	if (!mpegbuf)
 	{
 		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
-	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 8192);
+	mpegbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buffer_length);
 	if (!mpegbufpos)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[MPx] ringbuffer_new_samples() failed\n");
