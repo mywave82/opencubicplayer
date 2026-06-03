@@ -50,12 +50,12 @@ Supported audio files (both compressed and PCM styled):
 
 Extension | Notes
 :-------- | :----
-`*.WAV`   |
-`*.OGG`   |
-`*.FLAC`  |
-`*.MP2`   |
-`*.MP3`   |
+`*.OGG`   | [OGG](https://xiph.org/ogg/) using ogg, libvorbis and libvorbisfile
+`*.FLAC`  | [FLAC](https://xiph.org/flac/)
+`*.MP2`   | [MPEG-1 Audio Layer II](https://en.wikipedia.org/wiki/MPEG-1_Audio_Layer_II) using [MAD: MPEG Audio Decoder](https://www.underbit.com/products/mad/)
+`*.MP3`   | [MPEG-1 Audio Layer III or MPEG-2 Audio Layer III](https://en.wikipedia.org/wiki/MP3) using [MAD: MPEG Audio Decoder](https://www.underbit.com/products/mad/)
 `*.QOA`   | [Quite OK Audio](https://qoaformat.org/)
+`*.WAV`   | [Waveform Audio File Format](https://en.wikipedia.org/wiki/WAV), only integer PCM is implemented
 
 Supported Audio-CD files:
 
