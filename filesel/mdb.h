@@ -9,6 +9,7 @@ struct ocpfilehandle_t;
 #define MDB_ARTIST_LEN   127 // Mostly used by released music
 #define MDB_STYLE_LEN    127
 #define MDB_COMMENT_LEN  127
+#define MDB_ALBUM_LEN    127
 
 /* flags */
 #define MDB_VIRTUAL    64  /* used by external API, to be removed? This entry shall not be stored to disk... */
@@ -46,11 +47,11 @@ struct moduleinfostruct
 	uint32_t date;
 
 	char title[MDB_TITLE_LEN];
-	char composer[MDB_TITLE_LEN];
-	char artist[MDB_COMPOSER_LEN];
-	char style[MDB_COMPOSER_LEN];
-	char comment[MDB_COMPOSER_LEN];
-	char album[MDB_COMPOSER_LEN];
+	char composer[MDB_COMPOSER_LEN];
+	char artist[MDB_ARTIST_LEN];
+	char style[MDB_STYLE_LEN];
+	char comment[MDB_COMMENT_LEN];
+	char album[MDB_ALBUM_LEN];
 };
 
 struct dirdbAPI_t;
