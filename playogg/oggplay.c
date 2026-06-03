@@ -941,13 +941,18 @@ OCP_INTERNAL int oggOpenPlayer (struct ocpfilehandle_t *oggf, struct cpifaceSess
 		goto error_out_plrDevAPI_Play;
 	}
 
-	oggbuf=malloc(1024 * 128);
+	uint32_t buffer_length = oggrate / 4; /* 250 ms, in addition to devp */
+	if (buffer_length < 8192)
+	{
+		buffer_length = 8192;
+	}
+	oggbuf = malloc(buffer_length * sizeof (int16_t) * 2 /* stereo */);
 	if (!oggbuf)
 	{
 		retval = errAllocMem;
 		goto error_out_plrDevAPI_Play;
 	}
-	oggbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, 1024*32);
+	oggbufpos = cpifaceSession->ringbufferAPI->new_samples (RINGBUFFER_FLAGS_STEREO | RINGBUFFER_FLAGS_16BIT | RINGBUFFER_FLAGS_SIGNED, buffer_length);
 	if (!oggbufpos)
 	{
 		retval = errAllocMem;
