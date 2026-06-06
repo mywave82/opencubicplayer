@@ -613,6 +613,7 @@ AC_SUBST(HAVE_X11_SHM)
 AS_IF([test "x$with_x11" = "xno"], [
 	X11_LIBS=
 	HAVE_X11=
+	with_x11_shm=no
 ],[
 	HAVE_X11=1
 	AC_DEFINE(HAVE_X11)

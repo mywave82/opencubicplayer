@@ -12768,6 +12768,7 @@ then :
 
 	X11_LIBS=
 	HAVE_X11=
+	with_x11_shm=no
 
 else case e in #(
   e)
