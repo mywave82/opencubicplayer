@@ -305,7 +305,7 @@ OCP_INTERNAL int wave_openfile (struct ocpdir_t *dir, const char *filename, stru
 			result.inexact->unref (result.inexact);
 			result.inexact = 0;
 		}
-	} else if (result.exact)
+	} else if (result.inexact)
 	{
 		*file = result.inexact;
 		result.inexact = 0;
@@ -366,7 +366,7 @@ OCP_INTERNAL int data_openfile (struct ocpdir_t *dir, const char *filename, stru
 			result.inexact->unref (result.inexact);
 			result.inexact = 0;
 		}
-	} else if (result.exact)
+	} else if (result.inexact)
 	{
 		*file = result.inexact;
 		result.inexact = 0;
