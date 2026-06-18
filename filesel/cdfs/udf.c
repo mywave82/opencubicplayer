@@ -37,7 +37,7 @@
 #ifdef CDFS_DEBUG
 #define debug_printf(...) fprintf (stderr, __VA_ARGS__)
 #else
-#define debug_printf(format,args...) ((void)0)
+#define debug_printf(format,args...) do{}while(0)
 #endif
 
 #define MAX_INDIRECT_RECURSION 1024
@@ -218,13 +218,12 @@ static void print_1_7_2_12_VolumeSetIdentifier2 (uint8_t *buffer, int len)
 		goto skipme;
 	}
 
-#ifdef CDFS_DEBUG
 	if (len >= 16)
 	{
+#ifdef CDFS_DEBUG
 		uint32_t Stamp;
 		time_t t1;
 		struct tm t2;
-
 
 		Stamp  = unhex(buffer[7]) << 28;
 		Stamp |= unhex(buffer[6]) << 24;
@@ -242,17 +241,17 @@ static void print_1_7_2_12_VolumeSetIdentifier2 (uint8_t *buffer, int len)
 		}
 
 		debug_printf ("unique_timestamp=%04d-%02d-%02d_%02d:%02d:%02d",
-			t2->tm_year + 1900,
-			t2->tm_mon + 1,
-			t2->tm_mday,
-			t2->tm_hour,
-			t2->tm_min,
-			t2->tm_sec);
+			t2.tm_year + 1900,
+			t2.tm_mon + 1,
+			t2.tm_mday,
+			t2.tm_hour,
+			t2.tm_min,
+			t2.tm_sec);
 		debug_printf (" ");
+#endif
 		buffer += 8;
 		len -= 8;
 	}
-#endif
 
 skipme:
 	if ((len >= 8) &&
@@ -1749,7 +1748,7 @@ static struct UDF_FileEntry_t *FileEntry (int n, struct cdfs_disc_t *disc, uint3
 	}
 	N(n+1); debug_printf ("Record Display Attributes:         %" PRIu8  "\n",                                                                 buffer[51]);
 	N(n+1); debug_printf ("Record Length:                     %" PRId32 "\n", (buffer[55] << 24) | (buffer[54] << 16) | (buffer[53] <<  8) |  buffer[52]);
-	N(n+1); debug_printf ("Information Length:                %" PRId64 "\n", retval->InformationLength = (
+	retval->InformationLength = (
 		((uint64_t)(buffer[63]) << 56) |
 		((uint64_t)(buffer[62]) << 48) |
 		((uint64_t)(buffer[61]) << 40) |
@@ -1757,7 +1756,8 @@ static struct UDF_FileEntry_t *FileEntry (int n, struct cdfs_disc_t *disc, uint3
 		((uint64_t)(buffer[59]) << 24) |
 		((uint64_t)(buffer[58]) << 16) |
 		((uint64_t)(buffer[57]) <<  8) |
-		            buffer[56]));
+		            buffer[56]);
+	N(n+1); debug_printf ("Information Length:                %" PRId64 "\n", retval->InformationLength);
 	if (!isextended)
 	{
 		N(n+1); debug_printf ("Logical Blocks Recorded:           %" PRId64 "\n",
@@ -1887,7 +1887,6 @@ static struct UDF_FileEntry_t *FileEntry (int n, struct cdfs_disc_t *disc, uint3
 	}
 
 	return retval;
-#undef buffer
 }
 
 static void FileEntry_Free (struct UDF_FileEntry_t *FE)
