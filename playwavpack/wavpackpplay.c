@@ -182,7 +182,7 @@ static int wavpackOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct m
 	cpifaceSession->dirdb->GetName_internalstr (file->dirdb_ref, &filename);
 	cpifaceSession->cpiDebug (cpifaceSession, "[WAVPACK] preloading %s...\n", filename);
 
-	{
+	do {
 		size_t filename_len;
 		char *filename_wvc_ideal;
 
