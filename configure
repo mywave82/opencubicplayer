@@ -12303,7 +12303,11 @@ if test "x$with_flac" = "xno"
 then :
   HAVE_FLAC=
 else case e in #(
-  e) HAVE_FLAC=1 ;;
+  e)
+  HAVE_FLAC=1
+  printf "%s\n" "#define HAVE_FLAC 1" >>confdefs.h
+
+ ;;
 esac
 fi
 
@@ -12494,7 +12498,11 @@ if test "x$with_wavpack" = "xno"
 then :
   HAVE_WAVPACK=
 else case e in #(
-  e) HAVE_WAVPACK=1 ;;
+  e)
+  HAVE_WAVPACK=1
+  printf "%s\n" "#define HAVE_WAVPACK 1" >>confdefs.h
+
+ ;;
 esac
 fi
 CFLAGS="$org_cflags"

@@ -547,7 +547,10 @@ AS_IF([test "x$with_flac" != "xno"],[
 		LIBS=$push_LIBS
 	])
 ])
-AS_IF([test "x$with_flac" = "xno"], [HAVE_FLAC=], [HAVE_FLAC=1])
+AS_IF([test "x$with_flac" = "xno"], [HAVE_FLAC=], [
+  HAVE_FLAC=1
+  AC_DEFINE([HAVE_FLAC],[1])
+])
 
 org_cflags="$CFLAGS"
 org_cppflags="$CPPFLAGS"
@@ -571,7 +574,11 @@ AS_IF([test "x$with_wavpack" != "xno"],[
 		[AS_IF([test "x$with_wavpack" = "xyes"], [AC_MSG_ERROR(["WavpackOpenFileInputEx64 not found in libwavpack, available since version 5.0"])], [with_wavpack="no"]) ]
 	)
 ])
-AS_IF([test "x$with_wavpack" = "xno"], [HAVE_WAVPACK=], [HAVE_WAVPACK=1])
+AS_IF([test "x$with_wavpack" = "xno"], [HAVE_WAVPACK=],
+[
+  HAVE_WAVPACK=1
+  AC_DEFINE([HAVE_WAVPACK],[1])
+])
 CFLAGS="$org_cflags"
 CPPFLAGS="$org_cppflags"
 LIBS="$push_LIBS"

@@ -6,9 +6,11 @@
 int wave_filename(const char *filename);
 
 #warning this operation should be redesigned for iterations
-int wave_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *offset, uint64_t *length);
+struct cdfs_datasource_handle_t *wave_openfile (struct ocpdir_t *dir, const char *filename);
 
 #warning this operation should be redesigned for iterations
-int data_openfile (struct ocpdir_t *dir, const char *filename, struct ocpfile_t **file, struct ocpfilehandle_t **handle, uint64_t *length);
+struct cdfs_datasource_handle_t *data_openfile (struct ocpdir_t *dir, const char *filename);
+
+struct cdfs_datasource_handle_t *spawn_audiofile_handle_plain (struct ocpfilehandle_t *fh, uint64_t offset, uint64_t length);
 
 #endif

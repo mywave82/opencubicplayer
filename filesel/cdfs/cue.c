@@ -449,12 +449,9 @@ static int cue_parse_token (struct cue_parser_t *cue_parser, enum CUE_tokens tok
 			case CUE_TOKEN_WAVE:
 				cue_parser_modify_source_WAVE (cue_parser);
 				break;
-#warning support MP3?
-#if 0
 			case CUE_TOKEN_MP3:
-				cue_parser_modify_source_MP3 (cue_parser);
+				cue_parser_modify_source_WAVE (cue_parser); /* we detect MP3 in the WAVE path */
 				break;
-#endif
 #warning support AIFF?
 #if 0
 			case CUE_TOKEN_AIFF:
@@ -642,7 +639,7 @@ static int cue_check_keyword (const char *input, int l, const char *needle)
 static void cue_parse_error (const char *orig, const char *input, const char *eol, const int lineno)
 {
 	int i = 0;
-	fprintf (stderr, "Failed to parse .CUE file at line %d\n", lineno + 1);
+	fprintf (stderr, "Failed to parse .CUE file at line %d\n", lineno);
 	while (1)
 	{
 		if (orig[i] == '\r') break;
@@ -1033,10 +1030,7 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 	for (i=0; i < cue_parser->datasourceN; i++)
 	{
-		struct ocpfile_t *file = 0;
-		struct ocpfilehandle_t *fh = 0;
-		uint64_t offset = 0;
-		uint64_t length;
+		struct cdfs_datasource_handle_t *h = 0;
 		enum cue_track_mode_t mode = AUDIO;
 		int j;
 		int ms;
@@ -1044,13 +1038,15 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 
 		if (cue_parser->datasource[i].wave)
 		{
-			if (wave_openfile (parentfile->parent, cue_parser->datasource[i].filename, &file, &fh, &offset, &length))
+			h = wave_openfile (parentfile->parent, cue_parser->datasource[i].filename);
+			if (!h)
 			{
 				fprintf (stderr, "Failed to open wave file %s (format must be stereo, 16bit, 44100 sample-rate)\n", cue_parser->datasource[i].filename);
 				goto fail_out;
 			}
 		} else {
-			if (data_openfile (parentfile->parent, cue_parser->datasource[i].filename, &file, &fh, &length))
+			h = data_openfile (parentfile->parent, cue_parser->datasource[i].filename);
+			if (!h)
 			{
 				fprintf (stderr, "Failed to open data file %s\n", cue_parser->datasource[i].filename);
 				goto fail_out;
@@ -1069,7 +1065,7 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 		}
 
 		ms = medium_sector_size (mode);
-		sectorcount = (length + ms - 1) / ms;
+		sectorcount = (h->length + ms - 1) / ms;
 
 		if (cue_parser->datasource[i].swap == 2) // we need to detect endian, broken images out in the wild
 		{
@@ -1097,8 +1093,7 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 						{
 							break;
 						}
-						fh->seek_set (fh, (offset + i) * 2352);
-						if (fh->read (fh, buffer, 2352) == 2352)
+						if (h->read (h, (offset + i) * 2352, buffer, 2352) == 2352)
 						{
 							detect_endian (buffer, &audiotracks_little, &audiotracks_big);
 						}
@@ -1125,14 +1120,12 @@ OCP_INTERNAL struct cdfs_disc_t *cue_parser_to_cdfs_disc (struct ocpfile_t *pare
 		cdfs_disc_datasource_append (retval,
 		                             discoffset,
 		                             sectorcount,
-		                             file,
-		                             fh,
+		                             h,
 		                             cue_track_mode_to_cdfs_format (mode, cue_parser->datasource[i].swap),
-		                             offset,
-		                             length);
+		                             0,
+		                             h->length);
 
-		if (file) file->unref (file);
-		if (fh) fh->unref (fh);
+		h->unref (h);
 
 		/* add TRACK00 */
 		cdfs_disc_track_append (retval,

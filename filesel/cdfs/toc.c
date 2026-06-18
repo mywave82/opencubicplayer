@@ -820,7 +820,7 @@ static int toc_check_keyword (const char *input, int l, const char *needle)
 static void toc_parse_error (const char *orig, const char *input, const char *eol, const int lineno)
 {
 	int i = 0;
-	fprintf (stderr, "Failed to parse .TOC file at line %d\n", lineno + 1);
+	fprintf (stderr, "Failed to parse .TOC file at line %d\n", lineno);
 	while (1)
 	{
 		if (orig[i] == '\r') break;
@@ -1150,7 +1150,7 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				cdfs_disc_datasource_append (retval,
 				                             trackoffset+tracklength,                         /* medium sector offset */
 				                             toc_parser->track_data[i].datasource[j].length,  /* medium sector count */
-				                             0, 0,                                            /* source file-descriptor */
+				                             0,                                               /* source file-descriptor */
 				                             FORMAT_RAW___NONE,                               /* source sector encoding */
 				                             0,                                               /* source byte offset */
 				                             0);                                              /* source byte length */
@@ -1163,25 +1163,24 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 			    (toc_parser->track_data[i].storage_mode_subchannel == NONE) &&
 			    wave_filename (toc_parser->track_data[i].datasource[j].filename))
 			{
-				struct ocpfile_t *file = 0;
-				struct ocpfilehandle_t *fh = 0;
+				struct cdfs_datasource_handle_t *h;
 				uint64_t offset = 0;
-				uint64_t length = 0;
+				uint64_t length;
 				uint32_t lengthsectors;
 
-				if (wave_openfile (parentfile->parent, toc_parser->track_data[i].datasource[j].filename, &file, &fh, &offset, &length))
+				h = wave_openfile (parentfile->parent, toc_parser->track_data[i].datasource[j].filename);
+				if (!h)
 				{
 					fprintf (stderr, "Failed to open wave file %s (format must be stereo, 16bit, 44100 sample-rate)\n", toc_parser->track_data[i].datasource[j].filename);
 					goto fail_out;
 				}
-
+				length = h->length;
 				if (toc_parser->track_data[i].datasource[j].offset>=0)
 				{
 					if (toc_parser->track_data[i].datasource[j].offset >= length)
 					{
-						fprintf (stderr, "Wave file shorter than offset in .toc file\n");
-						if (file) file->unref (file);
-						if (fh) fh->unref (fh);
+						fprintf (stderr, "Wave file shorter than offset in .toc file (offset requested %"PRIu64", file size %"PRIu64")\n", toc_parser->track_data[i].datasource[j].offset, length);
+						h->unref (h);
 						goto fail_out;
 					}
 					offset += toc_parser->track_data[i].datasource[j].offset;
@@ -1197,33 +1196,32 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				cdfs_disc_datasource_append (retval,
 				                             trackoffset + tracklength,                       /* medium sector offset */
 				                             lengthsectors,                                   /* medium sector count */
-				                             file,
-				                             fh,
+				                             h,
 				                             FORMAT_AUDIO_SWAP___NONE,                        /* source sector encoding */
 				                             offset,                                          /* source byte offset */
 				                             length);                                         /* source byte length */
 				tracklength += lengthsectors;
+				h->unref (h);
 			} else {
-				struct ocpfile_t *file = 0;
-				struct ocpfilehandle_t *fh = 0;
+				struct cdfs_datasource_handle_t *h;
 				uint64_t offset = 0;
-				uint64_t length = 0;
+				uint64_t length;
 				uint32_t lengthsectors;
 				int ss;
 
-				if (data_openfile (parentfile->parent, toc_parser->track_data[i].datasource[j].filename, &file, &fh, &length))
+				h = data_openfile (parentfile->parent, toc_parser->track_data[i].datasource[j].filename);
+				if (!h)
 				{
 					fprintf (stderr, "Failed to open data file %s\n", toc_parser->track_data[i].datasource[j].filename);
 					goto fail_out;
 				}
-
+				length = h->length;
 				if (toc_parser->track_data[i].datasource[j].offset>=0)
 				{
 					if (toc_parser->track_data[i].datasource[j].offset >= length)
 					{
-						fprintf (stderr, "Data file shorter than offset in .toc file\n");
-						if (file) file->unref (file);
-						if (fh) fh->unref (fh);
+						fprintf (stderr, "Data file shorter than offset in .toc file (requested offset %"PRIu64", file size %"PRIu64")\n", toc_parser->track_data[i].datasource[j].offset, length);
+						h->unref (h);
 						goto fail_out;
 					}
 					offset += toc_parser->track_data[i].datasource[j].offset;
@@ -1242,8 +1240,7 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				cdfs_disc_datasource_append (retval,
 				                             trackoffset + tracklength,                       /* medium sector offset */
 				                             lengthsectors,                                   /* medium sector count */
-				                             file,
-				                             fh,
+				                             h,
 				                             toc_storage_mode_to_cdfs_format (toc_parser->track_data[i].storage_mode,
 				                                                              toc_parser->track_data[i].storage_mode_subchannel,
 				                                                              toc_parser->track_data[i].datasource[j].swap),
@@ -1251,8 +1248,7 @@ OCP_INTERNAL struct cdfs_disc_t *toc_parser_to_cdfs_disc (struct ocpfile_t *pare
 				                             offset,                                          /* source byte offset */
 				                             length);                                         /* source byte length */
 				tracklength += lengthsectors;
-				if (file) file->unref (file);
-				if (fh) fh->unref (fh);
+				h->unref (h);
 			}
 		}
 

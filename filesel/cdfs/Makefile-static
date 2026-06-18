@@ -2,5 +2,5 @@ cdfs_so=audio.o cdfs.o cue.o iso9660.o main.o toc.o udf.o wave.o
 
 ifeq ($(STATIC_CORE),1)
  STATIC_OBJECTS += $(patsubst %.o,filesel/cdfs/%.o,$(cdfs_so))
- STATIC_LIBS += $(LIBDISCID_LIBS)
+ STATIC_LIBS += $(LIBDISCID_LIBS) $(WAVPACK_LIBS) $(FLAC_LIBS) $(MATH_LIBS) $(OGG_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS) $(MAD_LIBS)
 endif

@@ -85,7 +85,8 @@ main.o: \
 	main.h \
 	../../stuff/err.h \
 	toc.h \
-	udf.h
+	udf.h \
+	wave.h
 	$(CC) -o $@ $< -c
 
 toc.o: \
@@ -110,9 +111,15 @@ udf.o: \
 
 wave.o: \
 	wave.c \
+	wave-flac.c \
+	wave-mp3.c \
+	wave-ogg.c \
+	wave-plain.c \
+	wave-wavpack.c \
 	../../config.h \
 	../../types.h \
 	../dirdb.h \
 	../filesystem.h \
+	cdfs.h \
 	wave.h
 	$(CC) -o $@ $< -c

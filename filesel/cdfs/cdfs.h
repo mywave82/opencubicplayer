@@ -153,16 +153,15 @@ enum cdfs_format_t
 	FORMAT_ERROR           = 255,
 };
 
-struct ocpfilehandle_t;
+struct cdfs_datasource_handle_t;
 
 struct cdfs_datasource_t
 {
 	uint32_t sectoroffset; /* offset into disc */
 	uint32_t sectorcount;  /* number of sectors */
-	struct ocpfile_t       *file;
-	struct ocpfilehandle_t *fh;
 	enum cdfs_format_t format;
-	uint64_t offset;       /* given in bytes */
+	struct cdfs_datasource_handle_t *h;
+	uint64_t offset;       /* given in bytes, as demanded in .TOC description */
 	uint64_t length;       /* given in bytes */
 };
 
@@ -178,6 +177,15 @@ struct cdfs_track_t
 	char *composer;
 	char *arranger;
 	char *message;
+};
+
+struct cdfs_datasource_handle_t
+{
+	void (*ref) (struct cdfs_datasource_handle_t *ah);
+	void (*unref) (struct cdfs_datasource_handle_t *ah);
+	uint32_t dirdb_ref;
+	uint64_t length;
+	unsigned int (*read) (struct cdfs_datasource_handle_t *ah, uint64_t offset, uint8_t *target, unsigned int len);
 };
 
 struct cdfs_instance_dir_t
@@ -252,14 +260,13 @@ struct cdfs_disc_t
 	struct UDF_Session       *udf_session;
 };
 
-void cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
-                                  uint32_t                sectoroffset,
-                                  uint32_t                sectorcount,
-                                  struct ocpfile_t       *file,
-                                  struct ocpfilehandle_t *fh,
-                                  enum cdfs_format_t      format,
-                                  uint64_t                offset,
-                                  uint64_t                length);
+void cdfs_disc_datasource_append (struct cdfs_disc_t              *disc,
+                                  uint32_t                         sectoroffset,
+                                  uint32_t                         sectorcount,
+                                  struct cdfs_datasource_handle_t *h,
+                                  enum cdfs_format_t               format,
+                                  uint64_t                         offset,
+                                  uint64_t                         length);
 
 void cdfs_disc_track_append (struct cdfs_disc_t *disc,
                              uint32_t            pregap,

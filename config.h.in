@@ -464,4 +464,8 @@ static inline void *memmem(const void *_haystack, size_t haystacklen,
 
 #undef SNDH_MUSTPROVIDE_ICE
 
+#undef HAVE_FLAC
+
+#undef HAVE_WAVPACK
+
 #endif

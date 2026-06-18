@@ -342,7 +342,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 		     ((disc->datasources_data[i].sectoroffset + disc->datasources_data[i].sectorcount) > sector))
 		{
 			uint32_t relsector = sector - disc->datasources_data[i].sectoroffset;
-			if (!disc->datasources_data[i].fh)
+			if (!disc->datasources_data[i].h)
 			{
 				memset (buffer, 0, 2048);
 				return 0;
@@ -370,13 +370,8 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 				case FORMAT_MODE1_RAW___NONE:
 				case FORMAT_MODE2_RAW___NONE:
 				case FORMAT_XA_MODE2_RAW:
-					if (disc->datasources_data[i].fh->seek_set (disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel)) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(SECTORSIZE_XA2+%d), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
 
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, xbuffer, 16) != 16)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel), xbuffer, 16) != 16)
 					{
 						debug_printf ("read(xbuffer, 16) failed\n");
 						return -1;
@@ -393,7 +388,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 							debug_printf ("Sector %"PRId32" is CLEAR\n", sector);
 							return -1;
 						case 0x01: /* MODE 1: DATA */
-							if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE) != SECTORSIZE)
+							if (disc->datasources_data[i].h->read(disc->datasources_data[i].h,  disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel) + 16, buffer, SECTORSIZE) != SECTORSIZE)
 							{
 								debug_printf ("read(buffer, SECTORSIZE) failed\n");
 								return -1;
@@ -403,12 +398,14 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 						case 0x02: /* MODE 2 */
 							/* assuming XA-FORM-1, that is the only mode2 that can provide 2048 bytes of data */
 #warning ignoring sub-header in FORMAT_XA_MODE2_RAW for now..
-							if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, xbuffer, 8) != 8)
+#if 0
+							if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel) + 16,  xbuffer, 8) != 8)
 							{
 								debug_printf ("read(xbuffer_subheader, 8) failed\n");
 								return -1;
 							}
-							if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE) != SECTORSIZE)
+#endif
+							if (disc->datasources_data[i].h->read(disc->datasources_data[i].h,  disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel) + 16 + 8, buffer, SECTORSIZE) != SECTORSIZE)
 							{
 								debug_printf ("read(buffer, SECTORSIZE) failed\n");
 								return -1;
@@ -425,24 +422,21 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 					subchannel = 96;
 					/* fall-through */
 				case FORMAT_XA_MODE2_FORM_MIX___NONE: /* not tested */
-					if (disc->datasources_data[i].fh->seek_set(disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(2324 + 8 + subchannel)) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(2324 + 8 + %d)), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
 
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, xbuffer, 8) != 8)
+#if 0
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(2324 + 8 + subchannel), xbuffer, 8) != 8)
 					{
 						debug_printf ("read(xbuffer, 8) failed\n");
 						return -1;
 					}
 #warning ignoring sub-header in FORMAT_XA_MODE2_FORM_MIX for now..
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, xbuffer, 8) != 8)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(2324 + 8 + subchannel) + 8, xbuffer, 8) != 8)
 					{
 						debug_printf ("read(xbuffer_subheader, 8) failed\n");
 						return -1;
 					}
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE) != SECTORSIZE)
+#endif
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(2324 + 8 + subchannel) + 8 + 8,  buffer, SECTORSIZE) != SECTORSIZE)
 					{
 						debug_printf ("read(buffer, SECTORSIZE) failed\n");
 						return -1;
@@ -460,12 +454,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 				case FORMAT_MODE1___NONE:
 				case FORMAT_XA_MODE2_FORM1___NONE:
 				case FORMAT_MODE_1__XA_MODE2_FORM1___NONE:
-					if (disc->datasources_data[i].fh->seek_set(disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE + subchannel)) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(SECTORSIZE + %d)), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE) != SECTORSIZE)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE + subchannel), buffer, SECTORSIZE) != SECTORSIZE)
 					{
 						debug_printf ("read(buffer, SECTORSIZE) failed\n");
 						return -1;
@@ -477,13 +466,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2048 (struct cdfs_disc_t *disc, uint
 					subchannel = 96;
 					/* fall-through */
 				case FORMAT_XA1_MODE2_FORM1___NONE:
-
-					if (disc->datasources_data[i].fh->seek_set(disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE + 8 + subchannel) + 8) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(SECTORSIZE + 8 + %d) + 8), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE) != SECTORSIZE)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE + 8 + subchannel) + 8, buffer, SECTORSIZE) != SECTORSIZE)
 					{
 						debug_printf ("read(buffer, SECTORSIZE) failed\n");
 						return -1;
@@ -524,7 +507,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2352 (struct cdfs_disc_t *disc, uint
 		{
 			uint32_t relsector = sector - disc->datasources_data[i].sectoroffset;
 
-			if (!disc->datasources_data[i].fh)
+			if (!disc->datasources_data[i].h)
 			{
 				memset (buffer, 0, 2352);
 				return 0;
@@ -537,13 +520,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2352 (struct cdfs_disc_t *disc, uint
 					subchannel = 96;
 					/* fall-through */
 				case FORMAT_AUDIO_SWAP___NONE: /* we do not swap endian on 2048 byte fetches */
-					if (disc->datasources_data[i].fh->seek_set (disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel)) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(SECTORSIZE_XA2+%d), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
-
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE_XA2) != SECTORSIZE_XA2)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel), buffer, SECTORSIZE_XA2) != SECTORSIZE_XA2)
 					{
 						debug_printf ("read(buffer, SECTORSIZE) failed\n");
 						return -1;
@@ -567,13 +544,7 @@ OCP_INTERNAL int cdfs_fetch_absolute_sector_2352 (struct cdfs_disc_t *disc, uint
 				case FORMAT_MODE1_RAW___NONE:
 				case FORMAT_MODE2_RAW___NONE:
 				case FORMAT_XA_MODE2_RAW:
-					if (disc->datasources_data[i].fh->seek_set (disc->datasources_data[i].fh, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel)) < 0)
-					{
-						debug_printf ("seek((%"PRId32")*(SECTORSIZE_XA2+%d), SEEK_SET) failed\n", relsector, subchannel);
-						return -1;
-					}
-
-					if (disc->datasources_data[i].fh->read(disc->datasources_data[i].fh, buffer, SECTORSIZE_XA2) != SECTORSIZE_XA2)
+					if (disc->datasources_data[i].h->read(disc->datasources_data[i].h, disc->datasources_data[i].offset + ((uint64_t)relsector)*(SECTORSIZE_XA2 + subchannel), buffer, SECTORSIZE_XA2) != SECTORSIZE_XA2)
 					{
 						debug_printf ("read(buffer, SECTORSIZE) failed\n");
 						return -1;
@@ -643,8 +614,7 @@ OCP_INTERNAL void
 cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
                              uint32_t                sectoroffset,
                              uint32_t                sectorcount,
-                             struct ocpfile_t       *file,
-                             struct ocpfilehandle_t *fh,
+                             struct cdfs_datasource_handle_t *h,
                              enum cdfs_format_t      format,
                              uint64_t                offset,
                              uint64_t                length)
@@ -654,8 +624,8 @@ cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
 	// append to previous datasource if possible
 	if ( disc->datasources_count && // there is an entry there already
 	     ((disc->datasources_data[disc->datasources_count-1].sectoroffset + disc->datasources_data[disc->datasources_count-1].sectorcount) == sectoroffset) &&
-	     ((!!disc->datasources_data[disc->datasources_count-1].fh) == (!!fh)) && // both entries are either both files or zero-fills
-	     ((!fh) || (disc->datasources_data[disc->datasources_count-1].fh->dirdb_ref == fh->dirdb_ref)) && // if entries are files, filenames matches
+	     ((!!disc->datasources_data[disc->datasources_count-1].h) == (!!h)) && // both entries are either both files or zero-fills
+	     ((!h) || (disc->datasources_data[disc->datasources_count-1].h->dirdb_ref == h->dirdb_ref)) && // if entries are files, filenames matches
 	     (disc->datasources_data[disc->datasources_count-1].format == format) &&
 	     ((disc->datasources_data[disc->datasources_count-1].offset + disc->datasources_data[disc->datasources_count-1].length) == offset) )
 	{
@@ -673,15 +643,10 @@ cdfs_disc_datasource_append (struct cdfs_disc_t     *disc,
 	disc->datasources_data = temp;
 	disc->datasources_data[disc->datasources_count].sectoroffset = sectoroffset;
 	disc->datasources_data[disc->datasources_count].sectorcount = sectorcount;
-	disc->datasources_data[disc->datasources_count].file = file;
-	if (file)
+	disc->datasources_data[disc->datasources_count].h = h;
+	if (h)
 	{
-		file->ref (file);
-	}
-	disc->datasources_data[disc->datasources_count].fh = fh;
-	if (fh)
-	{
-		fh->ref (fh);
+		h->ref (h);
 	}
 	disc->datasources_data[disc->datasources_count].format = format;
 	disc->datasources_data[disc->datasources_count].offset = offset;
@@ -841,13 +806,9 @@ static void cdfs_disc_free (struct cdfs_disc_t *disc)
 
 	for (i=0; i < disc->datasources_count; i++)
 	{
-		if (disc->datasources_data[i].file)
+		if (disc->datasources_data[i].h)
 		{
-			disc->datasources_data[i].file->unref (disc->datasources_data[i].file);
-		}
-		if (disc->datasources_data[i].fh)
-		{
-			disc->datasources_data[i].fh->unref (disc->datasources_data[i].fh);
+			disc->datasources_data[i].h->unref (disc->datasources_data[i].h);
 		}
 	}
 	free (disc->datasources_data);

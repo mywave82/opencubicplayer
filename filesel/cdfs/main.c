@@ -36,6 +36,7 @@
 #include "iso9660.h"
 #include "main.h"
 #include "stuff/err.h"
+#include "wave.h"
 #include "toc.h"
 #include "udf.h"
 
@@ -64,7 +65,7 @@ static struct ocpdir_t *cdfs_disc_to_dir (struct cdfs_disc_t *disc)
 			              disc->datasources_data[i].sectoroffset,
 			              disc->datasources_data[i].sectoroffset + disc->datasources_data[i].sectorcount - 1,
 			              disc->datasources_data[i].sectorcount,
-			             !disc->datasources_data[i].file);
+			             !disc->datasources_data[i].h);
 		}
 	}
 #endif
@@ -332,10 +333,20 @@ static struct ocpdir_t *test_iso (struct ocpfile_t *file)
 		return 0;
 	}
 
+	uint64_t filesize = fh->filesize (fh);
+	struct cdfs_datasource_handle_t *h = spawn_audiofile_handle_plain (fh, 0, fh->filesize (fh));
+	fh->unref (fh);
+	if (!h)
+	{
+		fprintf (stderr, "test_iso(): spawn_audiofile_handle_plain() failed\n");
+		cdfs_disc_unref (disc);
+		return 0;
+	}
+
 	cdfs_disc_datasource_append (disc,
 	                             0,                  /* sectoroffset */
 	                             isofile_sectorcount,
-	                             file, fh,
+	                             h,
 	                             isofile_format,
 	                             0,                  /* offset */
 	                             fh->filesize (fh)); /* length */
