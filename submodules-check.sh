@@ -28,6 +28,6 @@ UNICODE_CASEFOLDING=`curl https://www.unicode.org/Public/latest/ 2> /dev/null|gr
 if test "x$UNICODE_CASEFOLDING" != x"17.0.0"; then echo Unicode CaseFolding needs to be verified; fi
 
 PSGPLAY=`git ls-remote https://github.com/frno7/psgplay.git refs/heads/main | sed -e 's/\t.*//'`
-if test "x$PSGPLAY" != x"3fa22c09e1f2277c76f9252042651a11adabe63a"; then echo PSG-play needs to be verified \($PSGPLAY\); fi
+if test "x$PSGPLAY" != x"869992cbbb8488b519149d8c0dd7afafb78aae5e"; then echo PSG-play needs to be verified \($PSGPLAY\); fi
 
 # TIMIDITY
