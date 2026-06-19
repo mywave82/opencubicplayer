@@ -420,7 +420,7 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	rateidx=(hdr>>20)&15;
 	frqidx=(hdr>>18)&3;
 	padding=(hdr>>17)&1;
-	stereo="\x01\x01\x02\x00"[(hdr>>30)&3];
+		stereo="\x01\x01\x02\x00"[(hdr>>30)&3];
 	if (frqidx==3)
 	{
 		f->seek_set (f, 0);
@@ -468,6 +468,20 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 	}
 
 	m->title[0]=0;
+
+	switch (ver)
+	{
+		case 0:
+			strcat(m->title, "MPEG 1, ");
+			break;
+		case 1:
+			strcat(m->title, "MPEG 2, ");
+			break;
+		case 2:
+			strcat(m->title, "MPEG 2.5, ");
+			break;
+	}
+
 	switch (layer)
 	{
 		case 1:
@@ -480,18 +494,23 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			strcat(m->title, "Layer III, ");
 			break;
 	}
+
+	unsigned int samplerate = 96000; /* just to have a default */
 	switch (ver)
 	{
 		case 0:
 			switch (frqidx)
 			{
 				case 0:
+					samplerate = 44100;
 					strcat(m->title, "44100 Hz, ");
 					break;
 				case 1:
+					samplerate = 48000;
 					strcat(m->title, "48000 Hz, ");
 					break;
 				case 2:
+					samplerate = 32000;
 					strcat(m->title, "32000 Hz, ");
 					break;
 			}
@@ -500,12 +519,15 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			switch (frqidx)
 			{
 				case 0:
+					samplerate = 22050;
 					strcat(m->title, "22050 Hz, ");
 					break;
 				case 1:
+					samplerate = 24000;
 					strcat(m->title, "24000 Hz, ");
 					break;
 				case 2:
+					samplerate = 16000;
 					strcat(m->title, "16000 Hz, ");
 					break;
 			}
@@ -514,16 +536,63 @@ static int ampegpReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f,
 			switch (frqidx)
 			{
 				case 0:
+					samplerate = 11025;
 					strcat(m->title, "11025 Hz, ");
 					break;
 				case 1:
+					samplerate = 12000;
 					strcat(m->title, "12000 Hz, ");
 					break;
 				case 2:
+					samplerate = 8000;
 					strcat(m->title, " 8000 Hz, ");
 					break;
 			}
 			break;
+	}
+
+	if (layer == 3)
+	{ /* Search for Xing header, to get a correct VBR length determined */
+	  /* Also the Info header does the same for CBR, to get the exact number of frames */
+		int targetoffset, i;
+		int crc = !(buf[1] & 0x01);
+
+		if (ver) /* mpeg 2 and mpeg 2.5 */
+		{
+			targetoffset = stereo ? 21 : 13;
+		} else { /* mpeg 1 */
+			targetoffset = stereo ? 36 : 21;
+		}
+
+		for (i = (crc ? 6 : 4); i < targetoffset; i++)
+		{
+			if ((buf + i >= bufend) || (buf[i] != 0))
+			{
+				break;
+			}
+		}
+		if (i == targetoffset) /* only zero bytes so far.... */
+		{
+			if (((buf + targetoffset + 12) < bufend) &&
+			    ((!memcmp (buf + targetoffset, "Xing", 4)) || (!memcmp (buf + targetoffset, "Info", 4)))  &&
+			    (buf[targetoffset + 7] & 0x01) /* FRAMES flag */)
+			{ /* we got a Xing VBR tag and it contains the number of frames */
+				uint32_t frames = (uint32_t)((((uint32_t)buf[targetoffset + 8 + 0])<<24)|
+				                             (((uint32_t)buf[targetoffset + 8 + 1])<<16)|
+				                             (((uint32_t)buf[targetoffset + 8 + 2])<<8)|
+				                             (((uint32_t)buf[targetoffset + 8 + 3])));
+				unsigned int samples_per_frame = ver ? 32 * 18 : 32 * 36;
+				m->playtime = ((uint64_t)frames) * samples_per_frame / samplerate;
+				if ((buf[targetoffset] == 'X'))
+				{
+					strcat(m->title, "VBR");
+				} else {
+					sprintf(m->title+strlen(m->title), "%d", rate);
+					strcat(m->title, " kbps");
+				}
+				goto got_xing;
+			}
+		}
 	}
 
 	br=rate;
@@ -624,6 +693,7 @@ outofframes:
 		strcat(m->title, "VBR");
 		m->playtime=0; /* unknown */
 	}
+got_xing:
 
 	m->channels=stereo?2:1;
 	m->modtype.integer.i=MODULETYPE("MPx");

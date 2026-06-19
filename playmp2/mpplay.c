@@ -85,6 +85,8 @@ static uint64_t fl;
 static uint64_t datapos;
 static uint64_t newpos;
 
+static int stream_from_start;
+
 static int donotloop=1;
 
 /* mpegIdler dumping locations */
@@ -257,7 +259,10 @@ static inline uint_fast32_t id3_tag_query(const unsigned char *data, uint_fast32
 
 	for (i=0; (data[i] == 0x00) && (i < length); i++); /* all zero bytes we can skip, they are probably padding */
 
-	debug_printf_stream ("[MPx] We have %d bytes of zero (%02x len=%d)\n", (int)i, data[0], (int)length);
+	if (i)
+	{
+		debug_printf_stream ("[MPx] We have %d bytes of zero (%02x len=%d)\n", (int)i, data[0], (int)length);
+	}
 
 	return i; /* if no zero bytes were found, we can not tell */
 }
@@ -439,13 +444,13 @@ static int stream_for_frame(void)
 			if (target)
 			{
 				len = file->read (file, data + data_length, target);
-			} else
+			} else {
 				len = 0;
+			}
 			debug_printf_stream ("[MPx] wanted to read %"PRIu32" bytes, and got %"PRIu32" bytes\n", target, len);
 
 			if (!len)
 			{
-				len=0;
 				if ( file->eof(file) ||!target) /* !target is the estimated EOF, feof(file) in-case file has shrunk... */
 				{
 					if (donotloop||target) /* if target was set, we must have had an error */
@@ -477,6 +482,10 @@ static int stream_for_frame(void)
 				}
 			} else {
 				GuardPtr=0;
+				if (!datapos)
+				{
+					stream_from_start = 1;
+				}
 				datapos += len;
 				newpos += len;
 
@@ -571,19 +580,65 @@ error:
 
 			continue;
 		}
+
+		if (stream_from_start)
+		{
+			stream_from_start = 0;
+			/* check for Xing/Info frame */
+			if (frame.header.layer==MAD_LAYER_III)
+			{
+				int targetoffset, i;
+
+				if ((frame.header.flags & MAD_FLAG_MPEG_2_5_EXT) ||
+				    (frame.header.flags & MAD_FLAG_LSF_EXT))
+				{
+					targetoffset = (frame.header.mode==MAD_MODE_SINGLE_CHANNEL) ? 13 : 21;
+				} else {
+					targetoffset = (frame.header.mode==MAD_MODE_SINGLE_CHANNEL) ? 21 : 36;
+				}
+
+				for (i = ((frame.header.flags & MAD_FLAG_PROTECTION) ? 6 : 4); i < targetoffset; i++)
+				{
+					if (stream.this_frame[i])
+					{
+						break;
+					}
+				}
+				if (i == targetoffset) /* only zero bytes so far.... */
+				{
+					if ((!memcmp (stream.this_frame + targetoffset, "Info", 4)) ||
+					    (!memcmp (stream.this_frame + targetoffset, "Xing", 4)))
+					{ /* ...followed by Info (CBR) or Xing (ABR/VBR) signature */
+						debug_printf_stream ("[MPx] skipping frame0, due to Info / Xing\n");
+						continue; // This frame only contains meta-information and will cause a no-sound frame of audio
+					}
+				}
+			}
+		}
+
 		if (!opt25_50)
 		{
-			debug_printf_stream ("[MPx] MPEG 2 layer %s, %s%s\n",
-				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+			const char *version;
+			if (frame.header.flags & MAD_FLAG_MPEG_2_5_EXT)
+			{
+				version = "2.5";
+			} else if (frame.header.flags & MAD_FLAG_LSF_EXT)
+			{
+				version = "2";
+			} else {
+				version = "1";
+			}
+			debug_printf_stream ("[MPx] MPEG %s layer %s, %s%s\n", version,
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_II)?"II":"III",
 				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 			opt25_50=1;
-			snprintf (opt25, sizeof (opt25), "MPEG 2 layer %s, %s",
-				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+			snprintf (opt25, sizeof (opt25), "MPEG%s layer %s, %s", version,
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_II)?"II":"III",
 				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":"stereo");
 
-			snprintf (opt50, sizeof (opt50), "MPEG 2 layer %s, %s%s",
-				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_I)?"II":"III",
+			snprintf (opt50, sizeof (opt50), "MPEG %s layer %s, %s%s", version,
+				(frame.header.layer==MAD_LAYER_I)?"I":(frame.header.layer==MAD_LAYER_II)?"II":"III",
 				(frame.header.mode==MAD_MODE_SINGLE_CHANNEL)?"mono":(frame.header.mode==MAD_MODE_DUAL_CHANNEL)?"Dual Channel":(frame.header.mode==MAD_MODE_JOINT_STEREO)?"Joint Stereo":"Stereo",
 				(frame.header.emphasis==MAD_EMPHASIS_NONE)?"":(frame.header.emphasis==MAD_EMPHASIS_50_15_US)?", 50/15us emphasis":(frame.header.emphasis==MAD_EMPHASIS_CCITT_J_17)?", CCITT J.17 emph":", unknown emphasis");
 		}
@@ -915,6 +970,8 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 {
 	if (mpegfile->seek_set (mpegfile, 0) >= 0)
 	{
+
+		/* check for RIFF header (MP2) */
 		unsigned char sig[4];
 		if (mpegfile->read (mpegfile, sig, 4) != 4)
 		{
@@ -923,7 +980,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 		mpegfile->seek_set (mpegfile, 0);
 		if (!memcmp(sig, "RIFF", 4))
 		{
-			debug_printf_stream ("[mppplay.c]: container RIFF (mpeg3, layer 2 probably AKA mp2)\n");
+			debug_printf_stream ("[mppplay.c]: container RIFF (version 1/2, layer 2 probably AKA mp2)\n");
 
 			mpegfile->seek_set (mpegfile, 12);
 			fl=0;
@@ -958,6 +1015,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 
 		while (1)
 		{
+			/* test for ID3v1.x at the file footer */
 			if (fl >= 256)
 			{
 				uint8_t buffer[256];
@@ -987,6 +1045,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					}
 				}
 			}
+			/* test for ID3v2.4 footer */
 			if (fl >= 25)
 			{
 				uint8_t sbuffer[10];
@@ -1034,6 +1093,7 @@ static int mpegOpenPlayer_FindRangeAndTags (struct ocpfilehandle_t *mpegfile)
 					}
 				}
 			}
+			/* test for IDv2.x footer */
 			if (fl >= 25)
 			{
 				int32_t s;
@@ -1114,6 +1174,8 @@ OCP_INTERNAL int mpegOpenPlayer (struct ocpfilehandle_t *mpegfile, struct cpifac
 	data_in_synth=0;
 	mpeg_eof=0;
 	mpeg_looped=0;
+
+	stream_from_start = 0;
 
 	mad_stream_init(&stream);
 	mad_frame_init(&frame);
