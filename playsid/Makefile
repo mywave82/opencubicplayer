@@ -35,6 +35,7 @@ LIBSIDPLAYOBJECTS= \
 	libresidfp-residfp.o \
 	libresidfp-SID.o \
 	libresidfp-Spline.o \
+	libresidfp-State.o \
 	libresidfp-version.o \
 	libresidfp-WaveformCalculator.o \
 	libresidfp-WaveformGenerator.o \
@@ -156,6 +157,9 @@ libresidfp-SID.o: \
 libresidfp-Spline.o: \
 	libresidfp-git/src/Spline.cpp
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c
+libresidfp-State.o: \
+	libresidfp-git/src/State.cpp
+	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -I./libresidfp-git/src -o $@ $< -c
 libresidfp-version.o: \
 	libresidfp-git/src/version.cc
 	$(LIBSIDPLAYCXX) $(LIBSIDPLAYCXXFLAGS) -ffast-math -fno-unsafe-math-optimizations -o $@ $< -c

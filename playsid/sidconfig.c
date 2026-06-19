@@ -605,7 +605,7 @@ static int float10x_to_int(const char *src)
 static int float100x_to_int(const char *src)
 {
 	int retval = atoi (src) * 100;
-	char *r = strchr (src, '.');
+	const char *r = strchr (src, '.');
 	if (r)
 	{
 		if (r[1] >= '0' && (r[1] <= '9'))
@@ -1289,6 +1289,8 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				case 'c':
 				case 'd':
 				case 'e':
+				case 'f':
+				case 'g':
 					esel = key - 'a' + 9;
 					break;
 				case 'A':
@@ -1296,6 +1298,8 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				case 'C':
 				case 'D':
 				case 'E':
+				case 'F':
+				case 'G':
 					esel = key - 'A' + 9;
 					break;
 

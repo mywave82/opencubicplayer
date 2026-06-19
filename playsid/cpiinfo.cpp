@@ -150,7 +150,7 @@ static void SidInfoDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	if ((line >= 1) && (line < SidInfoHeight))
 	{
-		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3     libsidplayfp v3.0.0, libresidfp v1.0.2~8243cb + OCP patches", SidInfoWidth-2); // v1.0~xxxxxx + OCP patches
+		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line,  0, 0x07, " \xb3     libsidplayfp v3.1.0a, libresidfp v1.2.0a~6fc774 + OCP patches", SidInfoWidth-2); // v1.0~xxxxxx + OCP patches
 		cpifaceSession->console->Driver->DisplayStr(SidInfoFirstLine + line, SidInfoWidth-2, 0x07, "\xb3", 1);
 	}
 	line++;
