@@ -246,6 +246,23 @@ if ! test -f $prefix/build-libjpeg-turbo-$LIBJPEGTURBO_VERSION; then
 	dirs=`ls -d */|cut -f1|grep 'libjpeg-turbo-*'` && rm -Rf $dirs
 	tar xfz libjpeg-turbo-$LIBJPEGTURBO_VERSION.tar.gz
 	cd libjpeg-turbo-$LIBJPEGTURBO_VERSION
+		patch -p1 <<EOF
+diff -ur libjpeg-turbo-3.2.0/src/spng/spng.c libjpeg-turbo-3.2.0-patch/src/spng/spng.c
+--- libjpeg-turbo-3.2.0/src/spng/spng.c 2026-06-30 19:25:43.000000000 +0200
++++ libjpeg-turbo-3.2.0-patch/src/spng/spng.c   2026-08-04 14:57:28.644856706 +0200
+@@ -6199,6 +6199,11 @@
+     #elif SPNG_SSE == 4
+         #pragma GCC target("sse4.1")
+     #else
++        #define __AVX512FP16INTRIN_H_INCLUDED     /* work-around for gcc i686 (mingw on Ubuntu) */
++        #define __AVX512FP16VLINTRIN_H_INCLUDED   /* work-around for gcc i686 (mingw on Ubuntu) */
++        #define _AVX512BF16VLINTRIN_H_INCLUDED    /* work-around for gcc i686 (mingw on Ubuntu) */
++        #define _AVX512BF16INTRIN_H_INCLUDED      /* work-around for gcc i686 (mingw on Ubuntu) */
++        #define _AVXNECONVERTINTRIN_H_INCLUDED    /* work-around for gcc i686 (mingw on Ubuntu) */
+         #pragma GCC target("sse2")
+     #endif
+ #endif
+EOF
 		do_cmake -DENABLE_SHARED=TRUE
 	cd ..
 	touch $prefix/build-libjpeg-turbo-$LIBJPEGTURBO_VERSION
@@ -313,6 +330,18 @@ diff -ur libvorbis-1.3.7/win32/vorbisfile.def libvorbis-1.3.7-new/win32/vorbisfi
  EXPORTS
  ov_clear
  ov_open
+EOF
+	patch -p2 << EOF
+diff --git a/libvorbis-1.3.7/CMakeLists.txt b/libvorbis-1.3.7-22ac96/CMakeLists.txt
+index f377c42..b42380b 100644
+--- a/libvorbis-1.3.7/CMakeLists.txt
++++ b/libvorbis-1.3.7-22ac96/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 2.8.12)
++cmake_minimum_required(VERSION 3.6)
+ project(vorbis)
+
+ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 EOF
 		do_cmake
 	cd ..
@@ -449,6 +478,18 @@ diff -u cJSON-1.7.15-orig/CMakeLists.txt cJSON-1.7.15/CMakeLists.txt
              -Wstrict-prototypes
              -Wwrite-strings
              -Wshadow
+EOF
+		patch -p1 <<EOF
+diff -u cJSON-1.7.18/CMakeLists.txt cJSON-1.7.18-a29814f/CMakeLists.txt
+--- cJSON-1.7.18/CMakeLists.txt 2026-08-04 09:23:39.918735622 +0200
++++ cJSON-1.7.18-a29814f/CMakeLists.txt 2026-08-04 09:30:10.797313010 +0200
+@@ -1,5 +1,5 @@
+ set(CMAKE_LEGACY_CYGWIN_WIN32 0)
+-cmake_minimum_required(VERSION 3.0)
++cmake_minimum_required(VERSION 3.5)
+
+ project(cJSON
+     VERSION 1.7.18
 EOF
 		do_cmake
 	cd ..
