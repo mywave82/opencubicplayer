@@ -30,8 +30,8 @@ LIBADPLUG_TARGETS=\
 	adplug_imf.o         adplug_jbm.o         adplug_ksm.o         adplug_lds.o         adplug_mad.o         adplug_mdi.o         adplug_mid.o         adplug_mkj.o         adplug_msc.o         \
 	adplug_mtk.o         adplug_mtr.o         adplug_mus.o         adplug_nemuopl.o     adplug_nukedopl.o    adplug_pis.o         adplug_player.o      adplug_players.o     adplug_plx.o         \
 	adplug_protrack.o    adplug_psi.o         adplug_rad2.o        adplug_rat.o         adplug_raw.o         adplug_realopl.o     adplug_rix.o         adplug_rol.o         adplug_s3m.o         \
-	adplug_sa2.o         adplug_sixdepack.o   adplug_sng.o         adplug_sop.o         adplug_surroundopl.o adplug_temuopl.o     adplug_u6m.o         adplug_unlzss.o      adplug_unlzh.o       \
-	adplug_unlzw.o       adplug_vgm.o         adplug_woodyopl.o    adplug_xad.o         adplug_xsm.o
+	adplug_sa2.o         adplug_sixdepack.o   adplug_sng.o         adplug_sop.o         adplug_surroundopl.o adplug_temuopl.o     adplug_u6m.o         adplug_ungzip.o      adplug_unlzss.o      \
+	adplug_unlzh.o       adplug_unlzw.o       adplug_vgm.o         adplug_wm.o          adplug_woodyopl.o    adplug_xad.o         adplug_xmi.o         adplug_xsm.o
 #adplugdb_adplugdb.o
 
 LIBBINIO_CXXFLAGS=$(ADPLUG_CXXFLAGS)
@@ -482,6 +482,10 @@ adplug_u6m.o: \
 	adplug-git/src/u6m.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
+adplug_ungzip.o: \
+	adplug-git/src/ungzip.c
+	$(CC) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
+
 adplug_unlzss.o: \
 	adplug-git/src/unlzss.c
 	$(CC) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
@@ -498,12 +502,20 @@ adplug_vgm.o: \
 	adplug-git/src/vgm.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
+adplug_wm.o: \
+	adplug-git/src/wm.cpp
+	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
+
 adplug_woodyopl.o: \
 	adplug-git/src/woodyopl.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
 adplug_xad.o: \
 	adplug-git/src/xad.cpp
+	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
+
+adplug_xmi.o: \
+	adplug-git/src/xmi.cpp
 	$(ADPLUG_CXX) $(LIBADPLUG_CXXFLAGS) $^ -o $@ -c
 
 adplug_xsm.o: \

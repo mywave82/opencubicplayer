@@ -65,6 +65,80 @@ static int oplReadInfo(struct moduleinfostruct *m, struct ocpfilehandle_t *f, co
 		}
 	}
 
+	/* XMI eXtended MIDI File Format, by Miles Design for their AIL (Audio Interface Library). */
+	if ((len > 12) && (!memcmp (buf, "FORM", 4)) && (!memcmp (buf + 8, "XMID", 4)))
+	{
+		snprintf(m->comment, sizeof(m->comment), "XMI eXtended MIDI File Format (single track)");
+		m->modtype.integer.i=MODULETYPE("OPL");
+		return 1;
+	}
+	if ((len > 12) && (!memcmp (buf, "FORM", 4)) && (!memcmp (buf + 8, "XDIR", 4)))
+	{
+		snprintf(m->comment, sizeof(m->comment), "XMI eXtended MIDI File Format (archive)");
+		m->modtype.integer.i=MODULETYPE("OPL");
+		if (len > 16)
+		{
+			uint32_t chunksize = (((uint8_t)(buf[4])) << 24) |
+			                     (((uint8_t)(buf[5])) << 16) |
+			                     (((uint8_t)(buf[6])) <<  8) |
+			                      ((uint8_t)(buf[7]))        ;
+			buf += 12;
+			len -= 12;
+
+			if (chunksize > len)
+			{
+				chunksize = len;
+			}
+
+			if ((chunksize < 4) || (memcmp (buf, "INFO", 4)))
+			{
+				return 1;
+			}
+			buf += 4;
+			len -= 4;
+			chunksize -= 4;
+
+			if (chunksize < 1)
+			{
+				return 1;
+			}
+			uint8_t len = (uint8_t)buf[0];
+			buf += 1;
+			len -= 1;
+			chunksize -= 1;
+
+			if (chunksize < len)
+			{
+				return 1;
+			}
+			snprintf (m->title, sizeof (m->title), "%.*s", len, buf);
+			buf += len;
+			len -= len;
+			chunksize -= len;
+
+			if (chunksize < 1)
+			{
+				return 1;
+			}
+			len = (uint8_t)buf[0];
+			buf += 1;
+			len -= 1;
+			chunksize -= 1;
+
+			if (chunksize < len)
+			{
+				return 1;
+			}
+			snprintf (m->composer, sizeof (m->composer), "%.*s", len, buf);
+			buf += len;
+			len -= len;
+			chunksize -= len;
+
+			return 1;
+		}
+		return 1;
+	}
+
 	for(i = CAdPlug::players.begin(); i != CAdPlug::players.end(); i++)
 	{
 		for(j = 0; (*i)->get_extension(j); j++)

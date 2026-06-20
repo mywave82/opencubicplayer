@@ -119,7 +119,9 @@ Extension | Notes
 `*.SNG`   | SNGPlay by BUGSY of OBSESSION
 `*.SOP`   | Note Sequencer by Lee Ho Bum (sopepos)
 `*.VGM`, `*.VGZ` | [Video Game Music](https://www.vgmpf.com/Wiki/index.php?title=VGM)
+`*.WM`    | MusicV WM
 `*.XAD`   | Various eXotic ADlib Formats by Riven the Mage
+`*.XMI`   | Miles Design eXtended MIDI
 `*.XMS`   | XMS-Tracker by MaDoKaN/E.S.G
 `*.XSM`   | eXtra Simple Music by Davey W Taylor
 

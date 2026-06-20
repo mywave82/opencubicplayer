@@ -10,10 +10,10 @@ ADPLUGDB=`git ls-remote https://github.com/adplug/database.git refs/heads/master
 if test "x$ADPLUGDB" != x"7ac0819ec55d6dd1ffe42890f82c3ada05d101b5"; then echo ADPLUGDB needs to be verified; fi
 
 LIBBINIO=`git ls-remote https://github.com/adplug/libbinio.git refs/heads/master | sed -e 's/\t.*//'`
-if test "x$LIBBINIO" != x"79d597dde20683c8578958308b4c1746ab5859ff"; then echo LIBBINIO needs to be verified; fi
+if test "x$LIBBINIO" != x"3baed731da6b44883c6820132fb1d2a44abc0939"; then echo LIBBINIO needs to be verified \($LIBBINIO\); fi
 
 ADPLUG=`git ls-remote https://github.com/adplug/adplug.git refs/heads/master | sed -e 's/\t.*//'`
-if test "x$ADPLUG" != x"101e7503d91fc783f5152d374a5837a13082ff1b"; then echo ADPLUG needs to be verified; fi
+if test "x$ADPLUG" != x"f8386a01dd6060010e625df4743f625c255abb19"; then echo ADPLUG needs to be verified \($ADPLUG\); fi
 
 LIBSIDPLAYFP=`git ls-remote https://github.com/libsidplayfp/libsidplayfp.git refs/heads/master | sed -e 's/\t.*//'`
 if test "x$LIBSIDPLAYFP" != x"a53d10176ebd227ea31cd49bc7b3f21aea9f8ae5"; then echo LIBSIDPLAYFP needs to be verified \($LIBSIDPLAYFP\); fi

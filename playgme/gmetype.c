@@ -575,19 +575,33 @@ static int gmeReadInfoVGM (struct moduleinfostruct *m, struct ocpfilehandle_t *f
 			uint8_t data_size[4];
 			uint8_t version[4];
 			uint8_t psg_rate[4];
+
 			uint8_t ym2413_rate[4];
 			uint8_t gd3_offset[4];
 			uint8_t track_duration[4];
 			uint8_t loop_offset[4];
+
 			uint8_t loop_duration[4];
 			uint8_t frame_rate[4];
 			uint8_t noise_feedback[2];
 			uint8_t noise_width;
 			uint8_t unused1;
 			uint8_t ym2612_rate[4];
+
 			uint8_t ym2151_rate[4];
 			uint8_t data_offset[4];
-			uint8_t unused2[8];
+			uint8_t segapcm_clock[4];
+			uint8_t spcm_interface[4];
+
+			uint8_t rf5c68_clock[4];
+			uint8_t ym2203_clock[4];
+			uint8_t ym2608_clock[4];
+			uint8_t ym2610B_clock[4];
+
+			uint8_t ym3812_clock[4];
+			uint8_t ym3526_clock[4];
+			uint8_t y8950_clock[4];
+			uint8_t ymf262_clock[4];
 		};
 		const struct header_t *h = (const struct header_t *)buf;
 		uint32_t gd3_pos =  ((uint_fast32_t)(h->gd3_offset[0]))        |
@@ -595,6 +609,10 @@ static int gmeReadInfoVGM (struct moduleinfostruct *m, struct ocpfilehandle_t *f
 				   (((uint_fast32_t)(h->gd3_offset[2])) << 16) |
 				   (((uint_fast32_t)(h->gd3_offset[3])) << 24);
 
+		uint32_t data_offset =  ((uint_fast32_t)(h->data_offset[0]))        |
+				       (((uint_fast32_t)(h->data_offset[1])) << 8 ) |
+				       (((uint_fast32_t)(h->data_offset[2])) << 16) |
+				       (((uint_fast32_t)(h->data_offset[3])) << 24);
 		gd3_pos -= 0x14;
 		if (gd3_pos > 0x40)
 		{
@@ -642,6 +660,14 @@ static int gmeReadInfoVGM (struct moduleinfostruct *m, struct ocpfilehandle_t *f
 		if ((len > 256) && (
 		    buf[0x50] || buf[0x51] || buf[0x52] || buf[0x53] || // OPL2
 		    buf[0x5c] || buf[0x5d] || buf[0x5e] || buf[0x5f])) // OPL3
+		{
+			m->modtype.integer.i = MODULETYPE("OPL");
+			return 1;
+		}
+		if ((len >= 0x60) &&
+		    (h->version[0] >= 0x50) && (h->version[1] == 0x01) &&
+		    (data_offset >= 0x0058) &&
+		    (h->ym3526_clock[0] || h->ym3526_clock[1] || h->ym3526_clock[2] || h->ym3526_clock[3])) // OPL / OPL1
 		{
 			m->modtype.integer.i = MODULETYPE("OPL");
 			return 1;
