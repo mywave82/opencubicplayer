@@ -16,8 +16,10 @@ sudo apt-get install mingw-w64-tools mingw-w64 libz-mingw-w64-dev nasm cmake
 host=$1
 if test "$host" == "i686-w64-mingw32"; then
  sudo update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix
+ sudo update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
 else
  sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
+ sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
 fi
 
 install=`pwd`/$host-install
