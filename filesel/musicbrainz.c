@@ -703,7 +703,7 @@ int musicbrainz_init (const struct configAPI_t *configAPI)
 
 	if (musicbrainz.File)
 	{
-		fprintf (stderr, "musicbrainz already initialzied\n");
+		fprintf (stderr, "musicbrainz already initialized\n");
 		return 0;
 	}
 	musicbrainz_setup_init ();
