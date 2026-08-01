@@ -45,6 +45,11 @@ if [ f"$FLAC_VERSION" != f"$FLAC_LATEST_VERSION" ]; then
 	echo FLAC version should have been $FLAC_LATEST_VERSION
 fi
 
+SPEEX_LATEST_VERSION=`curl -s https://www.speex.org/downloads/|grep -m 1 speex-|sed -e 's/.*speex-//'|sed -e 's/\.tar\..*//'`
+if [ f"$SPEEX_VERSION" != f"$SPEEX_LATEST_VERSION" ]; then
+	echo SPEEX version should have been $SPEEX_LATEST_VERSION
+fi
+
 SDL3_LATEST_VERSION=`curl -s https://github.com/libsdl-org/SDL/releases|grep -m 1 "Link--primary Link.*>3\."|sed -e 's/.*"Link--primary Link">//'|sed -e 's/<.*//'`
 if [ f"$SDL3_VERSION" != f"$SDL3_LATEST_VERSION" ]; then
 	echo SDL3 version should have been $SDL3_LATEST_VERSION

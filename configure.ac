@@ -116,6 +116,7 @@ AC_ARG_WITH([x11],                     [AS_HELP_STRING([--with-x11],            
 AC_ARG_WITH([x11_shm],                 [AS_HELP_STRING([--with-x11-shm],                   [force/disable x11 SHM support])],                                               [], [with_x11_shm=auto])
 #AC_ARG_WITH([adplug],                 [AS_HELP_STRING([--with-adplug],                    [force/disable adplug support])],                                                [], [with_adplug=auto])
 AC_ARG_WITH([mad],                     [AS_HELP_STRING([--with-mad],                       [force/disable mad mpeg audio support])],                                        [], [with_mad=auto])
+AC_ARG_WITH([speex],                   [AS_HELP_STRING([--with-speex],                     [force/disable speex audio support])],                                           [], [with_speex=auto])
 AC_ARG_WITH([libgme],                  [AS_HELP_STRING([--with-libgme],                    [force/disable libgme (Game Music Emulator support)])],                          [], [with_libgme=auto])
 AC_ARG_WITH([wavpack],                 [AS_HELP_STRING([--with-wavpack],                   [force/disable wavpack audio support])],                                         [], [with_wavpack=auto])
 AC_ARG_WITH([alsa],                    [AS_HELP_STRING([--with-alsa],                      [force/disable alsa support])],                                                  [], [with_alsa=auto])
@@ -530,6 +531,19 @@ dnl Fall back to non-pkg-config method
 	VORBISFILE_LIBS="-lvorbisfile"
 	VORBISFILE_CFLAGS=""
 	LIBS=$push_LIBS
+])
+
+AC_SUBST(HAVE_SPEEX)
+AS_IF([test "x$with_speex" != "xno"],[
+	PKG_CHECK_MODULES([SPEEX],[speex],[],[
+		AS_IF([test "x$with_speex" != "xyes"],[AC_MSG_ERROR("required library speex, failed detected")])
+		with_speex=no
+	])
+])
+AS_IF([test "x$with_speex" = "xno"], [
+	HAVE_SPEEX=
+],[
+	HAVE_SPEEX=1
 ])
 
 AC_SUBST(FLAC_CFLAGS)
@@ -1345,6 +1359,7 @@ dnl AS_IF([test "x$with_adplug"    = "xno" ], [echo "adplug:            OFF"], [
 AS_IF([test "x$with_mad"       = "xno" ], [echo "mad:               OFF"], [echo "mad:               ON"])
                                            echo "sidplayfp:         GIT/builtin"
 AS_IF([test "x$with_flac"      = "xno" ], [echo "FLAC:              OFF"], [echo "FLAC:              ON"])
+AS_IF([test "x$with_speex"     = "xno" ], [echo "SPEEX:             OFF"], [echo "SPEEX:             ON"])
 AS_IF([test "x$with_libgme"    = "xno" ], [echo "GME:               OFF"], [echo "GME:               ON"])
 AS_IF([test "x$with_wavpack"   = "xno" ], [echo "WAVPACK:           OFF"], [echo "WAVPACK:           ON"])
 AS_IF([test "x$with_x11"       = "xno" ], [echo "x11:               OFF"], [echo "x11:               ON"])

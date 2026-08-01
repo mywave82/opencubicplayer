@@ -1112,9 +1112,15 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileInt ("fscolors", "WV", 14, 10);
 		}
 
-		if (epoch < 20260603)
+		if (epoch < 20260801)
 		{
-			cfSetProfileInt("version", "epoch", 20260603, 10);
+			fprintf(stderr, "ocp.ini update (3.4.0) add [fscolors] SPX=6\n");
+			cfSetProfileInt ("fscolors", "SPX", 14, 10);
+		}
+
+		if (epoch < 20260801)
+		{
+			cfSetProfileInt("version", "epoch", 20260801, 10);
 			cfStoreConfig();
 #ifdef _WIN32
 			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
@@ -1131,17 +1137,17 @@ static int init_modules(int argc, char *argv[]
 #endif
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260603)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260801)
 	{
 #ifndef _WIN32
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260603\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260801\033[0m\n\n");
 			sleep(5);
 		} else
 #endif
 		{
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260603\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260801\n\n");
 		}
 	}
 

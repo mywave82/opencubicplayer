@@ -1,5 +1,5 @@
 [version]
-  epoch=20260419
+  epoch=20260801
 
 [general]
 ;link=
@@ -222,6 +222,7 @@ lpf_Qpct=100              ; For stereo model "empiric+lpf", this sets the Q valu
   S3M=2
   SID=6
   STM=2
+  SPX=6
   ULT=5
   WAV=14
   WV=14

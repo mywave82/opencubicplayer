@@ -748,6 +748,9 @@ WAVPACK_CFLAGS
 HAVE_FLAC
 FLAC_LIBS
 FLAC_CFLAGS
+SPEEX_LIBS
+SPEEX_CFLAGS
+HAVE_SPEEX
 VORBISFILE_LIBS
 VORBISFILE_CFLAGS
 VORBIS_LIBS
@@ -865,6 +868,7 @@ with_builtin
 with_x11
 with_x11_shm
 with_mad
+with_speex
 with_libgme
 with_wavpack
 with_alsa
@@ -937,6 +941,8 @@ VORBIS_CFLAGS
 VORBIS_LIBS
 VORBISFILE_CFLAGS
 VORBISFILE_LIBS
+SPEEX_CFLAGS
+SPEEX_LIBS
 FLAC_CFLAGS
 FLAC_LIBS
 WAVPACK_CFLAGS
@@ -1604,6 +1610,7 @@ Optional Packages:
   --with-x11              force/disable x11 support
   --with-x11-shm          force/disable x11 SHM support
   --with-mad              force/disable mad mpeg audio support
+  --with-speex            force/disable speex audio support
   --with-libgme           force/disable libgme (Game Music Emulator support)
   --with-wavpack          force/disable wavpack audio support
   --with-alsa             force/disable alsa support
@@ -1721,6 +1728,9 @@ Some influential environment variables:
               C compiler flags for VORBISFILE, overriding pkg-config
   VORBISFILE_LIBS
               linker flags for VORBISFILE, overriding pkg-config
+  SPEEX_CFLAGS
+              C compiler flags for SPEEX, overriding pkg-config
+  SPEEX_LIBS  linker flags for SPEEX, overriding pkg-config
   FLAC_CFLAGS C compiler flags for FLAC, overriding pkg-config
   FLAC_LIBS   linker flags for FLAC, overriding pkg-config
   WAVPACK_CFLAGS
@@ -8091,6 +8101,16 @@ esac
 fi
 
 
+# Check whether --with-speex was given.
+if test ${with_speex+y}
+then :
+  withval=$with_speex;
+else case e in #(
+  e) with_speex=auto ;;
+esac
+fi
+
+
 # Check whether --with-libgme was given.
 if test ${with_libgme+y}
 then :
@@ -11973,6 +11993,107 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
+fi
+
+
+if test "x$with_speex" != "xno"
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for speex" >&5
+printf %s "checking for speex... " >&6; }
+
+if test -n "$SPEEX_CFLAGS"; then
+    pkg_cv_SPEEX_CFLAGS="$SPEEX_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"speex\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SPEEX_CFLAGS=`$PKG_CONFIG --cflags "speex" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SPEEX_LIBS"; then
+    pkg_cv_SPEEX_LIBS="$SPEEX_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"speex\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "speex") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SPEEX_LIBS=`$PKG_CONFIG --libs "speex" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "speex" 2>&1`
+        else
+	        SPEEX_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "speex" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SPEEX_PKG_ERRORS" >&5
+
+
+		if test "x$with_speex" != "xyes"
+then :
+  as_fn_error failed detected" "\"required library speex" "$LINENO" 5
+fi
+		with_speex=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+		if test "x$with_speex" != "xyes"
+then :
+  as_fn_error failed detected" "\"required library speex" "$LINENO" 5
+fi
+		with_speex=no
+
+else
+	SPEEX_CFLAGS=$pkg_cv_SPEEX_CFLAGS
+	SPEEX_LIBS=$pkg_cv_SPEEX_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+fi
+if test "x$with_speex" = "xno"
+then :
+
+	HAVE_SPEEX=
+
+else case e in #(
+  e)
+	HAVE_SPEEX=1
+ ;;
+esac
 fi
 
 
@@ -23429,6 +23550,13 @@ then :
   echo "FLAC:              OFF"
 else case e in #(
   e) echo "FLAC:              ON" ;;
+esac
+fi
+if test "x$with_speex"     = "xno"
+then :
+  echo "SPEEX:             OFF"
+else case e in #(
+  e) echo "SPEEX:             ON" ;;
 esac
 fi
 if test "x$with_libgme"    = "xno"
