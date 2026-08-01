@@ -23,8 +23,10 @@ endif
 
 .PHONY: all clean install uninstall
 
+# non-static core build
 cdfs$(LIB_SUFFIX): $(cdfs_so)
-	$(CC) $(SHARED_FLAGS) $(ICONV_LIBS) -o $@ $^ $(LIBDISCID_LIBS)
+	$(CC) $(SHARED_FLAGS) $(ICONV_LIBS) -o $@ $^ $(LIBDISCID_LIBS) $(WAVPACK_LIBS) $(FLAC_LIBS) $(MATH_LIBS) $(OGG_LIBS) $(VORBIS_LIBS) $(VORBISFILE_LIBS) $(MAD_LIBS)
+
 
 audio.o: \
 	audio.c \
