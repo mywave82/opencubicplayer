@@ -71,6 +71,8 @@ static uint64_t  flaclastpos;
 
 static int donotloop=1;
 
+static int is_ogg;
+
 static volatile int clipbusy=0;
 
 static int flacPendingSeek = 0;
@@ -116,7 +118,8 @@ static void add_comment2(const char *title, const char *value, const uint32_t va
 
 static void add_comment(const char *src, const uint32_t srclen)
 {
-	char *equal, *tmp, *tmp2;
+	const char *equal;
+	char *tmp, *tmp2;
 #if 0
 	if (!strncasecmp (src, "METADATA_BLOCK_PICTURE=", 23))
 	{
@@ -326,6 +329,10 @@ static void metadata_callback(
 			flacbits           = metadata->data.stream_info.bits_per_sample;
 			flac_max_blocksize = metadata->data.stream_info.max_blocksize;
 			samples            = metadata->data.stream_info.total_samples;
+			if (!samples)
+			{
+				fprintf (stderr, "[FLAC] warning, total_samples = 0\n");
+			}
 #if 0
 			fprintf(stderr, "METADATA_TYPE_STREAMINFO\n");
 			fprintf(stderr, "streaminfo.min_blocksize: %d\n", metadata->data.stream_info.min_blocksize);
@@ -613,6 +620,8 @@ static void flacIdler (struct cpifaceSessionAPI_t *cpifaceSession)
 			/* fprintf(stderr, "eof reached\n"); */
 			break;
 		}
+
+		/* This logic is known to fail for OGG streams, since they read multiple packets in a single page when doing file I/O */
 		samples_for_bitrate = 0;
 		prePOS = flacfile->getpos (flacfile);
 #if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT <= 7
@@ -903,22 +912,33 @@ OCP_INTERNAL void flacGetInfo (struct flacinfo *info)
 	info->bits=flacbits;
 	snprintf (info->opt25, sizeof (info->opt25), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
 	snprintf (info->opt50, sizeof (info->opt50), "%s - %s", FLAC__VERSION_STRING, FLAC__VENDOR_STRING);
-	info->bitrate=bitrate;
+	info->bitrate = is_ogg ? -1 : bitrate;
 }
 OCP_INTERNAL uint64_t flacGetPos (struct cpifaceSessionAPI_t *cpifaceSession)
 {
+	if (!samples)
+	{
+		uint64_t inbuf = cpifaceSession->ringbufferAPI->get_tail_available_samples (flacbufpos);
+		if (inbuf > flaclastpos)
+		{
+			return 0;
+		}
+		return (flaclastpos -  inbuf);
+	}
 	return (flaclastpos + samples - cpifaceSession->ringbufferAPI->get_tail_available_samples (flacbufpos)) % samples;
 }
 OCP_INTERNAL void flacSetPos (uint64_t pos)
 {
-	if (pos>=samples)
+	if (samples)
 	{
-		if (donotloop)
-			pos=samples-1;
-		else
-			pos%=samples;
+		if (pos>=samples)
+		{
+			if (donotloop)
+				pos=samples-1;
+			else
+				pos%=samples;
+		}
 	}
-
 	/* Seek, causes a decoding to happen, so we just flag it as pending, and let Idle perform it when buffer has space */
 	flacPendingSeek = 1;
 	flacPendingSeekPos = pos;
@@ -958,6 +978,14 @@ OCP_INTERNAL int flacOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSes
 	int temp;
 	uint32_t flacbuflen;
 	int retval;
+
+	char buffer[4];
+	file->seek_set (file, 0);
+	if (file->read (file, buffer, 4) != 4)
+	{
+		return errFormStruc;
+	}
+	file->seek_set (file, 0);
 
 	if (!cpifaceSession->plrDevAPI)
 	{
@@ -1008,6 +1036,7 @@ OCP_INTERNAL int flacOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSes
 	FLAC__seekable_stream_decoder_set_eof_callback(decoder, eof_callback);
 	FLAC__seekable_stream_decoder_set_client_data(decoder, cpifaceSession);
 	FLAC__seekable_stream_decoder_set_error_callback(decoder, error_callback);
+
 	if ((temp=FLAC__seekable_stream_decoder_init(decoder))!=FLAC__SEEKABLE_STREAM_DECODER_OK)
 	{
 		cpifaceSession->cpiDebug (cpifaceSession, "[FLAC] FLAC__seekable_stream_decoder_init() failed, %s\n", FLAC__SeekableStreamDecoderStateString[temp]);
@@ -1022,22 +1051,47 @@ OCP_INTERNAL int flacOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSes
 	}
 #else
 	FLAC__stream_decoder_set_md5_checking(decoder, true);
-	if((temp=FLAC__stream_decoder_init_stream(
-	   decoder,
-	   read_callback,
-	   seek_callback,
-	   tell_callback,
-	   length_callback,
-	   eof_callback,
-	   write_callback,
-	   metadata_callback,
-	   error_callback,
-	   cpifaceSession /*my_client_data*/
-	)) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+
+	if (!memcmp (buffer, "OggS", 4))
 	{
-		cpifaceSession->cpiDebug (cpifaceSession, "[FLAC] FLAC__stream_decoder_init_stream() failed, %s\n", FLAC__StreamDecoderStateString[temp]);
-		retval = errFormStruc;
-		goto error_out_decoder;
+		is_ogg = 1;
+#warning only available since libFLAC 1.0 probably
+		if((temp=FLAC__stream_decoder_init_ogg_stream(
+		   decoder,
+		   read_callback,
+		   seek_callback,
+		   tell_callback,
+		   length_callback,
+		   eof_callback,
+		   write_callback,
+		   metadata_callback,
+		   error_callback,
+		   cpifaceSession /*my_client_data*/
+		)) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[FLAC] FLAC__stream_decoder_init_ogg_stream() failed, %s\n", FLAC__StreamDecoderStateString[temp]);
+			retval = errFormStruc;
+			goto error_out_decoder;
+		}
+	} else {
+		is_ogg = 0;
+		if((temp=FLAC__stream_decoder_init_stream(
+		   decoder,
+		   read_callback,
+		   seek_callback,
+		   tell_callback,
+		   length_callback,
+		   eof_callback,
+		   write_callback,
+		   metadata_callback,
+		   error_callback,
+		   cpifaceSession /*my_client_data*/
+		)) != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+		{
+			cpifaceSession->cpiDebug (cpifaceSession, "[FLAC] FLAC__stream_decoder_init_stream() failed, %s\n", FLAC__StreamDecoderStateString[temp]);
+			retval = errFormStruc;
+			goto error_out_decoder;
+		}
 	}
 	if (!FLAC__stream_decoder_process_until_end_of_metadata(decoder))
 	{

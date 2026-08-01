@@ -9,7 +9,7 @@ struct flacinfo
 	uint32_t rate; /* output rate */
 	int	 stereo;
 	int      bits;
-	uint32_t bitrate;
+	int32_t  bitrate;
 	char     opt25[26];
 	char     opt50[51];
 };
