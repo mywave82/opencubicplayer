@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.3.1
+%define version 3.4.0
 
 Name: %{name}
 Version: %{version}
@@ -34,74 +34,59 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
-Changes from version 3.3.0 to 3.3.1:
+Changes from version 3.3.1 to 3.4.0:
 
-[FLAC]
- * Multiple metra-entries with same key caused crash.
+Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
 
-[SNDH]
- * Add missing MIME type: audio/x-sndh
+[speex]
+ * Initial support (*.spx)
 
-[HVL, OGG, TIMIDITY]
- * Used plrDevAPI->Idle() that returns available free space, instead of plrDevAPI->GetStats() to retrieve the current audio-delay.
+[wavpack]
+ * Initial support (*.wv)
 
-[TIMIDITY]
- * Harden logic that delays events for UI.
+[flac]
+ * Added support for FLAC embedded into OGG (*.OGA)
 
-
-Changes from version 3.2.3 to 3.3.0:
-
-[SID]
- * Update libsidplayfp to v3.0.0
- * Update libresidfp to latest master
- * Adjust keyboard repeat detection for accelerating adjusting the filters.
- * enableOld6581caps option for C64 Assembly 326298
- * Fix potential crashes in 'o' and 'b' modes.
-
-[ULT]
- * Adjust cmdVolSlide to be 4 times as powerful. Also add minor missing effects/commands.
-
-[SNDH]
- * Add support for SNDH files using psgplay
-
-[XM]
- * Give warning if tune contains non-standard non-supported ADPCM sample
- * After a ECx, a note without an instrument should unmute the channel. (#176)
-
-[HVL]
- * Fix potential crashes in 'o' and 'b' modes.
-
-[modland.com]
- * no longer hosts playsid directory, and update the list of unknown directories
-
-[channel viewer]
- * a DC bias should not produce volume-bars active
-
-[YM]
- * Update register to frequency logic to match SNDH. (Fixes a bug where the HI part of the registers ended up being ignored)
-
-[nCurses]
- * Try to support rxvt styled terminals regarding SHIFT+F(n) keys.
- * Do not purge keyboard input buffer on conRestore/conSave
- * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
-
-[X11]
- * allow to enable/disable X11 SHM extension API during ./configure (for docker container)
- * Do not purge keyboard input buffer on conRestore/conSave
- * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
-
-[SDL]
- * With SDL3, scrollwheel now works as UP/DOWN keys - usefull in filebrowser.
- * install icons when building with SDL3.
- * Do not purge keyboard input buffer on conRestore/conSave
- * Move graphic refresh to its own timer callback instead of keyboard pull/read for a more consistent responsivness. Implemented for for nCurses, X11 and SDL.
+[help]
+ * Use the correct screen-width if displaying error-messages, avoid crash blanking invalid memory
 
 [mingw]
- * update support-libraries to latest versions.
- * devpdisk, file-creation failed due to filename being in LFN syntax, but without any drive and directory.
+ * Update version-numbers of packages used by mingw build
 
-[QOA]
- * Update to latest git (no impact for OCP)
+[adplug/opl]
+ * update adplug to latest master
+   * adds support for *.xmi, Miles Design music
+   * adds support for *.wm, Silky's MusicV WM OPL3 format
+
+[sidplayfp/sid]
+ * Update to latest masters.
+
+[sndh]
+ * update psgplay to latest master.
+
+[qoa]
+ * update to latest master
+   * Adds more sanitization
+   * Fixes Out-Of-Bounds read for special crafted .QOA files
+
+[libmad/mpX]
+ * Skip frame 0, if it is a meta-frame.
+ * Correct MPEG version and LAYER information in the status header.
+ * File-browser detection, now uses information in meta-header to calculate song length if available if no ID3 tag is available.
+
+[cue/toc]
+ * Add support for WavPack, Ogg, FLAC and MP3 compressed audio
+ *.WAV files, the result of case-insenstive-search was never used.
+
+[udf]
+ * Filesystem did not parse correctly if CDFS_DEBUG was not defined.
+
+[wav]
+ * Fix parsing META comments
+
+[configure]
+ * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes roblems with the internal list of core plugins.
+ * --with-strip_lto_flags, that can automatically strip away -flto flags.
 
 %prep
 %setup -q -n %{name}-%{version}

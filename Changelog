@@ -1,3 +1,57 @@
+Version 3.4.0
+=============
+Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
+
+[speex]
+ * Initial support (*.spx)
+
+[wavpack]
+ * Initial support (*.wv)
+
+[flac]
+ * Added support for FLAC embedded into OGG (*.OGA)
+
+[help]
+ * Use the correct screen-width if displaying error-messages, avoid crash blanking invalid memory
+
+[mingw]
+ * Update version-numbers of packages used by mingw build
+
+[adplug/opl]
+ * update adplug to latest master
+   * adds support for *.xmi, Miles Design music
+   * adds support for *.wm, Silky's MusicV WM OPL3 format
+
+[sidplayfp/sid]
+ * Update to latest masters.
+
+[sndh]
+ * update psgplay to latest master.
+
+[qoa]
+ * update to latest master
+   * Adds more sanitization
+   * Fixes Out-Of-Bounds read for special crafted .QOA files
+
+[libmad/mpX]
+ * Skip frame 0, if it is a meta-frame.
+ * Correct MPEG version and LAYER information in the status header.
+ * File-browser detection, now uses information in meta-header to calculate song length if available if no ID3 tag is available.
+
+[cue/toc]
+ * Add support for WavPack, Ogg, FLAC and MP3 compressed audio
+ *.WAV files, the result of case-insenstive-search was never used.
+
+[udf]
+ * Filesystem did not parse correctly if CDFS_DEBUG was not defined.
+
+[wav]
+ * Fix parsing META comments
+
+[configure]
+ * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes roblems with the internal list of core plugins.
+ * --with-strip_lto_flags, that can automatically strip away -flto flags.
+
 Version 3.3.1
 =============
 Bugfix release
