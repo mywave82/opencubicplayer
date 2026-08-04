@@ -70,18 +70,18 @@ do_cmake () {
 
 WGET="wget --tries=20 --waitretry=5 --retry-connrefused"
 
-#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4
-test -f ax_cxx_compile_stdcxx.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4 )
-#WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4
-test -f ax_check_compile_flag.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4 )
-#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4
-test -f ax_cflags_warn_all.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4 )
-#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4
-test -f ax_compiler_vendor.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4 )
-#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4
-test -f ax_prepend_flag.m4       || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4 )
-#$WGET 'http://git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O ax_require_defined.m4
-test -f ax_require_defined.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O ax_require_defined.m4 )
+#test -f ax_cxx_compile_stdcxx.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4 )
+#test -f ax_check_compile_flag.m4 || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4 )
+#test -f ax_cflags_warn_all.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4 )
+#test -f ax_compiler_vendor.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4 )
+#test -f ax_prepend_flag.m4       || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4 )
+#test -f ax_require_defined.m4    || ( sleep 5 && $WGET 'https://gitweb.git.savannah.gnu.org/gitweb/?p=autoconf-archive.git;a=blob_plain;f=m4/ax_require_defined.m4' -O ax_require_defined.m4 )
+test -f ax_cxx_compile_stdcxx.m4 || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_cxx_compile_stdcxx.m4' -O ax_cxx_compile_stdcxx.m4 )
+test -f ax_check_compile_flag.m4 || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_check_compile_flag.m4' -O ax_check_compile_flag.m4 )
+test -f ax_cflags_warn_all.m4    || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_cflags_warn_all.m4' -O ax_cflags_warn_all.m4 )
+test -f ax_compiler_vendor.m4    || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_compiler_vendor.m4' -O ax_compiler_vendor.m4 )
+test -f ax_prepend_flag.m4       || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_prepend_flag.m4' -O ax_prepend_flag.m4 )
+test -f ax_require_defined.m4    || ( sleep 5 && $WGET 'https://raw.githubusercontent.com/autoconf-archive/autoconf-archive/refs/heads/master/m4/ax_require_defined.m4' -O ax_require_defined.m4 )
 
 test -f bzip2-$BZIP2_VERSION.tar.gz                 || $WGET https://sourceware.org/pub/bzip2/bzip2-$BZIP2_VERSION.tar.gz -O bzip2-$BZIP2_VERSION.tar.gz                                                                                     || rm bzip2-$BZIP2_VERSION.tar.gz                 || false
 test -f libmad-$LIBMAD_VERSION.tar.gz               || $WGET https://sourceforge.net/projects/mad/files/libmad/$LIBMAD_VERSION/libmad-$LIBMAD_VERSION.tar.gz/download -O libmad-$LIBMAD_VERSION.tar.gz                                       || rm libmad-$LIBMAD_VERSION.tar.gz               || false
