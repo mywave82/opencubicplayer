@@ -85,7 +85,7 @@ Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
  * Fix parsing META comments
 
 [configure]
- * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes roblems with the internal list of core plugins.
+ * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes problems with the internal list of core plugins.
  * --with-strip_lto_flags, that can automatically strip away -flto flags.
 
 %prep
