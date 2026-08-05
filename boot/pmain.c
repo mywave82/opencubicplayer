@@ -1114,7 +1114,7 @@ static int init_modules(int argc, char *argv[]
 
 		if (epoch < 20260801)
 		{
-			fprintf(stderr, "ocp.ini update (3.4.0) add [fscolors] SPX=6\n");
+			fprintf(stderr, "ocp.ini update (3.4.0) add [fscolors] SPX=14\n");
 			cfSetProfileInt ("fscolors", "SPX", 14, 10);
 		}
 
@@ -1126,6 +1126,12 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileString ("libsidplayfp", "dacLeakageLevel", "1.0");
 			fprintf(stderr, "ocp.ini update (3.5.0) add [libsidplayfp] dcBlockResistor=0.0\n");
 			cfSetProfileString ("libsidplayfp", "dcBlockResistor", "0.0");
+		}
+
+		if (epoch < 20260812)
+		{
+			fprintf(stderr, "ocp.ini update (3.5.0) add [fscolors] OPUS=14\n");
+			cfSetProfileInt ("fscolors", "OPUS", 14, 10);
 		}
 
 		if (epoch < 20260812)

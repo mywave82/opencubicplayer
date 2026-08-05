@@ -100,6 +100,7 @@ test -f libpng-$LIBPNG_VERSION.tar.gz               || $WGET https://download.so
 test -f libogg-$LIBOGG_VERSION.tar.gz               || $WGET https://downloads.xiph.org/releases/ogg/libogg-$LIBOGG_VERSION.tar.gz -O libogg-$LIBOGG_VERSION.tar.gz                                                                          || rm libogg-$LIBOGG_VERSION.tar.gz               || false
 test -f libvorbis-$LIBVORBIS_VERSION.tar.gz         || $WGET https://downloads.xiph.org/releases/vorbis/libvorbis-$LIBVORBIS_VERSION.tar.gz -O libvorbis-$LIBVORBIS_VERSION.tar.gz                                                           || rm libvorbis-$LIBVORBIS_VERSION.tar.gz         || false
 test -f flac-$FLAC_VERSION.tar.xz                   || $WGET https://ftp.osuosl.org/pub/xiph/releases/flac/flac-$FLAC_VERSION.tar.xz -O flac-$FLAC_VERSION.tar.xz                                                                            || rm flac-$FLAC_VERSION.tar.xz                   || false
+test -f opus-$OPUS_VERSION.tar.gz                   || $WGET https://downloads.xiph.org/releases/opus/opus-$OPUS_VERSION.tar.gz -O opus-$OPUS_VERSION.tar.gz                                                                                 || rm opus-$OPUS_VERSION.tar.gz                   || false
 test -f speex-$SPEEX_VERSION.tar.gz                 || $WGET https://downloads.xiph.org/releases/speex/speex-$SPEEX_VERSION.tar.gz -O speex-$SPEEX_VERSION.tar.gz                                                                            || rm speex-$SPEEX_VERSION.tar.gz                 || false
 test -f SDL3-devel-$SDL3_VERSION-mingw.tar.gz       || $WGET https://github.com/libsdl-org/SDL/releases/download/release-$SDL3_VERSION/SDL3-devel-$SDL3_VERSION-mingw.tar.gz -O SDL3-devel-$SDL3_VERSION-mingw.tar.gz                        || rm SDL3-devel-$SDL3_VERSION-mingw.tar.gz       || false
 if test "$host" == "i686-w64-mingw32"; then
@@ -374,6 +375,18 @@ if ! test -f $prefix/build-flac-$FLAC_VERSION; then
 	touch $prefix/build-flac-$FLAC_VERSION
 fi
 
+########## OPUS ##########
+if ! test -f $prefix/build-opus-$OPUS_VERSION; then
+	dirs=`ls -d */|cut -f1|grep 'opus-*'` && rm -Rf $dirs
+	tar xfz opus-$OPUS_VERSION.tar.gz
+	cd opus-$OPUS_VERSION
+		autoreconf --install --force
+		./configure --host $host --prefix=$prefix
+		make all install
+	cd ..
+	touch $prefix/build-opus-$OPUS_VERSION
+fi
+
 ########## SPEEX ##########
 if ! test -f $prefix/build-speex-$SPEEX_VERSION; then
 	dirs=`ls -d */|cut -f1|grep 'speex-*'` && rm -Rf $dirs
@@ -611,6 +624,7 @@ cp $prefix/lib/bz2.dll              \
    $prefix/bin/libiconv-2.dll       \
    $prefix/bin/libjpeg-62.dll       \
    $prefix/bin/libmad-0.dll         \
+   $prefix/bin/libopus-0.dll        \
    $prefix/bin/libpng16.dll         \
    $prefix/bin/libspeex-1.dll       \
    $prefix/bin/libturbojpeg.dll     \

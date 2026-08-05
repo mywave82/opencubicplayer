@@ -5,6 +5,9 @@ SUBDIRS=boot cpiface dev doc devp devw filesel goodies help medialib playay play
 ifeq ($(HAVE_MAD),1)
 SUBDIRS+=playmp2
 endif
+ifeq ($(HAVE_OPUS),1)
+SUBDIRS+=playopus
+endif
 ifeq ($(HAVE_SPEEX),1)
 SUBDIRS+=playspeex
 endif
