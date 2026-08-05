@@ -751,6 +751,9 @@ FLAC_CFLAGS
 SPEEX_LIBS
 SPEEX_CFLAGS
 HAVE_SPEEX
+OPUS_LIBS
+OPUS_CFLAGS
+HAVE_OPUS
 VORBISFILE_LIBS
 VORBISFILE_CFLAGS
 VORBIS_LIBS
@@ -868,6 +871,7 @@ with_builtin
 with_x11
 with_x11_shm
 with_mad
+with_opus
 with_speex
 with_libgme
 with_wavpack
@@ -941,6 +945,8 @@ VORBIS_CFLAGS
 VORBIS_LIBS
 VORBISFILE_CFLAGS
 VORBISFILE_LIBS
+OPUS_CFLAGS
+OPUS_LIBS
 SPEEX_CFLAGS
 SPEEX_LIBS
 FLAC_CFLAGS
@@ -1610,6 +1616,7 @@ Optional Packages:
   --with-x11              force/disable x11 support
   --with-x11-shm          force/disable x11 SHM support
   --with-mad              force/disable mad mpeg audio support
+  --with-opus             force/disable opus audio support
   --with-speex            force/disable speex audio support
   --with-libgme           force/disable libgme (Game Music Emulator support)
   --with-wavpack          force/disable wavpack audio support
@@ -1728,6 +1735,8 @@ Some influential environment variables:
               C compiler flags for VORBISFILE, overriding pkg-config
   VORBISFILE_LIBS
               linker flags for VORBISFILE, overriding pkg-config
+  OPUS_CFLAGS C compiler flags for OPUS, overriding pkg-config
+  OPUS_LIBS   linker flags for OPUS, overriding pkg-config
   SPEEX_CFLAGS
               C compiler flags for SPEEX, overriding pkg-config
   SPEEX_LIBS  linker flags for SPEEX, overriding pkg-config
@@ -8101,6 +8110,16 @@ esac
 fi
 
 
+# Check whether --with-opus was given.
+if test ${with_opus+y}
+then :
+  withval=$with_opus;
+else case e in #(
+  e) with_opus=auto ;;
+esac
+fi
+
+
 # Check whether --with-speex was given.
 if test ${with_speex+y}
 then :
@@ -12000,6 +12019,107 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
+fi
+
+
+if test "x$with_opus" != "xno"
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for opus" >&5
+printf %s "checking for opus... " >&6; }
+
+if test -n "$OPUS_CFLAGS"; then
+    pkg_cv_OPUS_CFLAGS="$OPUS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"opus\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "opus") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPUS_CFLAGS=`$PKG_CONFIG --cflags "opus" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$OPUS_LIBS"; then
+    pkg_cv_OPUS_LIBS="$OPUS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"opus\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "opus") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPUS_LIBS=`$PKG_CONFIG --libs "opus" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        OPUS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "opus" 2>&1`
+        else
+	        OPUS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "opus" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$OPUS_PKG_ERRORS" >&5
+
+
+		if test "x$with_opus" = "xyes"
+then :
+  as_fn_error $? "required library opus, failed detected" "$LINENO" 5
+fi
+		with_opus=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+		if test "x$with_opus" = "xyes"
+then :
+  as_fn_error $? "required library opus, failed detected" "$LINENO" 5
+fi
+		with_opus=no
+
+else
+	OPUS_CFLAGS=$pkg_cv_OPUS_CFLAGS
+	OPUS_LIBS=$pkg_cv_OPUS_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+fi
+if test "x$with_opus" = "xno"
+then :
+
+	HAVE_OPUS=
+
+else case e in #(
+  e)
+	HAVE_OPUS=1
+ ;;
+esac
 fi
 
 
@@ -23557,6 +23677,13 @@ then :
   echo "FLAC:              OFF"
 else case e in #(
   e) echo "FLAC:              ON" ;;
+esac
+fi
+if test "x$with_opus"      = "xno"
+then :
+  echo "OPUS:              OFF"
+else case e in #(
+  e) echo "OPUS:              ON" ;;
 esac
 fi
 if test "x$with_speex"     = "xno"
