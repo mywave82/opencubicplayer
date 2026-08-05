@@ -605,7 +605,7 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 #endif
 	}
 
-	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "[TiMidity++] CTL CMSG %s: ",
+	fprintf (stderr, "[TiMidity++] CTL CMSG %s: ",
 		(verbosity_level == VERB_DEBUG_SILLY) ? "DEBUG.SILLY" :
 		(verbosity_level == CMSG_WARNING) ? "WARNING" :
 		(verbosity_level == CMSG_ERROR) ? "ERROR" :
@@ -616,8 +616,8 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 	va_start (args, fmt);
 	vsnprintf (buffer, sizeof(buffer), fmt, args);
 	va_end (args);
-	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "%s", buffer);
-	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "\n");
+	fprintf (stderr, "%s", buffer);
+	fprintf (stderr, "\n");
 
 	return 0;
 }
