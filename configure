@@ -8888,7 +8888,7 @@ if test "x$ac_cv_lib_m_sqrt" = xyes
 then :
   MATH_LIBS=-lm
 else case e in #(
-  e) as_fn_error $? "\"libm not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libm not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -10705,7 +10705,7 @@ then :
   LIBS="-lz $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"zlib not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "zlib not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -10714,7 +10714,7 @@ if test "x$ac_cv_header_zlib_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"zlib header files was not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "zlib header files was not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -10778,7 +10778,7 @@ if test "x$ac_cv_header_bzlib_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"bzip2 header file not found (libbz2-dev)\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "bzip2 header file not found (libbz2-dev)" "$LINENO" 5 ;;
 esac
 fi
 
@@ -10847,7 +10847,7 @@ if test "x$ac_cv_lib_dl_dlopen" = xyes
 then :
   DL_LIBS="-ldl"
 else case e in #(
-  e) as_fn_error $? "\"dlopen not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "dlopen not found" "$LINENO" 5 ;;
 esac
 fi
  ;;
@@ -10984,7 +10984,7 @@ else case e in #(
   e)
 			if test "x$with_mad" = "xyes"
 then :
-  as_fn_error $? "\"libmad not found\"" "$LINENO" 5
+  as_fn_error $? "libmad not found" "$LINENO" 5
 else case e in #(
   e) with_mad="no" ;;
 esac
@@ -11004,7 +11004,7 @@ else case e in #(
   e)
 				if test "x$with_mad" = "xyes"
 then :
-  as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5
+  as_fn_error $? "libmad header files was not found" "$LINENO" 5
 else case e in #(
   e) with_mad="no" ;;
 esac
@@ -11081,7 +11081,7 @@ else case e in #(
   e)
 			if test "x$with_mad" = "xyes"
 then :
-  as_fn_error $? "\"libmad not found\"" "$LINENO" 5
+  as_fn_error $? "libmad not found" "$LINENO" 5
 else case e in #(
   e) with_mad="no" ;;
 esac
@@ -11101,7 +11101,7 @@ else case e in #(
   e)
 				if test "x$with_mad" = "xyes"
 then :
-  as_fn_error $? "\"libmad header files was not found\"" "$LINENO" 5
+  as_fn_error $? "libmad header files was not found" "$LINENO" 5
 else case e in #(
   e) with_mad="no" ;;
 esac
@@ -11401,7 +11401,7 @@ then :
   LIBS="-logg $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"ogg libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "ogg libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11463,7 +11463,7 @@ then :
   LIBS="-logg $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"ogg libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "ogg libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11591,7 +11591,7 @@ then :
   LIBS="-lvorbis $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"vorbis libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "vorbis libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11600,7 +11600,7 @@ if test "x$ac_cv_header_vorbis_codec_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libvorbis header files was not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libvorbis header files was not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11662,7 +11662,7 @@ then :
   LIBS="-lvorbis $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"vorbis libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "vorbis libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11671,7 +11671,7 @@ if test "x$ac_cv_header_vorbis_codec_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libvorbis header files was not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libvorbis header files was not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11845,7 +11845,7 @@ then :
   printf "%s\n" "#define HAVE_OV_PCM_SEEK 1" >>confdefs.h
 
 else case e in #(
-  e) as_fn_error $? "\"vorbis libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "vorbis libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11858,7 +11858,7 @@ if test "x$ac_cv_header_vorbis_vorbisfile_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libvorbis header files were not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libvorbis header files were not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11966,7 +11966,7 @@ then :
   printf "%s\n" "#define HAVE_OV_PCM_SEEK 1" >>confdefs.h
 
 else case e in #(
-  e) as_fn_error $? "\"vorbis libraries not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "vorbis libraries not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -11979,7 +11979,7 @@ if test "x$ac_cv_header_vorbis_vorbisfile_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libvorbis header files were not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libvorbis header files were not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -12059,9 +12059,9 @@ fi
 	echo "$SPEEX_PKG_ERRORS" >&5
 
 
-		if test "x$with_speex" != "xyes"
+		if test "x$with_speex" = "xyes"
 then :
-  as_fn_error failed detected" "\"required library speex" "$LINENO" 5
+  as_fn_error $? "required library speex, failed detected" "$LINENO" 5
 fi
 		with_speex=no
 
@@ -12069,9 +12069,9 @@ elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
-		if test "x$with_speex" != "xyes"
+		if test "x$with_speex" = "xyes"
 then :
-  as_fn_error failed detected" "\"required library speex" "$LINENO" 5
+  as_fn_error $? "required library speex, failed detected" "$LINENO" 5
 fi
 		with_speex=no
 
@@ -12258,7 +12258,7 @@ then :
 else case e in #(
   e) if test "x$with_flac" = "xyes"
 then :
-  as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5
+  as_fn_error $? "libFLAC not found" "$LINENO" 5
 else case e in #(
   e) with_flac="no" ;;
 esac
@@ -12276,7 +12276,7 @@ then :
 else case e in #(
   e)  if test "x$with_flac" = "xyes"
 then :
-  as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5
+  as_fn_error $? "libFLAC header files were not found" "$LINENO" 5
 else case e in #(
   e) with_flac="no" ;;
 esac
@@ -12386,7 +12386,7 @@ then :
 else case e in #(
   e) if test "x$with_flac" = "xyes"
 then :
-  as_fn_error $? "\"libFLAC not found\"" "$LINENO" 5
+  as_fn_error $? "libFLAC not found" "$LINENO" 5
 else case e in #(
   e) with_flac="no" ;;
 esac
@@ -12404,7 +12404,7 @@ then :
 else case e in #(
   e)  if test "x$with_flac" = "xyes"
 then :
-  as_fn_error $? "\"libFLAC header files were not found\"" "$LINENO" 5
+  as_fn_error $? "libFLAC header files were not found" "$LINENO" 5
 else case e in #(
   e) with_flac="no" ;;
 esac
@@ -12505,7 +12505,7 @@ fi
 
 	if test "x$with_wavpack" = "xyes"
 then :
-  as_fn_error $? "\"libwavpack not found\"" "$LINENO" 5
+  as_fn_error $? "libwavpack not found" "$LINENO" 5
 else case e in #(
   e) with_wavpack="no" ;;
 esac
@@ -12516,7 +12516,7 @@ elif test $pkg_failed = untried; then
 printf "%s\n" "no" >&6; }
 	if test "x$with_wavpack" = "xyes"
 then :
-  as_fn_error $? "\"libwavpack not found\"" "$LINENO" 5
+  as_fn_error $? "libwavpack not found" "$LINENO" 5
 else case e in #(
   e) with_wavpack="no" ;;
 esac
@@ -12541,7 +12541,7 @@ then :
 else case e in #(
   e) if test "x$with_wavpack" = "xyes"
 then :
-  as_fn_error $? "\"libwavpack header file not found\"" "$LINENO" 5
+  as_fn_error $? "libwavpack header file not found" "$LINENO" 5
 else case e in #(
   e) with_wavpack="no" ;;
 esac
@@ -12607,7 +12607,7 @@ then :
 else case e in #(
   e) if test "x$with_wavpack" = "xyes"
 then :
-  as_fn_error $? "\"WavpackOpenFileInputEx64 not found in libwavpack, available since version 5.0\"" "$LINENO" 5
+  as_fn_error $? "WavpackOpenFileInputEx64 not found in libwavpack, available since version 5.0" "$LINENO" 5
 else case e in #(
   e) with_wavpack="no" ;;
 esac
@@ -12645,7 +12645,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11" = "xyes"
 then :
-  as_fn_error $? "\"xvidmode header files was not found\"" "$LINENO" 5
+  as_fn_error $? "xvidmode header files was not found" "$LINENO" 5
 else case e in #(
   e) with_x11="no" ;;
 esac
@@ -12668,7 +12668,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11_shm" = "xyes"
 then :
-  as_fn_error $? "\"XShm header files was not found\"" "$LINENO" 5
+  as_fn_error $? "XShm header files was not found" "$LINENO" 5
 else case e in #(
   e) with_x11_shm="no" ;;
 esac
@@ -12691,7 +12691,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11" = "xyes"
 then :
-  as_fn_error $? "\"xpm header files was not found\"" "$LINENO" 5
+  as_fn_error $? "xpm header files was not found" "$LINENO" 5
 else case e in #(
   e) with_x11="no" ;;
 esac
@@ -12754,7 +12754,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11" = "xyes"
 then :
-  as_fn_error $? "\"Xpm/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+  as_fn_error $? "Xpm/X11 not found (expected to be found in /usr/X11R6/lib)" "$LINENO" 5
 else case e in #(
   e) with_x11="no" ;;
 esac
@@ -12818,7 +12818,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11_shm" = "xyes"
 then :
-  as_fn_error $? "\"SHM/X11 not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+  as_fn_error $? "SHM/X11 not found (expected to be found in /usr/X11R6/lib)" "$LINENO" 5
 else case e in #(
   e) with_x11_shm="no" ;;
 esac
@@ -12882,7 +12882,7 @@ then :
 else case e in #(
   e)  if test "x$with_x11" = "xyes"
 then :
-  as_fn_error $? "\"xvidmode was not found (expected to be found in /usr/X11R6/lib)\"" "$LINENO" 5
+  as_fn_error $? "xvidmode was not found (expected to be found in /usr/X11R6/lib)" "$LINENO" 5
 else case e in #(
   e) with_x11="no" ;;
 esac
@@ -12926,15 +12926,15 @@ fi
 
 if test "x$with_sdl" = "xyes" && test "x$with_sdl2" = "xyes"
 then :
-  as_fn_error $? "\"Can not use both --with-sdl and --with-sdl2\"" "$LINENO" 5
+  as_fn_error $? "Can not use both --with-sdl and --with-sdl2" "$LINENO" 5
 fi
 if test "x$with_sdl" = "xyes" && test "x$with_sdl3" = "xyes"
 then :
-  as_fn_error $? "\"Can not use both --with-sdl and --with-sdl3\"" "$LINENO" 5
+  as_fn_error $? "Can not use both --with-sdl and --with-sdl3" "$LINENO" 5
 fi
 if test "x$with_sdl2" = "xyes" && test "x$with_sdl3" = "xyes"
 then :
-  as_fn_error $? "\"Can not use both --with-sdl2 and --with-sdl3\"" "$LINENO" 5
+  as_fn_error $? "Can not use both --with-sdl2 and --with-sdl3" "$LINENO" 5
 fi
 if test "x$with_sdl" = "xyes"
 then :
@@ -13016,14 +13016,14 @@ fi
 
 	if test "x$with_sdl3" = "xyes"
 then :
-  as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
+  as_fn_error $? "libSDL3 was not found" "$LINENO" 5
 fi;with_sdl3=no
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	if test "x$with_sdl3" = "xyes"
 then :
-  as_fn_error $? "\"libSDL3 was not found\"" "$LINENO" 5
+  as_fn_error $? "libSDL3 was not found" "$LINENO" 5
 fi;with_sdl3=no
 else
 	SDL3_CFLAGS=$pkg_cv_SDL3_CFLAGS
@@ -13426,7 +13426,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
      SDL_LIBS=""
      if test "x$with_sdl2" = "xyes"
 then :
-  as_fn_error $? "\"libSDL2 was not found\"" "$LINENO" 5
+  as_fn_error $? "libSDL2 was not found" "$LINENO" 5
 else case e in #(
   e) with_sdl2="no" ;;
 esac
@@ -13575,7 +13575,7 @@ then :
 else case e in #(
   e)  if test "x$with_sdl" = "xyes"
 then :
-  as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5
+  as_fn_error $? "libSDL was not found" "$LINENO" 5
 else case e in #(
   e) with_sdl="no" ;;
 esac
@@ -13595,7 +13595,7 @@ then :
 else case e in #(
   e)  if test "x$with_sdl" = "xyes"
 then :
-  as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5
+  as_fn_error $? "SDL header files not found" "$LINENO" 5
 else case e in #(
   e) with_sdl="no" ;;
 esac
@@ -13659,7 +13659,7 @@ then :
 else case e in #(
   e)  if test "x$with_sdl" = "xyes"
 then :
-  as_fn_error $? "\"libSDL was not found\"" "$LINENO" 5
+  as_fn_error $? "libSDL was not found" "$LINENO" 5
 else case e in #(
   e) with_sdl="no" ;;
 esac
@@ -13679,7 +13679,7 @@ then :
 else case e in #(
   e)  if test "x$with_sdl" = "xyes"
 then :
-  as_fn_error $? "\"SDL header files not found\"" "$LINENO" 5
+  as_fn_error $? "SDL header files not found" "$LINENO" 5
 else case e in #(
   e) with_sdl="no" ;;
 esac
@@ -13830,7 +13830,7 @@ then :
   LIBS="-lfreetype $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"libfreetype not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libfreetype not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -13839,7 +13839,7 @@ if test "x$ac_cv_header_ft2built_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libfreetype header files was not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libfreetype header files was not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -13898,7 +13898,7 @@ then :
   LIBS="-lfreetype $LIBS"
 
 else case e in #(
-  e) as_fn_error $? "\"libfreetype not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libfreetype not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -13907,7 +13907,7 @@ if test "x$ac_cv_header_ft2built_h" = xyes
 then :
 
 else case e in #(
-  e) as_fn_error $? "\"libfreetype header files was not found\"" "$LINENO" 5 ;;
+  e) as_fn_error $? "libfreetype header files was not found" "$LINENO" 5 ;;
 esac
 fi
 
@@ -21921,7 +21921,7 @@ fi
 
 		if test "x$with_libgme" = "xyes"
 then :
-  as_fn_error $? "\"libgme not found\"" "$LINENO" 5
+  as_fn_error $? "libgme not found" "$LINENO" 5
 else case e in #(
   e) with_libgme="no" ;;
 esac
@@ -21933,7 +21933,7 @@ printf "%s\n" "no" >&6; }
 
 		if test "x$with_libgme" = "xyes"
 then :
-  as_fn_error $? "\"libgme not found\"" "$LINENO" 5
+  as_fn_error $? "libgme not found" "$LINENO" 5
 else case e in #(
   e) with_libgme="no" ;;
 esac
