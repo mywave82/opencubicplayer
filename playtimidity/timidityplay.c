@@ -108,6 +108,8 @@ static uint32_t gmibuffill = 0;
 static uint32_t gmibuffpos; /* read fine-pos.. when rate has a fraction */
 static uint32_t gmibufrate = 0x10000; /* re-sampling rate.. fixed point 0x10000 => 1.0 */
 
+static struct cpifaceSessionAPI_t *cpifaceSession_debug;
+
 #define PANPROC \
 do { \
 	float _rs = rs, _ls = ls; \
@@ -587,31 +589,36 @@ static int ocp_ctl_write (char *buf, int32 size)
 
 static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 {
-#ifdef PLAYTIMIDITY_DEBUG
-	va_list ap;
-
 	if (verbosity_level == VERB_DEBUG_SILLY)
 	{
 		if (!loading)
 		{
 			return 0;
 		}
+#if 0
 	} else if (!((type == CMSG_WARNING) || (type == CMSG_ERROR) || (type == CMSG_FATAL)))
 	{
 		if (!loading)
 		{
 			return 0;
 		}
+#endif
 	}
 
-	fputs("[TiMidity++ MID] CTL CMSG ", stderr);
+	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "[TiMidity++] CTL CMSG %s: ",
+		(verbosity_level == VERB_DEBUG_SILLY) ? "DEBUG.SILLY" :
+		(verbosity_level == CMSG_WARNING) ? "WARNING" :
+		(verbosity_level == CMSG_ERROR) ? "ERROR" :
+		(verbosity_level == CMSG_FATAL) ? "FATAL" : "?");
 
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
+	va_list args;
+	char buffer[512];
+	va_start (args, fmt);
+	vsnprintf (buffer, sizeof(buffer), fmt, args);
+	va_end (args);
+	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "%s", buffer);
+	cpifaceSession_debug->cpiDebug (cpifaceSession_debug, "\n");
 
-	fputs ("\n", stderr);
-#endif
 	return 0;
 }
 
@@ -956,7 +963,7 @@ static void scan_lyrics (struct cpifaceSessionAPI_t *cpifaceSession, const MidiE
 				const char *e;
 				for (t++; t[0]; t = e)
 				{
-					char *p, *n;
+					const char *p, *n;
 					e = t + strlen(t);
 					if ((p = strchr (t, '/')) /* && (p < e) */)
 					{
@@ -990,7 +997,7 @@ static void scan_lyrics (struct cpifaceSessionAPI_t *cpifaceSession, const MidiE
 				const char *e;
 				for (t++; t[0]; t = e)
 				{
-					char *p, *n;
+					const char *p, *n;
 					e = t + strlen(t);
 					if ((p = strchr (t, '\n')) /* && (p < e) */)
 					{
@@ -2126,6 +2133,9 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
 
+	cpifaceSession_debug = cpifaceSession;
+	loading = 1;
+
 	memset (&tc, 0, sizeof (tc));
 	tc.contextowner = cpifaceSession;
 #ifdef ALWAYS_TRACE_TEXT_META_EVENT
@@ -2243,8 +2253,6 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 		return errPlay;
 	}
 
-	loading = 1;
-
 	samples_committed = 0;
 	samples_lastui = 0;
 	samples_lastdelay = 0;
@@ -2266,7 +2274,6 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	pan=64;
 	srnd=0;
 	speed=0x100;
-	loading = 0;
 
 	gmibuffree=1;
 #define c (&tc)
@@ -2306,6 +2313,9 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	timidityIdler (cpifaceSession, &tc); /* trigger the file to load as soon as possible */
+
+	loading = 0;
+
 	return errOk;
 }
 
