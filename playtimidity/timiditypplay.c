@@ -133,6 +133,8 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	cpifaceSession->SetMuteChannel = timidityMute;
 	timidityChanSetup (cpifaceSession);
 
+	cpiTimiditySetupInit (cpifaceSession);
+
 	{
 		size_t buffersize = 64*1024;
 		uint8_t *buffer = (uint8_t *)malloc (buffersize);
@@ -168,8 +170,6 @@ static int timidityOpenFile (struct cpifaceSessionAPI_t *cpifaceSession, struct 
 	}
 
 	cpifaceSession->InPause = 0;
-
-	cpiTimiditySetupInit (cpifaceSession);
 
 	return errOk;
 }
