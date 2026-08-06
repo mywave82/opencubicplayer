@@ -503,6 +503,7 @@ static int ID3PicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 			}
 			break;
 		case cpievInit:
+			ID3PicVisible = 0;
 			ID3PicLastSerial = -1;
 			if (cpifaceSession->console->TextGUIOverlay)
 			{

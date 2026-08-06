@@ -501,6 +501,7 @@ static int FlacPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievInit:
+			FlacPicVisible = 0;
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				flacMetaDataLock();

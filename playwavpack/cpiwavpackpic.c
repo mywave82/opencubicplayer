@@ -427,6 +427,7 @@ static int WavPackPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievInit:
+			WavPackPicVisible = 0;
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				Refresh_WavPackPictures();

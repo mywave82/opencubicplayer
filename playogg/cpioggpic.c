@@ -489,6 +489,7 @@ static int OggPicEvent (struct cpifaceSessionAPI_t *cpifaceSession, int ev)
 	switch (ev)
 	{
 		case cpievInit:
+			OggPicVisible = 0;
 			if (cpifaceSession->console->TextGUIOverlay)
 			{
 				Refresh_OggPictures();
