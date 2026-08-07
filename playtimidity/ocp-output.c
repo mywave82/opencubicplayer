@@ -275,7 +275,7 @@ int32 general_output_convert(int32 *buf, int32 count)
     return bytes;
 }
 
-int validate_encoding(int enc, int include_enc, int exclude_enc)
+int validate_encoding(struct timiditycontext_t *c, int enc, int include_enc, int exclude_enc)
 {
     const char *orig_enc_name, *enc_name;
 
@@ -290,7 +290,7 @@ int validate_encoding(int enc, int include_enc, int exclude_enc)
 	enc &= ~PE_16BIT;	/* 24bit overrides 16bit */
     enc_name = output_encoding_string(enc);
     if(strcmp(orig_enc_name, enc_name) != 0)
-	ctl->cmsg(CMSG_WARNING, VERB_NOISY,
+	ctl->cmsg(c, CMSG_WARNING, VERB_NOISY,
 		  "Notice: Audio encoding is changed `%s' to `%s'",
 		  orig_enc_name, enc_name);
     return enc;

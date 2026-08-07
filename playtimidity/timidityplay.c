@@ -507,7 +507,7 @@ OCP_INTERNAL int get_module_type (char *fn)
 
 OCP_INTERNAL int convert_mod_to_midi_file(struct timiditycontext_t *c, MidiEvent * ev)
 {
-	ctl->cmsg(CMSG_INFO, VERB_NORMAL,
+	ctl->cmsg(c, CMSG_INFO, VERB_NORMAL,
 	          "Aborting!  timidity attempted to convert module to midi file\n");
 	return 1;
 }
@@ -585,10 +585,11 @@ static int ocp_ctl_write (char *buf, int32 size)
 }
 
 
-static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
+static int ocp_ctl_cmsg(struct timiditycontext_t *c, int type, int verbosity_level, char *fmt, ...)
 {
-#ifdef PLAYTIMIDITY_DEBUG
+	char buffer[512];
 	va_list ap;
+	struct cpifaceSessionAPI_t *cpifaceSession = c->contextowner;
 
 	if (verbosity_level == VERB_DEBUG_SILLY)
 	{
@@ -604,14 +605,24 @@ static int ocp_ctl_cmsg(int type, int verbosity_level, char *fmt, ...)
 		}
 	}
 
-	fputs("[TiMidity++ MID] CTL CMSG ", stderr);
-
 	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
+	vsnprintf(buffer, sizeof (buffer), fmt, ap);
 	va_end(ap);
 
-	fputs ("\n", stderr);
-#endif
+	cpifaceSession->cpiDebug (cpifaceSession, "[TiMidity++] CTL CMSG %s %s: %s\n",
+		(verbosity_level == VERB_DEBUG_SILLY) ? "DEBUG" :
+		(type == CMSG_WARNING) ? "WARNING" :
+		(type == CMSG_ERROR) ? "ERROR" :
+		(type == CMSG_FATAL) ? "FATAL" :
+		(type == CMSG_INFO) ? "INFO" :
+		(type == CMSG_TEXT) ? "TEXT" : "?",
+		(verbosity_level == VERB_NORMAL) ? "NORMAL" :
+		(verbosity_level == VERB_VERBOSE) ? "VERBOSE" :
+		(verbosity_level == VERB_NOISY) ? "NOISY" :
+		(verbosity_level == VERB_DEBUG) ? "DEBUG" :
+		(verbosity_level == VERB_DEBUG_SILLY) ? "DEBUG_SILLY" : "?",
+		buffer);
+
 	return 0;
 }
 
@@ -1026,7 +1037,7 @@ static int emulate_main_start(struct timiditycontext_t *c, struct cpifaceSession
 	init_mail_addr();
 	if(c->url_user_agent == NULL)
 	{
-		c->url_user_agent = (char *)safe_malloc(10 + strlen(timidity_version));
+		c->url_user_agent = (char *)safe_malloc(c, 10 + strlen(timidity_version));
 		strcpy(c->url_user_agent, "TiMidity-");
 		strcat(c->url_user_agent, timidity_version);
 	}
@@ -1225,7 +1236,7 @@ static int emulate_timidity_play_main_start (struct timiditycontext_t *c, const 
 
 	/* Open output device */
 #if 0
-	ctl->cmsg(CMSG_INFO, VERB_DEBUG_SILLY,
+	ctl->cmsg(c, CMSG_INFO, VERB_DEBUG_SILLY,
 	          "Open output: %c, %s",
 	           play_mode->id_character,
 	           play_mode->id_name);
@@ -1234,13 +1245,13 @@ static int emulate_timidity_play_main_start (struct timiditycontext_t *c, const 
 	if (play_mode->flag & PF_PCM_STREAM)
 	{
 		play_mode->extra_param[1] = aq_calc_fragsize(c);
-		ctl->cmsg(CMSG_INFO, VERB_DEBUG_SILLY,
+		ctl->cmsg(c, CMSG_INFO, VERB_DEBUG_SILLY,
 		          "requesting fragment size: %d",
 		          play_mode->extra_param[1]);
 	}
 	if(play_mode->open_output() < 0)
 	{
-		ctl->cmsg(CMSG_FATAL, VERB_NORMAL,
+		ctl->cmsg(c, CMSG_FATAL, VERB_NORMAL,
 		          "Couldn't open %s (`%c')",
 		          play_mode->id_name, play_mode->id_character);
 		ctl->close();
@@ -2126,6 +2137,8 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	uint32_t gmibuflen;
 	enum plrRequestFormat format;
 
+	loading = 1;
+
 	memset (&tc, 0, sizeof (tc));
 	tc.contextowner = cpifaceSession;
 #ifdef ALWAYS_TRACE_TEXT_META_EVENT
@@ -2243,8 +2256,6 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 		return errPlay;
 	}
 
-	loading = 1;
-
 	samples_committed = 0;
 	samples_lastui = 0;
 	samples_lastdelay = 0;
@@ -2266,7 +2277,6 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	pan=64;
 	srnd=0;
 	speed=0x100;
-	loading = 0;
 
 	gmibuffree=1;
 #define c (&tc)
@@ -2306,6 +2316,9 @@ OCP_INTERNAL int timidityOpenPlayer (const char *path, uint8_t *buffer, size_t b
 	cpifaceSession->Normalize (cpifaceSession, mcpNormalizeNoFilter | mcpNormalizeCanSpeedPitchUnlock | mcpNormalizeCannotEcho | mcpNormalizeCannotAmplify);
 
 	timidityIdler (cpifaceSession, &tc); /* trigger the file to load as soon as possible */
+
+	loading = 0;
+
 	return errOk;
 }
 
