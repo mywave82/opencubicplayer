@@ -101,7 +101,7 @@ static int AtariST_to_UTF8_Dynamic (char **target, const unsigned char *src)
 static int DetectStringDynamic (const char *Field, const unsigned char **ptr, int *remaining, int even, const int taglength, int subtunes, void *_target)
 {
 	char **target = _target;
-	unsigned char *termination;
+	const unsigned char *termination;
 #ifdef PLAYSNDH_DEBUG
 	if (even) fprintf (stderr, "[SNDH] DetectStringDynamic: Not needed even padding\n");
 #endif
@@ -309,8 +309,8 @@ static int DetectStringsDynamic (const char *Field, const unsigned char **ptr, i
 {
 	char ***target = _target;
 	uint32_t offset = 0;
-	unsigned char *termination = 0;
-	unsigned char *termination_max = 0;
+	const unsigned char *termination = 0;
+	const unsigned char *termination_max = 0;
 	int i;
 
 #ifdef PLAYSNDH_DEBUG
