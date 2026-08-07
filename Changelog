@@ -1,3 +1,23 @@
+Version 3.4.1
+=============
+Bugfixes
+
+[psgplay/sndh]
+ * Try to make it compile on m68k target
+
+[configure]
+ * AC_MSG_ERROR calls should contain message inside [], not "". Failing to do so causes syntax error when running the configure script and it wants to display an error message.
+ * if libspeex was not detected, auto vs forced logic was swapped around
+
+[flac/mpX/ogg/wavpack]
+ * Ensure that PictureViewer initializes to "NotVisible", avoid de-referencing invalid memory playing a file without a picture, after playing a file with a picture.
+
+[timidity/midi]
+ * Library messages should not depend on compile-time flag
+ * cpiTimiditySetupInit() should be called before loading a MIDI song, so that reverb and chorus are initialized to wanted settings as early as possible.
+ * Update Timidity, protect against roomsize reaching zero, causing inf math and assertion/abort on certain systems.
+
+
 Version 3.4.0
 =============
 Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
@@ -51,6 +71,7 @@ Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
 [configure]
  * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes problems with the internal list of core plugins.
  * --with-strip_lto_flags, that can automatically strip away -flto flags.
+
 
 Version 3.3.1
 =============

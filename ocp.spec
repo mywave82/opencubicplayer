@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.4.0
+%define version 3.4.1
 
 Name: %{name}
 Version: %{version}
@@ -34,6 +34,25 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
+Changes from version 3.4.0 to 3.4.1
+
+Bugfixes
+
+[psgplay/sndh]
+ * Try to make it compile on m68k target
+
+[configure]
+ * AC_MSG_ERROR calls should contain message inside [], not "". Failing to do so causes syntax error when running the configure script and it wants to display an error message.
+ * if libspeex was not detected, auto vs forced logic was swapped around
+
+[flac/mpX/ogg/wavpack]
+ * Ensure that PictureViewer initializes to "NotVisible", avoid de-referencing invalid memory playing a file without a picture, after playing a file with a picture.
+
+[timidity/midi]
+ * Library messages should not depend on compile-time flag
+ * cpiTimiditySetupInit() should be called before loading a MIDI song, so that reverb and chorus are initialized to wanted settings as early as possible.
+ * Update Timidity, protect against roomsize reaching zero, causing inf math and assertion/abort on certain systems.
+
 Changes from version 3.3.1 to 3.4.0:
 
 Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
