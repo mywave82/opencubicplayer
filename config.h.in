@@ -332,6 +332,8 @@ int strverscmp(const char *s1, const char *s2);
 
 #undef HAVE_SYS_DIR_H
 
+#undef HAVE_STDDEF_H
+
 #undef HAVE_STDINT_H
 
 #undef HAVE_INTTYPES_H
