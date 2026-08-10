@@ -643,6 +643,7 @@ OCP_INTERNAL void speexSeekHome (struct cpifaceSessionAPI_t *cpifaceSession)
 		if (!speex_pages[i].ismeta)
 		{
 			speexSeekPage (cpifaceSession, i, 0);
+			return;
 		}
 	}
 }
