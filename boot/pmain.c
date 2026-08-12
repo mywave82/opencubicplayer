@@ -1118,9 +1118,19 @@ static int init_modules(int argc, char *argv[]
 			cfSetProfileInt ("fscolors", "SPX", 14, 10);
 		}
 
-		if (epoch < 20260801)
+		if (epoch < 20260812)
 		{
-			cfSetProfileInt("version", "epoch", 20260801, 10);
+			fprintf(stderr, "ocp.ini update (3.5.0) add [libsidplayfp] waveoffset6581=1.0\n");
+			cfSetProfileString ("libsidplayfp", "waveoffset6581", "1.0");
+			fprintf(stderr, "ocp.ini update (3.5.0) add [libsidplayfp] dacLeakageLevel=1.0\n");
+			cfSetProfileString ("libsidplayfp", "dacLeakageLevel", "1.0");
+			fprintf(stderr, "ocp.ini update (3.5.0) add [libsidplayfp] dcBlockResistor=0.0\n");
+			cfSetProfileString ("libsidplayfp", "dcBlockResistor", "0.0");
+		}
+
+		if (epoch < 20260812)
+		{
+			cfSetProfileInt("version", "epoch", 20260812, 10);
 			cfStoreConfig();
 #ifdef _WIN32
 			uint16_t *wConfigHomePath = utf8_to_utf16 (ConfigHomePath);
@@ -1137,17 +1147,17 @@ static int init_modules(int argc, char *argv[]
 #endif
 		}
 	}
-	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260801)
+	if (cfGetProfileInt("version", "epoch", 0, 10) != 20260812)
 	{
 #ifndef _WIN32
 		if (isatty(2))
 		{
-			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260801\033[0m\n\n");
+			fprintf(stderr,"\n\033[1m\033[31mWARNING, ocp.ini [version] epoch != 20260812\033[0m\n\n");
 			sleep(5);
 		} else
 #endif
 		{
-			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260801\n\n");
+			fprintf(stderr,"\nWARNING, ocp.ini [version] epoch != 20260812\n\n");
 		}
 	}
 

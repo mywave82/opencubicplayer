@@ -75,10 +75,13 @@ static int config_CIA;
 static int config_filter;
 static int config_filtercurve6581;
 static int config_filterrange6581;
+static int config_waveoffset6581;
 static int config_enableOld6581caps;
 static int config_filtercurve8580;
 static int config_combinedwaveforms;
 static int config_digiboost;
+static int config_dacLeakageLevel;
+static int config_dcBlockResistor;
 static char *config_kernal;
 static char *config_basic;
 static char *config_chargen;
@@ -86,6 +89,28 @@ static char *config_chargen;
 struct browser_t entry_kernal;
 struct browser_t entry_basic;
 struct browser_t entry_chargen;
+
+#define SEL_EMULATOR           0
+#define SEL_DEFAULTC64MODEL    1
+#define SEL_FORCEC64MODEL      2
+#define SEL_DEFAULTSID         3
+#define SEL_FORCESID           4
+#define SEL_CIAMODEL           5
+#define SEL_FILTER             6
+#define SEL_FILTERCURVE6581    7
+#define SEL_FILTERRANGE6581    8
+#define SEL_WAVEOFFSET6581     9
+#define SEL_ENABLEOLD6581CAPS 10
+#define SEL_FILTERCURVE8580   11
+#define SEL_CWS               12
+#define SEL_DIGIBOOST         13
+#define SEL_DACLEAKAGELEVEL   14
+#define SEL_DCBLOCKRESISTANCE 15
+#define SEL_ROM_KERNAL        16
+#define SEL_ROM_BASIC         17
+#define SEL_ROM_CHARGEN       18
+#define SEL_TOTAL_ENTRIES     19
+#define SEL_TOTAL_SINGLELINED SEL_ROM_KERNAL
 
 static void ConfigDrawItems (const int lineno, int xpos, const int width, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
 {
@@ -105,9 +130,9 @@ static void ConfigDrawItems (const int lineno, int xpos, const int width, const 
 	API->console->Driver->DisplayVoid (lineno, xpos, width - xpos + origxpos);
 }
 
-static void ConfigDrawMenuItems (const int lineno, int xpos, const int width, const char *item, const char **list, const int listlength, const int selected, const int active, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuItems (const int lineno, int xpos, const int width, const int number, const char *item, const char **list, const int listlength, const int selected, const int active, const int correctemulator, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x07, 22, " %s:", item);
+	API->console->DisplayPrintf (lineno, xpos, 0x07, 22, "%d %.*o%s:", number + 1, correctemulator ? 7 : 8, item);
 	ConfigDrawItems (lineno, xpos + 23, width - 23, list, listlength, selected, active, API);
 }
 
@@ -173,16 +198,16 @@ static void ConfigDrawBar (const int lineno, int xpos, int width, int scale, con
 	API->console->DisplayPrintf (lineno, xpos, (active)?0x07:0x08, width, "%10s%-7s [%*C.#%*C.] %-6s", prefix, min, p1, p2, max);
 }
 
-static void ConfigDrawMenuBar (const int lineno, int xpos, int width, const char *item, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuBar (const int lineno, int xpos, int width, const int number, const char *item, int scale, const char *suffix, int minlevel, int maxlevel, int level, const int active, const int correctemulator, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x07, 23, " %s:", item);
+	API->console->DisplayPrintf (lineno, xpos, 0x07, 22, "%d %.*o%s:", number + 1, correctemulator ? 7 : 8, item);
 	ConfigDrawBar (lineno, xpos + 23, width - 23, scale, suffix, minlevel, maxlevel, level, active, API);
 }
 
-static void ConfigDrawMenuRom (const int lineno, int xpos, int width, const char *item, int active, const char *path, const struct DevInterfaceAPI_t *API)
+static void ConfigDrawMenuRom (const int lineno, int xpos, int width, const int number, const char *item, int active, const char *path, const struct DevInterfaceAPI_t *API)
 {
-	API->console->DisplayPrintf (lineno, xpos, 0x07, width, " %20s %.*o%*S",
-		item,
+	API->console->DisplayPrintf (lineno, xpos, 0x07, 22, "%d %s:", number + 1, item);
+	API->console->DisplayPrintf (lineno, xpos + 23, 0x07, width - 23, "%.*o%*S",
 		active?0x0f:0x08,
 		width - 23,
 		path);
@@ -293,14 +318,17 @@ static void ConfigDrawHashMenuInfo (const int lineno, int xpos, int width, const
  |  7: filter:          [yes] [no]                                            |
  |  8: filtercurve6581:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
  |  9: filterrange6581:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
- | 10: enable 6581OldCaps yes] no]
- | 11: filtercurve8580:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
- | 12: digiboost:       [yes] [no]                                            |
- | 13: kernal.rom:      sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | KERNEL.ROM images can be found online. Some SID files requires this file in order to play correctly
+ | 10: waveoffset6581:     0.50      0.0 {           #           ]   1.0      | Default is 1.0
+ | 11: enable 6581OldCaps yes] no]
+ | 12: filtercurve8580:    0.50      0.0 [           #           ]   1.0      | Default is 0.5
+ | 13: digiboost:       [yes] [no]                                            |
+ | 14: DAC leakage:        1.00      0.0 [                      #]   1.0      | Default is 1.0
+ | 15: DC Block Resitor    0.0       0.0 [#                      ]   1.0      | Default is 0.0
+ | 16: kernal.rom:      sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | KERNEL.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjasdf                              |
- | 14: basic.rom:       sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | BASIC.ROM images can be found online. Some SID files requires this file in order to play correctly
+ | 17: basic.rom:       sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | BASIC.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjasdf                              |
- | 15: chargen.rom:     sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | CHARGEN.ROM images can be found online. Some SID files requires this file in order to play correctly
+ | 18: chargen.rom:     sadfasdfsdfsadf/sdfasdf/sdfasdf/sdfasdf.ROM           | CHARGEN.ROM images can be found online. Some SID files requires this file in order to play correctly
  |                           sadflojhsdflkhjas                                |
  +----------------------------------------------------------------------------|
  |                                                                            |
@@ -313,7 +341,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	const int LINES_NOT_AVAILABLE_START = 3;
 	const int LINES_NOT_AVAILABLE_STOP = 4;
 	const int LINES_NOT_AVAILABLE = LINES_NOT_AVAILABLE_START + LINES_NOT_AVAILABLE_STOP;
-	const int maxcontentheight = 19;
+	const int maxcontentheight = SEL_TOTAL_ENTRIES + 3 /* 3 of the entries are double-lined */;
 	      int contentheight = MIN(maxcontentheight, MAX(API->console->TextHeight - 1 - LINES_NOT_AVAILABLE, LINES_NOT_AVAILABLE + 1));
 	      int mlHeight = contentheight + LINES_NOT_AVAILABLE;
 	      int mlTop, mlLeft, mlWidth;
@@ -324,7 +352,7 @@ static void sidConfigDraw (int EditPos, const struct DevInterfaceAPI_t *API)
 	const char *CIAmodels[] = {"MOS6526", "MOS6526W4485", "MOS8521"};
 	const char *combinedwaveforms[] = {"Average", "Weak", "Strong" };
 
-	const int Pos = EditPos + ((EditPos > 13) ? (EditPos - 13) * 2 : 0); /* 3 last lines count double speed */
+	const int Pos = EditPos + ((EditPos > SEL_TOTAL_SINGLELINED) ? (EditPos - SEL_TOTAL_SINGLELINED) * 2 : 0); /* 3 last lines count double speed */
 	int half;
 	int skip;
 	int dot;
@@ -374,25 +402,28 @@ if (skip)                   \
   contentheight--;          \
 }
 
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 1: emulator", emulators, 2, config_emulator, EditPos==0, API);                   _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 2: default C64", C64models, 5, config_defaultC64, EditPos==1, API);              _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 3: force C64 model", offon, 2, config_forceC64, EditPos==2, API);                _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 4: default SID", SIDmodels, 2, config_defaultSID, EditPos==3, API);              _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 5: force SID", offon, 2, config_forceSID, EditPos==4, API);                      _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 6: CIA", CIAmodels, 3, config_CIA, EditPos==5, API);                             _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, " 7: filter", offon, 2, config_filter, EditPos==6, API);                           _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 8: filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==7, API);  _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, " 9: filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==8, API);  _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "10: Old 6581 Cap val:", offon, 2, config_enableOld6581caps, EditPos==9, API);     _B
-	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, "11: filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==10, API); _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "12: CWS", combinedwaveforms, 3, config_combinedwaveforms, EditPos==11, API);      _B
-	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, "13: digiboost", offon, 2, config_digiboost, EditPos==12, API);                    _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "14: kernal.rom:", EditPos==13, config_kernal, API);                               _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_kernal.hash_8192, entry_kernal.hash_4096, 0, API);                           _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "15: basic.rom:", EditPos==14, config_basic, API);                                 _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_basic.hash_8192, entry_basic.hash_4096, 1, API);                             _B
-	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, "16: chargen.rom", EditPos==15, config_chargen, API);                              _B
-	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_chargen.hash_8192, entry_chargen.hash_4096, 2, API);                         _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_EMULATOR,          "emulator", emulators, 2, config_emulator,                  EditPos==SEL_EMULATOR,          1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_DEFAULTC64MODEL,   "default C64", C64models, 5, config_defaultC64,             EditPos==SEL_DEFAULTC64MODEL,   1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_FORCEC64MODEL,     "force C64 model", offon, 2, config_forceC64,               EditPos==SEL_FORCEC64MODEL,     1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_DEFAULTSID,        "default SID", SIDmodels, 2, config_defaultSID,             EditPos==SEL_DEFAULTSID,        1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_FORCESID,          "force SID", offon, 2, config_forceSID,                     EditPos==SEL_FORCESID,          1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_CIAMODEL,          "CIA", CIAmodels, 3, config_CIA,                            EditPos==SEL_CIAMODEL,          1,                    API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_FILTER,            "filter", offon, 2, config_filter,                          EditPos==SEL_FILTER,            1,                    API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_FILTERCURVE6581,   "filtercurve6581", 100, "", 0, 100, config_filtercurve6581, EditPos==SEL_FILTERCURVE6581,   config_emulator == 0, API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_FILTERRANGE6581,   "filterrange6581", 100, "", 0, 100, config_filterrange6581, EditPos==SEL_FILTERRANGE6581,   config_emulator == 0, API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_WAVEOFFSET6581,    "waveoffset6581", 100, "", 0, 100, config_waveoffset6581,   EditPos==SEL_WAVEOFFSET6581,    config_emulator == 0, API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_ENABLEOLD6581CAPS, "Old 6581 Cap val", offon, 2, config_enableOld6581caps,     EditPos==SEL_ENABLEOLD6581CAPS, config_emulator == 0, API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_FILTERCURVE8580,   "filtercurve8580", 100, "", 0, 100, config_filtercurve8580, EditPos==SEL_FILTERCURVE8580,   config_emulator == 0, API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_CWS,               "CWS", combinedwaveforms, 3, config_combinedwaveforms,      EditPos==SEL_CWS,               config_emulator == 0, API); _B
+	_A ConfigDrawMenuItems    (mlTop++, mlLeft, mlWidth, SEL_DIGIBOOST,         "digiboost", offon, 2, config_digiboost,                    EditPos==SEL_DIGIBOOST,         1,                    API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_DACLEAKAGELEVEL,   "DAC Leakage lvl", 100, "", 0, 100, config_dacLeakageLevel, EditPos==SEL_DACLEAKAGELEVEL,   config_emulator == 0, API); _B
+	_A ConfigDrawMenuBar      (mlTop++, mlLeft, mlWidth, SEL_DCBLOCKRESISTANCE, "DC Block Res", 100, "", 0, 100, config_dcBlockResistor,    EditPos==SEL_DCBLOCKRESISTANCE, config_emulator == 0, API); _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, SEL_ROM_KERNAL,        "kernal.rom:", EditPos==SEL_ROM_KERNAL, config_kernal, API);   _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_kernal.hash_8192, entry_kernal.hash_4096, 0, API);                              _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, SEL_ROM_BASIC,         "basic.rom:", EditPos==SEL_ROM_BASIC, config_basic, API);      _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_basic.hash_8192, entry_basic.hash_4096, 1, API);                                _B
+	_A ConfigDrawMenuRom      (mlTop++, mlLeft, mlWidth, SEL_ROM_CHARGEN,       "chargen.rom", EditPos==SEL_ROM_CHARGEN, config_chargen, API); _B
+	_A ConfigDrawHashMenuInfo (mlTop++, mlLeft, mlWidth, entry_chargen.hash_8192, entry_chargen.hash_4096, 2, API);                            _B
 
 #undef _A
 #undef _B
@@ -401,67 +432,79 @@ if (skip)                   \
 
 	switch (EditPos)
 	{
-		case 0:
+		case SEL_EMULATOR:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " residfp = floating point emulator.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " crSID   = fixed point emulator (sidlite)");
 			break;
-		case 1:
+		case SEL_DEFAULTC64MODEL:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " For SID files that does not specify C64 model.");
 			mlTop++;
 			break;
-		case 2:
+		case SEL_FORCEC64MODEL:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Override C64 model specified in SID files (if specified).");
 			mlTop++;
 			break;
-		case 3:
+		case SEL_DEFAULTSID:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " For SID files that does not specify SID model.");
 			mlTop++;
 			break;
-		case 4:
+		case SEL_FORCESID:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Override SID model specified in SID files (if specified).");
 			mlTop++;
 			break;
-		case 5:
+		case SEL_CIAMODEL:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Specify which CIA chip to emulate. MOS6526 is the classic model where");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " MOS6526W4485 is a specific batch. MOS8521 is the modern chip model.");
 			break;
-		case 6:
+		case SEL_FILTER:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Enable post-processing filtering.");
 			mlTop++;
 			break;
-		case 7:
+		case SEL_FILTERCURVE6581:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Value to use if SID is MOS6581.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5");
 			break;
-		case 8:
+		case SEL_FILTERRANGE6581:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". MOS6581 only: 0=\"bright\", 1=\"dark\".");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5%");
 			break;
-		case 9:
+		case SEL_WAVEOFFSET6581:
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Affects the volume of digi samples.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Range is between 0 (faint digis) and 1 (loud digis). Default is 1.0");
+			break;
+		case SEL_ENABLEOLD6581CAPS:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Enable old value of 2200pF capacitors instead of");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " 470pF, matching C64 Assembly 326298. Default is off.");
 			break;
-		case 10:
+		case SEL_FILTERCURVE8580:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Value to use if SID is MOS8580.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is 0.5");
 			break;
-		case 11:
+		case SEL_CWS:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Combined waveforms strength.");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Default is average.");
 			break;
-		case 12:
+		case SEL_DIGIBOOST:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Digi-Boost is a hardware feature only available on MOS8580, where the");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " digital playback would be boosted.");
 			break;
-		case 13:
+		case SEL_DACLEAKAGELEVEL:
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Affects the envelope and waveforms.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Range is between 0 (no leakage) and 1 (full leakage). Default is 1.0");
+			break;
+		case SEL_DCBLOCKRESISTANCE:
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Only used by \"residfp\". Affects the highpass cutoff frequency.");
+			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " Range is between 0 (1.6Hz) and 1 (16Hz). Default is 0.0");
+			break;
+		case SEL_ROM_KERNAL:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " KERNEL.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
-		case 14:
+		case SEL_ROM_BASIC:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " BASIC.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
-		case 15:
+		case SEL_ROM_CHARGEN:
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " CHARGEN.ROM images can be found online. Some SID files requires this file");
 			API->console->DisplayPrintf (mlTop++, mlLeft, 0x07, mlWidth, " in order to play correctly.");
 			break;
@@ -1052,20 +1095,29 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 	config_filter =                            API->configAPI->GetProfileBool   ("libsidplayfp", "filter",          1, 1);
 	config_filtercurve6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
 	config_filterrange6581 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filterrange6581", "0.5"));
+	config_waveoffset6581  = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "waveoffset6581",  "1.0"));
 	config_enableOld6581caps =                 API->configAPI->GetProfileBool   ("libsidplayfp", "enableOld6581caps", 0, 0);
 	config_filtercurve8580 = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
 	config_combinedwaveforms = CWS_to_int     (API->configAPI->GetProfileString ("libsidplayfp", "combinedwaveforms", "Strong"));
 	config_digiboost =                         API->configAPI->GetProfileBool   ("libsidplayfp", "digiboost",       0, 0);
+	config_dacLeakageLevel = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "dacLeakageLevel", "1.0"));
+	config_dcBlockResistor = float100x_to_int (API->configAPI->GetProfileString ("libsidplayfp", "dcBlockResistor", "0.0"));
 	config_kernal = strdup                    (API->configAPI->GetProfileString ("libsidplayfp", "kernal",          "KERNEL.ROM"));
 	config_basic = strdup                     (API->configAPI->GetProfileString ("libsidplayfp", "basic",           "BASIC.ROM"));
 	config_chargen = strdup                   (API->configAPI->GetProfileString ("libsidplayfp", "chargen",         "CHARGEN.ROM"));
 
-	if (config_filtercurve6581 < 0) config_filtercurve6581 = 0;
+	if (config_filtercurve6581 <   0) config_filtercurve6581 =   0;
 	if (config_filtercurve6581 > 100) config_filtercurve6581 = 100;
-	if (config_filterrange6581 < 0) config_filterrange6581 = 0;
+	if (config_filterrange6581 <   0) config_filterrange6581 =   0;
 	if (config_filterrange6581 > 100) config_filterrange6581 = 100;
-	if (config_filtercurve8580 < 0) config_filtercurve8580 = 0;
+	if (config_waveoffset6581  <   0) config_waveoffset6581  =   0;
+	if (config_waveoffset6581  > 100) config_waveoffset6581  = 100;
+	if (config_filtercurve8580 <   0) config_filtercurve8580 =   0;
 	if (config_filtercurve8580 > 100) config_filtercurve8580 = 100;
+	if (config_dacLeakageLevel <   0) config_dacLeakageLevel =   0;
+	if (config_dacLeakageLevel > 100) config_dacLeakageLevel = 100;
+	if (config_dcBlockResistor <   0) config_dcBlockResistor =   0;
+	if (config_dcBlockResistor > 100) config_dcBlockResistor = 100;
 
 #ifdef _WIN32
 	entry_kernal.dirdb_ref  = API->dirdb->ResolvePathWithBaseAndRef (dirdb_base, config_kernal,  DIRDB_RESOLVE_DRIVE | DIRDB_RESOLVE_TILDE_HOME | DIRDB_RESOLVE_WINDOWS_SLASH, dirdb_use_file);
@@ -1113,21 +1165,21 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 			switch (key)
 			{
 				case _KEY_ENTER:
-					if ((esel == 13) || (esel == 14) || (esel == 15))
+					if ((esel == SEL_ROM_KERNAL) || (esel == SEL_ROM_BASIC) || (esel == SEL_ROM_CHARGEN))
 					{
 						uint32_t dir_ref;
 						int dsel = 0;
 						int inner = 1;
 
-						if (esel == 13)
+						if (esel == SEL_ROM_KERNAL)
 						{
 							dir_ref = API->dirdb->GetParentAndRef (entry_kernal.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_kernal.dirdb_ref, &dsel, API);
-						} else if (esel == 14)
+						} else if (esel == SEL_ROM_BASIC)
 						{
 							dir_ref = API->dirdb->GetParentAndRef (entry_basic.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_basic.dirdb_ref, &dsel, API);
-						} else { /* 15 */
+						} else { /* SEL_ROM_CHARGEN */
 							dir_ref = API->dirdb->GetParentAndRef (entry_chargen.dirdb_ref, dirdb_use_dir);
 							refresh_dir (dir_ref, entry_chargen.dirdb_ref, &dsel, API);
 						}
@@ -1237,21 +1289,21 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 											}
 											if (newpath)
 											{
-												if (esel == 13)
+												if (esel == SEL_ROM_KERNAL)
 												{
 													API->dirdb->Unref (entry_kernal.dirdb_ref, dirdb_use_file);
 													entry_kernal = entries_data[dsel];
 													API->dirdb->Ref (entry_kernal.dirdb_ref, dirdb_use_file);
 													free (config_kernal);
 													config_kernal = newpath;
-												} else if (esel == 14)
+												} else if (esel == SEL_ROM_BASIC)
 												{
 													API->dirdb->Unref (entry_basic.dirdb_ref, dirdb_use_file);
 													entry_basic = entries_data[dsel];
 													API->dirdb->Ref (entry_basic.dirdb_ref, dirdb_use_file);
 													free (config_basic);
 													config_basic = newpath;
-												} else { /* esel == 15 */
+												} else { /* esel == SEL_ROM_CHARGEN */
 													API->dirdb->Unref (entry_chargen.dirdb_ref, dirdb_use_file);
 													entry_chargen = entries_data[dsel];
 													API->dirdb->Ref (entry_chargen.dirdb_ref, dirdb_use_file);
@@ -1291,6 +1343,9 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				case 'e':
 				case 'f':
 				case 'g':
+				case 'h':
+				case 'i':
+				case 'j':
 					esel = key - 'a' + 9;
 					break;
 				case 'A':
@@ -1300,83 +1355,110 @@ static void sidConfigRun (void **token, const struct DevInterfaceAPI_t *API)
 				case 'E':
 				case 'F':
 				case 'G':
+				case 'H':
+				case 'I':
+				case 'J':
 					esel = key - 'A' + 9;
 					break;
 
 				case KEY_LEFT:
 					switch (esel)
 					{
-						case 0: config_emulator = 0; break;
-						case 1: config_defaultC64 -= (!!config_defaultC64); break;
-						case 2: config_forceC64 = 0; break;
-						case 3: config_defaultSID -= (!!config_defaultSID); break;
-						case 4: config_forceSID = 0; break;
-						case 5: config_CIA -= (!!config_CIA); break;
-						case 6: config_filter = 0; break;
-						case 7:
+						case SEL_EMULATOR:        config_emulator = 0; break;
+						case SEL_DEFAULTC64MODEL: config_defaultC64 -= (!!config_defaultC64); break;
+						case SEL_FORCEC64MODEL:   config_forceC64 = 0; break;
+						case SEL_DEFAULTSID:      config_defaultSID -= (!!config_defaultSID); break;
+						case SEL_FORCESID:        config_forceSID = 0; break;
+						case SEL_CIAMODEL:        config_CIA -= (!!config_CIA); break;
+						case SEL_FILTER:          config_filter = 0; break;
+						case SEL_FILTERCURVE6581:
 							config_filtercurve6581 -= repeat;
 							if (config_filtercurve6581 < 0) config_filtercurve6581 = 0;
 							break;
-						case 8:
+						case SEL_FILTERRANGE6581:
 							config_filterrange6581 -= repeat;
 							if (config_filterrange6581 < 0) config_filterrange6581 = 0;
 							break;
-						case 9:
+						case SEL_WAVEOFFSET6581:
+							config_waveoffset6581 -= repeat;
+							if (config_waveoffset6581 < 0) config_waveoffset6581 = 0;
+							break;
+						case SEL_ENABLEOLD6581CAPS:
 							config_enableOld6581caps = 0;
 							break;
-						case 10:
+						case SEL_FILTERCURVE8580:
 							config_filtercurve8580 -= repeat;
 							if (config_filtercurve8580 < 0) config_filtercurve8580 = 0;
 							break;
-						case 11:
+						case SEL_CWS:
 							config_combinedwaveforms -= 1;
 							if (config_combinedwaveforms < 0) config_combinedwaveforms = 0;
 							break;
-						case 12: config_digiboost = 0; break;
-						case 13:
-						case 14:
-						case 15:
+						case SEL_DIGIBOOST:       config_digiboost = 0; break;
+						case SEL_DACLEAKAGELEVEL:
+							config_dacLeakageLevel -= repeat;
+							if (config_dacLeakageLevel < 0) config_dacLeakageLevel = 0;
+							break;
+						case SEL_DCBLOCKRESISTANCE:
+							config_dcBlockResistor -= repeat;
+							if (config_dcBlockResistor < 0) config_dcBlockResistor = 0;
+							break;
+						case SEL_ROM_KERNAL:
+						case SEL_ROM_BASIC:
+						case SEL_ROM_CHARGEN:
 							break;
 					}
 					break;
 				case KEY_RIGHT:
 					switch (esel)
 					{
-						case 0: config_emulator = 1; break;
-						case 1: config_defaultC64 += (config_defaultC64 != 4); break;
-						case 2: config_forceC64 = 1; break;
-						case 3: config_defaultSID = 1; break;
-						case 4: config_forceSID = 1; break;
-						case 5: config_CIA += (config_CIA != 2); break;
-						case 6: config_filter = 1; break;
-						case 7:
+						case SEL_EMULATOR:        config_emulator = 1; break;
+						case SEL_DEFAULTC64MODEL: config_defaultC64 += (config_defaultC64 != 4); break;
+						case SEL_FORCEC64MODEL:   config_forceC64 = 1; break;
+						case SEL_DEFAULTSID:      config_defaultSID = 1; break;
+						case SEL_FORCESID:        config_forceSID = 1; break;
+						case SEL_CIAMODEL:        config_CIA += (config_CIA != 2); break;
+						case SEL_FILTER:          config_filter = 1; break;
+						case SEL_FILTERCURVE6581:
 							config_filtercurve6581 += repeat;
 							if (config_filtercurve6581 > 100) config_filtercurve6581 = 100;
 							break;
-						case 8:
+						case SEL_FILTERRANGE6581:
 							config_filterrange6581 += repeat;
 							if (config_filterrange6581 > 100) config_filterrange6581 = 100;
 							break;
-						case 9:
+						case SEL_WAVEOFFSET6581:
+							config_waveoffset6581 += repeat;
+							if (config_waveoffset6581 > 100) config_waveoffset6581 = 100;
+							break;
+						case SEL_ENABLEOLD6581CAPS:
 							config_enableOld6581caps = 1;
 							break;
-						case 10:
+						case SEL_FILTERCURVE8580:
 							config_filtercurve8580 += repeat;
 							if (config_filtercurve8580 > 100) config_filtercurve8580 = 100;
 							break;
-						case 11:
+						case SEL_CWS:
 							config_combinedwaveforms += 1;
 							if (config_combinedwaveforms > 2) config_combinedwaveforms = 2;
 							break;
-						case 12: config_digiboost = 1; break;
-						case 13:
-						case 14:
-						case 15:
+						case SEL_DIGIBOOST:       config_digiboost = 1; break;
+						case SEL_DACLEAKAGELEVEL:
+							config_dacLeakageLevel += repeat;
+							if (config_dacLeakageLevel > 100) config_dacLeakageLevel = 100;
+							break;
+						case SEL_DCBLOCKRESISTANCE:
+							config_dcBlockResistor += repeat;
+							if (config_dcBlockResistor > 100) config_dcBlockResistor = 100;
+							break;
+						case SEL_ROM_KERNAL:
+						case SEL_ROM_BASIC:
+						case SEL_ROM_CHARGEN:
 							break;
 					}
 					break;
 				case KEY_DOWN:
-					if (esel < 15)
+					if (esel < 18)
 					{
 						esel++;
 					}
@@ -1408,10 +1490,13 @@ superexit:
 	API->configAPI->SetProfileBool   ("libsidplayfp", "filter", config_filter);
 	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve6581", int_to_float100x(config_filtercurve6581));
 	API->configAPI->SetProfileString ("libsidplayfp", "filterrange6581", int_to_float100x(config_filterrange6581));
+	API->configAPI->SetProfileString ("libsidplayfp", "waveoffset6581", int_to_float100x(config_waveoffset6581));
 	API->configAPI->SetProfileBool   ("libsidplayfp", "enableOld6581caps", config_enableOld6581caps);
 	API->configAPI->SetProfileString ("libsidplayfp", "filtercurve8580", int_to_float100x(config_filtercurve8580));
 	API->configAPI->SetProfileString ("libsidplayfp", "combinedwaveforms", CWS_from_int (config_combinedwaveforms));
 	API->configAPI->SetProfileBool   ("libsidplayfp", "digiboost", config_digiboost);
+	API->configAPI->SetProfileString ("libsidplayfp", "dacLeakageLevel", int_to_float100x(config_dacLeakageLevel));
+	API->configAPI->SetProfileString ("libsidplayfp", "dcBlockResistor", int_to_float100x(config_dcBlockResistor));
 	API->configAPI->SetProfileString ("libsidplayfp", "kernal",    config_kernal); free (config_kernal);
 	API->configAPI->SetProfileString ("libsidplayfp", "basic",     config_basic); free (config_basic);
 	API->configAPI->SetProfileString ("libsidplayfp", "chargen",   config_chargen); free (config_chargen);

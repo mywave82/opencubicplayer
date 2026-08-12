@@ -1,5 +1,5 @@
 [version]
-  epoch=20260801
+  epoch=20260812
 
 [general]
 ;link=
@@ -123,10 +123,12 @@
 ; filterrange6581=0.5  Controls the filter range for the MOS6581 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (dark) to 1.0 (bright), the default value is 0.5.
   filterrange6581=0.5
-
-  enableOld6581caps=off
+; waveoffset6581=1.0   Affects the volume of digi samples if emulator=residfp.
+;                      Range is between 0 (faint digis) and 1 (loud digis). Default is 1.0
+  waveoffset6581=1.0
 ; enableOld6581caps=off Enable old value of 2200pF capacitors instead of 470pF for MOS6581 SID
 ;                       model if emulator=residfp. Enabling this matches C64 Assembly 326298.
+  enableOld6581caps=off
 ; filtercurve8580=0.5  Controls the filter curve for the MOS8580 SID model if emulator=residfp.
 ;                      Ranges from 0.0 (light) to 1.0 (dark), the default value is 0.5.
   filtercurve8580=0.5
@@ -135,6 +137,12 @@
   combinedwaveforms=Strong
 ; digiboost=on/off  Enable digiboost for MOS8580 SID model.
   digiboost=off
+; dacLeakageLevel=1.0  Affects the envelope and waveforms if emulator=residfp.
+;                      Range is between 0 (no leakage) and 1 (full leakage). Default is 1.0
+  dacLeakageLevel=1.0
+; dcBlockResistor=0.0  Affects the highpass cutoff frequency if emulator=residfp.
+;                      Range is between 0 (1.6Hz) and 1 (16Hz). Default is 0.0
+  dcBlockResistor=0.0
 ; kernal, basic and chargen makes it possible to specify path to ROM images, that the C64
 ; emulator can expose to the programs stored in SID files. Some SID files uses functions
 ; or data from these. Examples:

@@ -45,13 +45,27 @@ static int SidSetupWidth;
 
 static int SidSetupEditPos = 0;
 
+#define SEL_FILTER          0
+#define SEL_FILTERCURVE6581 1
+#define SEL_FILTERRANGE6581 2
+#define SEL_WAVEOFFSET6581  3
+#define SEL_OLD6581CAP      4
+#define SEL_FILTERCURVE8580 5
+#define SEL_CWS             6
+#define SEL_DACLEAKAGELEVEL 7
+#define SEL_DCBLOCKRES      8
+#define SEL_TOTAL_COUNT     9
+
 static int SidSetupUseresidfp = 0; // true for residfp, false for crSID
 static int SidSetupFilter = 0;
 static int SidSetupFilterCurve6581 = 0;
 static int SidSetupFilterRange6581 = 0;
+static int SidSetupWaveOffset6581 = 0;
 static int SidSetupEnableOld6581Caps = 0;
 static int SidSetupFilterCurve8580 = 0;
 static int SidSetupCombinedWaveformsStrength = 0;
+static int SidSetupDACLeakageLevel = 0;
+static int SidSetupDCBlockRes = 0;
 
 static void SidSetupSetWin (struct cpifaceSessionAPI_t *cpifaceSession, int _ignore, int wid, int ypos, int hgt)
 {
@@ -67,7 +81,7 @@ static int SidSetupGetWin (struct cpifaceSessionAPI_t *cpifaceSession, struct cp
 		return 0;
 	}
 	q->hgtmin = 7;
-	q->hgtmax = 7;
+	q->hgtmax = SEL_TOTAL_COUNT + 1;
 	q->xmode = 1;
 	q->size = 2;
 	q->top = 0;
@@ -189,23 +203,32 @@ static void SidSetupDraw (struct cpifaceSessionAPI_t *cpifaceSession, int focus)
 
 	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine, 0, focus?COLTITLE1H:COLTITLE1, focus?" Sid Setup":" Sid Setup (press i to focus)", SidSetupWidth);
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 1, 0, (focus&&(SidSetupEditPos==0))?0x07:0x08, &"  Filter:"[2 - skip], 27 + skip);
-	SidSetupDrawItems (cpifaceSession, focus, 1, skip, offon, 2, SidSetupFilter, SidSetupEditPos==0, (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 1, 0, (focus&&(SidSetupEditPos==SEL_FILTER))?0x07:0x08, &"  Filter:"[2 - skip], 27 + skip);
+	SidSetupDrawItems (cpifaceSession, focus, 1, skip, offon, 2, SidSetupFilter, SidSetupEditPos==SEL_FILTER, (SidSetupUseresidfp == 0));
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 2, 0, (focus&&(SidSetupEditPos==1))?0x07:0x08, &"  FilterCurve6581:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 2, skip, 100, "", 0, 100, SidSetupFilterCurve6581, SidSetupEditPos == 1, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 2, 0, (focus&&(SidSetupEditPos==SEL_FILTERCURVE6581))?0x07:0x08, &"  FilterCurve6581:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 2, skip, 100, "", 0, 100, SidSetupFilterCurve6581, SidSetupEditPos == SEL_FILTERCURVE6581, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 3, 0, (focus&&(SidSetupEditPos==2))?0x07:0x08, &"  FilterRange6581:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 3, skip, 100, "", 0, 100, SidSetupFilterRange6581, SidSetupEditPos == 2, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 3, 0, (focus&&(SidSetupEditPos==SEL_FILTERRANGE6581))?0x07:0x08, &"  FilterRange6581:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 3, skip, 100, "", 0, 100, SidSetupFilterRange6581, SidSetupEditPos == SEL_FILTERRANGE6581, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 4, 0, (focus&&(SidSetupEditPos==3))?0x07:0x08, &"  Enable Old 6581 Cap values:"[2 - skip], 27 + skip);
-	SidSetupDrawItems (cpifaceSession, focus, 4, skip, offon, 2, SidSetupEnableOld6581Caps, SidSetupEditPos==3, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 4, 0, (focus&&(SidSetupEditPos==SEL_WAVEOFFSET6581))?0x07:0x08, &"  WaveOffset6581:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 4, skip, 100, "", 0, 100, SidSetupWaveOffset6581, SidSetupEditPos == SEL_WAVEOFFSET6581, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 5, 0, (focus&&(SidSetupEditPos==4))?0x07:0x08, &"  FilterCurve8580:"[2 - skip], 27 + skip);
-	SidSetupDrawBar (cpifaceSession, focus, 5, skip, 100, "", 0, 100, SidSetupFilterCurve8580, SidSetupEditPos == 4, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS8580") || (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 5, 0, (focus&&(SidSetupEditPos==SEL_OLD6581CAP))?0x07:0x08, &"  Enable Old 6581 Cap values:"[2 - skip], 27 + skip);
+	SidSetupDrawItems (cpifaceSession, focus, 5, skip, offon, 2, SidSetupEnableOld6581Caps, SidSetupEditPos==SEL_OLD6581CAP, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS6581") || (SidSetupUseresidfp == 0));
 
-	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 6, 0, (focus&&(SidSetupEditPos==5))?0x07:0x08, &"  CombinedWaveformsStrength:"[2 - skip], 27 + skip);
-	SidSetupDrawItems (cpifaceSession, focus, 6, skip, combinedwaveforms, 3, SidSetupCombinedWaveformsStrength, SidSetupEditPos==5, (SidSetupFilter == 0) || (SidSetupUseresidfp == 0));
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 6, 0, (focus&&(SidSetupEditPos==SEL_FILTERCURVE8580))?0x07:0x08, &"  FilterCurve8580:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 6, skip, 100, "", 0, 100, SidSetupFilterCurve8580, SidSetupEditPos == SEL_FILTERCURVE8580, (SidSetupFilter == 0) || strcmp (sidChipModel(0), "MOS8580") || (SidSetupUseresidfp == 0));
+
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 7, 0, (focus&&(SidSetupEditPos==SEL_CWS))?0x07:0x08, &"  CombinedWaveformsStrength:"[2 - skip], 27 + skip);
+	SidSetupDrawItems (cpifaceSession, focus, 7, skip, combinedwaveforms, 3, SidSetupCombinedWaveformsStrength, SidSetupEditPos==SEL_CWS, (SidSetupFilter == 0) || (SidSetupUseresidfp == 0));
+
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 8, 0, (focus&&(SidSetupEditPos==SEL_DACLEAKAGELEVEL))?0x07:0x08, &"  DAC Leakage Lvl:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 8, skip, 100, "", 0, 100, SidSetupDACLeakageLevel, SidSetupEditPos == SEL_DACLEAKAGELEVEL, (SidSetupUseresidfp == 0));
+
+	cpifaceSession->console->Driver->DisplayStr (SidSetupFirstLine + 9, 0, (focus&&(SidSetupEditPos==SEL_DCBLOCKRES))?0x07:0x08, &"  DC Block Res:"[2 - skip], 27 + skip);
+	SidSetupDrawBar (cpifaceSession, focus, 9, skip, 100, "", 0, 100, SidSetupDCBlockRes, SidSetupEditPos == SEL_DCBLOCKRES, (SidSetupUseresidfp == 0));
 }
 
 static int SidSetupIProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint16_t key)
@@ -265,14 +288,14 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 			cpifaceSession->KeyHelp (KEY_DOWN,  "Move cursor down");
 			return 0;
 		case KEY_LEFT:
-			if (SidSetupEditPos==0)
+			if (SidSetupEditPos==SEL_FILTER)
 			{
 				if (SidSetupFilter)
 				{
 					SidSetupFilter = 0;
 					sidSetFilter(SidSetupFilter);
 				}
-			} else if (SidSetupEditPos==1)
+			} else if (SidSetupEditPos==SEL_FILTERCURVE6581)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -280,7 +303,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterCurve6581 < 0) SidSetupFilterCurve6581 = 0;
 					sidSetFilterCurve6581((double)SidSetupFilterCurve6581 / 100.0);
 				}
-			} else if (SidSetupEditPos==2)
+			} else if (SidSetupEditPos==SEL_FILTERRANGE6581)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -288,7 +311,15 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterRange6581 < 0) SidSetupFilterRange6581 = 0;
 					sidSetFilterRange6581((double)SidSetupFilterRange6581 / 100.0);
 				}
-			} else if (SidSetupEditPos==3)
+			} else if (SidSetupEditPos==SEL_WAVEOFFSET6581)
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupWaveOffset6581 -= repeat;
+					if (SidSetupWaveOffset6581 < 0) SidSetupWaveOffset6581 = 0;
+					sidSetWaveOffset6581((double)SidSetupWaveOffset6581 / 100.0);
+				}
+			} else if (SidSetupEditPos==SEL_OLD6581CAP)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -298,7 +329,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 						sidSetEnableOld6581caps (SidSetupEnableOld6581Caps);
 					}
 				}
-			} else if (SidSetupEditPos==4)
+			} else if (SidSetupEditPos==SEL_FILTERCURVE8580)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -306,24 +337,41 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterCurve8580 < 0) SidSetupFilterCurve8580 = 0;
 					sidSetFilterCurve8580((double)SidSetupFilterCurve8580 / 100.0);
 				}
-			} else if (SidSetupEditPos==5)
+			} else if (SidSetupEditPos==SEL_CWS)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp && (SidSetupCombinedWaveformsStrength > 0))
 				{
 					SidSetupCombinedWaveformsStrength--;
 					sidSetCombinedWaveformsStrength(SidSetupCombinedWaveformsStrength);
 				}
+			} else if (SidSetupEditPos==SEL_DACLEAKAGELEVEL)
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupDACLeakageLevel -= repeat;
+					if (SidSetupDACLeakageLevel < 0) SidSetupDACLeakageLevel = 0;
+					sidSetDACLeakageLevel((double)SidSetupDACLeakageLevel / 100.0);
+				}
+			} else if (SidSetupEditPos==SEL_DCBLOCKRES)
+
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupDCBlockRes -= repeat;
+					if (SidSetupDCBlockRes < 0) SidSetupDCBlockRes = 0;
+					sidSetDCBlockRes((double)SidSetupDCBlockRes / 100.0);
+				}
 			}
 			break;
 		case KEY_RIGHT:
-			if (SidSetupEditPos==0)
+			if (SidSetupEditPos==SEL_FILTER)
 			{
 				if (!SidSetupFilter)
 				{
 					SidSetupFilter = 1;
 					sidSetFilter(SidSetupFilter);
 				}
-			} else if (SidSetupEditPos==1)
+			} else if (SidSetupEditPos==SEL_FILTERCURVE6581)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -331,7 +379,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterCurve6581 > 100) SidSetupFilterCurve6581 = 100;
 					sidSetFilterCurve6581((double)SidSetupFilterCurve6581 / 100.0);
 				}
-			} else if (SidSetupEditPos==2)
+			} else if (SidSetupEditPos==SEL_FILTERRANGE6581)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -339,7 +387,16 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterRange6581 > 100) SidSetupFilterRange6581 = 100;
 					sidSetFilterRange6581((double)SidSetupFilterRange6581 / 100.0);
 				}
-			} else if (SidSetupEditPos==3)
+			} else if (SidSetupEditPos==SEL_WAVEOFFSET6581)
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupWaveOffset6581 += repeat;
+					if (SidSetupWaveOffset6581 > 100) SidSetupWaveOffset6581 = 100;
+					sidSetWaveOffset6581((double)SidSetupWaveOffset6581 / 100.0);
+				}
+
+			} else if (SidSetupEditPos==SEL_OLD6581CAP)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -349,7 +406,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 						sidSetEnableOld6581caps (SidSetupEnableOld6581Caps);
 					}
 				}
-			} else if (SidSetupEditPos==4)
+			} else if (SidSetupEditPos==SEL_FILTERCURVE8580)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp)
 				{
@@ -357,12 +414,28 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 					if (SidSetupFilterCurve8580 > 100) SidSetupFilterCurve8580 = 100;
 					sidSetFilterCurve8580((double)SidSetupFilterCurve8580 / 100.0);
 				}
-			} else if (SidSetupEditPos==5)
+			} else if (SidSetupEditPos==SEL_CWS)
 			{
 				if (SidSetupFilter && SidSetupUseresidfp && (SidSetupCombinedWaveformsStrength < 2))
 				{
 					SidSetupCombinedWaveformsStrength++;
 					sidSetCombinedWaveformsStrength(SidSetupCombinedWaveformsStrength);
+				}
+			} else if (SidSetupEditPos==SEL_DACLEAKAGELEVEL)
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupDACLeakageLevel += repeat;
+					if (SidSetupDACLeakageLevel > 100) SidSetupDACLeakageLevel = 100;
+					sidSetDACLeakageLevel((double)SidSetupDACLeakageLevel / 100.0);
+				}
+			} else if (SidSetupEditPos==SEL_DCBLOCKRES)
+			{
+				if (SidSetupFilter && SidSetupUseresidfp)
+				{
+					SidSetupDCBlockRes += repeat;
+					if (SidSetupDCBlockRes > 100) SidSetupDCBlockRes = 100;
+					sidSetDCBlockRes((double)SidSetupDCBlockRes / 100.0);
 				}
 			}
 			break;
@@ -373,7 +446,7 @@ static int SidSetupAProcessKey (struct cpifaceSessionAPI_t *cpifaceSession, uint
 			}
 			break;
 		case KEY_DOWN:
-			if (SidSetupEditPos < 5)
+			if (SidSetupEditPos < (SEL_TOTAL_COUNT - 1))
 			{
 				SidSetupEditPos++;
 			}
@@ -451,16 +524,25 @@ OCP_INTERNAL void cpiSidSetupInit (struct cpifaceSessionAPI_t *cpifaceSession)
 	SidSetupFilter =                                cpifaceSession->configAPI->GetProfileBool   ("libsidplayfp", "filter",          1, 1);
 	SidSetupFilterCurve6581 = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "filtercurve6581", "0.5"));
 	SidSetupFilterRange6581 = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "filterrange6581", "0.5"));
+	SidSetupWaveOffset6581  = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "waveoffset6581",  "1.0"));
 	SidSetupEnableOld6581Caps =                     cpifaceSession->configAPI->GetProfileBool   ("libsidplayfp", "enableOld6581caps", 0, 0);
 	SidSetupFilterCurve8580 = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "filtercurve8580", "0.5"));
 	SidSetupCombinedWaveformsStrength = CWS_to_int (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "combinedwaveforms", "Average"));
+	SidSetupDACLeakageLevel = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "dacLeakageLevel", "1.0"));
+	SidSetupDCBlockRes      = float100x_to_int     (cpifaceSession->configAPI->GetProfileString ("libsidplayfp", "dcBlockResistor", "0.0"));
 
 	if (SidSetupFilterCurve6581 <   0) SidSetupFilterCurve6581 = 0;
 	if (SidSetupFilterCurve6581 > 100) SidSetupFilterCurve6581 = 100;
 	if (SidSetupFilterRange6581 <   0) SidSetupFilterRange6581 = 0;
 	if (SidSetupFilterRange6581 > 100) SidSetupFilterRange6581 = 100;
+	if (SidSetupWaveOffset6581  <   0) SidSetupWaveOffset6581  = 0;
+	if (SidSetupWaveOffset6581  > 100) SidSetupWaveOffset6581  = 100;
 	if (SidSetupFilterCurve8580 <   0) SidSetupFilterCurve8580 = 0;
 	if (SidSetupFilterCurve8580 > 100) SidSetupFilterCurve8580 = 100;
+	if (SidSetupDACLeakageLevel <   0) SidSetupDACLeakageLevel = 0;
+	if (SidSetupDACLeakageLevel > 100) SidSetupDACLeakageLevel = 100;
+	if (SidSetupDCBlockRes      <   0) SidSetupDCBlockRes      = 0;
+	if (SidSetupDCBlockRes      > 100) SidSetupDCBlockRes      = 100;
 
 	cpifaceSession->cpiTextRegisterMode (cpifaceSession, &cpiSidSetup);
 }

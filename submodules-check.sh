@@ -16,10 +16,10 @@ ADPLUG=`git ls-remote https://github.com/adplug/adplug.git refs/heads/master | s
 if test "x$ADPLUG" != x"f8386a01dd6060010e625df4743f625c255abb19"; then echo ADPLUG needs to be verified \($ADPLUG\); fi
 
 LIBSIDPLAYFP=`git ls-remote https://github.com/libsidplayfp/libsidplayfp.git refs/heads/master | sed -e 's/\t.*//'`
-if test "x$LIBSIDPLAYFP" != x"a53d10176ebd227ea31cd49bc7b3f21aea9f8ae5"; then echo LIBSIDPLAYFP needs to be verified \($LIBSIDPLAYFP\); fi
+if test "x$LIBSIDPLAYFP" != x"7c377133a2240995373499b50a44e1d38783da85"; then echo LIBSIDPLAYFP needs to be verified \($LIBSIDPLAYFP\); fi
 
 LIBRESIDFP=`git ls-remote https://github.com/libsidplayfp/libresidfp.git refs/heads/main | sed -e 's/\t.*//'`
-if test "x$LIBRESIDFP" != x"6fc77464e392e2349e95067ffd4f7da0ccaf250d"; then echo LIBRESIDFP needs to be verified \($LIBRESIDFP\); fi
+if test "x$LIBRESIDFP" != x"ccfc47936dcb5f350c62f536b0832af9b22de490"; then echo LIBRESIDFP needs to be verified \($LIBRESIDFP\); fi
 
 ANCIENT=`git ls-remote https://github.com/temisu/ancient.git refs/heads/master | sed -e 's/\t.*//'`
 if test "x$ANCIENT" != x"d52dc0c1eec35f14e0da78dd48836ac9542f2f0f"; then echo ANCIENT needs to be verified; fi

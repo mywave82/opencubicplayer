@@ -77,10 +77,13 @@ namespace libsidplayfp
 		void SetFilter(bool enable);
 		void SetFilterCurve6581 (double v);
 		void SetFilterRange6581 (double v);
+		void SetWaveOffset6581 (double v);
 		void SetEnableOld6581caps (bool v);
 
 		void SetFilterCurve8580 (double v);
 		void SetCombinedWaveformsStrength (int CWS);
+		void sidSetDACLeakageLevel (double v);
+		void sidSetDCBlockRes (double v);
 
 	private:
 		SidConfig          m_engCfg;
@@ -97,11 +100,12 @@ namespace libsidplayfp
 			// Filter parameters for reSIDfp
 			double         filterCurve6581;
 			double         filterRange6581;
-			bool           enableOld6581caps;
+			double         waveOffset6581;
 			double         filterCurve8580;
-
+			double         dacLeakageLevel;
+			double         dcBlockResistor;
 			SidConfig::sid_cw_t combinedWaveforms;
-
+			bool           enableOld6581caps;
 			bool           enabled;
 		} m_filter;
 

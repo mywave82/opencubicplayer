@@ -777,7 +777,9 @@ OCP_INTERNAL int sidGetLChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 			{
 				length1 = length2;
 				length2 = 0;
-				src = sid_buf_4x3[sid] + pos2 * 4 + ch;
+				pos1 = pos2;
+				pos2 = -1;
+				src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 			}
 			if (!length1)
 			{
@@ -847,7 +849,9 @@ OCP_INTERNAL int sidGetPChanSample (struct cpifaceSessionAPI_t *cpifaceSession, 
 			{
 				length1 = length2;
 				length2 = 0;
-				src = sid_buf_4x3[sid] + pos2 * 4 + ch;
+				pos1 = pos2;
+				pos2 = -1;
+				src = sid_buf_4x3[sid] + pos1 * 4 + ch;
 			}
 			if (!length1)
 			{
@@ -895,6 +899,15 @@ OCP_INTERNAL void sidSetFilterRange6581 (double v)
 	mySidPlayer->SetFilterRange6581 (v);
 }
 
+OCP_INTERNAL void sidSetWaveOffset6581 (double v)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->SetWaveOffset6581 (v);
+}
+
 OCP_INTERNAL void sidSetFilterCurve8580 (double v)
 {
 	if (!mySidPlayer)
@@ -911,6 +924,26 @@ OCP_INTERNAL void sidSetCombinedWaveformsStrength (int CWF)
 		return;
 	}
 	mySidPlayer->SetCombinedWaveformsStrength (CWF);
+}
+
+OCP_INTERNAL void sidSetDACLeakageLevel (double v)
+{
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->sidSetDACLeakageLevel (v);
+}
+
+OCP_INTERNAL void sidSetDCBlockRes (double v)
+{
+#warning remove-me
+fprintf(stderr, "sidSetDCBlockRes(%lf), mySidPlayer=%p\n", v, mySidPlayer);
+	if (!mySidPlayer)
+	{
+		return;
+	}
+	mySidPlayer->sidSetDCBlockRes (v);
 }
 
 OCP_INTERNAL int sidOpenPlayer (struct ocpfilehandle_t *file, struct cpifaceSessionAPI_t *cpifaceSession)

@@ -255,6 +255,16 @@ namespace libsidplayfp
 			//fprintf (stderr, "filterrange6581=%lf\n", m_filter.filterRange6581);
 		}
 
+		const char *waveoffset6581 = configAPI->GetProfileString("libsidplayfp", "waveoffset6581", "1.0");
+		m_filter.waveOffset6581 = strtod(waveoffset6581, &endptr);
+		if ((*endptr != 0) || (range6581 == endptr))
+		{
+			fprintf (stderr, "[libsidplayfp]\n  waveoffset6581=invalid... defaulting to 1.0\n");
+			m_filter.waveOffset6581=1.0;
+		} else {
+			//fprintf (stderr, "waveoffset6581=%lf\n", m_filter.waveOffset6581);
+		}
+
 		const char *curve8580 = configAPI->GetProfileString("libsidplayfp", "filtercurve8580", "0.5");
 		m_filter.filterCurve8580 = strtod(curve8580, &endptr);
 		if ((*endptr != 0) || (curve8580 == endptr))
@@ -284,6 +294,26 @@ namespace libsidplayfp
 
 		m_engCfg.digiBoost = configAPI->GetProfileBool("libsidplayfp", "digiboost", 0, 0);
 		//fprintf (stderr, "digiboost=%d\n", m_engCfg.digiBoost);
+
+		const char *dacLeakageLevel = configAPI->GetProfileString("libsidplayfp", "dacLeakageLevel", "1.0");
+		m_filter.dacLeakageLevel = strtod(dacLeakageLevel, &endptr);
+		if ((*endptr != 0) || (dacLeakageLevel == endptr))
+		{
+			fprintf (stderr, "[libsidplayfp]\n  dacLeakageLevel=invalid... defaulting to 1.0\n");
+			m_filter.dacLeakageLevel=1.0;
+		} else {
+			//fprintf (stderr, "dacLeakageLevel=%lf\n", m_filter.dacLeakageLevel);
+		}
+
+		const char *dcBlockResistor = configAPI->GetProfileString("libsidplayfp", "dcBlockResistor", "0.0");
+		m_filter.dcBlockResistor = strtod(dcBlockResistor, &endptr);
+		if ((*endptr != 0) || (dcBlockResistor == endptr))
+		{
+			fprintf (stderr, "[libsidplayfp]\n  dcBlockResistor=invalid... defaulting to 0.0\n");
+			m_filter.dcBlockResistor=0.0;
+		} else {
+			//fprintf (stderr, "dcBlockResistor=%lf\n", m_filter.dcBlockResistor);
+		}
 
 		if (!createSidEmu (configAPI))
 		{
@@ -411,10 +441,12 @@ namespace libsidplayfp
 				m_engCfg.sidEmulation = rs;
 				rs->filter6581Curve(m_filter.filterCurve6581);
 				rs->filter6581Range(m_filter.filterRange6581);
+				rs->offset6581(m_filter.waveOffset6581);
 				rs->enableOld6581caps(m_filter.enableOld6581caps);
 				rs->filter8580Curve(m_filter.filterCurve8580);
 				rs->combinedWaveformsStrength(m_filter.combinedWaveforms);
-
+				rs->dacLeakage(m_filter.dacLeakageLevel);
+				rs->dcbRes(m_filter.dcBlockResistor);
 			}
 		}
 		catch (std::bad_alloc const &ba) {}
@@ -586,6 +618,26 @@ namespace libsidplayfp
 		}
 	}
 
+	void ConsolePlayer::SetWaveOffset6581 (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		if (m_residfp == 1)
+		{
+			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+			if (rs)
+			{
+				rs->offset6581 (v);
+			}
+		} else if (m_residfp == 2)
+		{
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+			/* TODO: no parameters available in crSID (sidlite) */
+		}
+	}
+
+
 	void ConsolePlayer::SetEnableOld6581caps (bool v)
 	{
 		if (m_residfp == 1)
@@ -641,6 +693,45 @@ namespace libsidplayfp
 			/* TODO: no parameters available in crSID (sidlite) */
 		}
 	}
+
+	void ConsolePlayer::sidSetDACLeakageLevel (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		if (m_residfp == 1)
+		{
+			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+			if (rs)
+			{
+				rs->dacLeakage (v);
+			}
+		} else if (m_residfp == 2)
+		{
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+			/* TODO: no parameters available in crSID (sidlite) */
+		}
+	}
+
+	void ConsolePlayer::sidSetDCBlockRes (double v)
+	{
+		if (v > 1.0) v = 1.0;
+		if (v < 0.0) v = 0.0;
+
+		if (m_residfp == 1)
+		{
+			ReSIDfpBuilder *rs = dynamic_cast<ReSIDfpBuilder *>(m_engCfg.sidEmulation);
+			if (rs)
+			{
+				rs->dcbRes (v);
+			}
+		} else if (m_residfp == 2)
+		{
+			SIDLiteBuilder *rs = dynamic_cast<SIDLiteBuilder *>(m_engCfg.sidEmulation);
+			/* TODO: no parameters available in crSID (sidlite) */
+		}
+	}
+
 
 	const SidTuneInfo::clock_t ConsolePlayer::getTuneInfoClockSpeed(void)
 	{
