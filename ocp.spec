@@ -1,7 +1,7 @@
 # rpm spec file for RedHat / Fedora linux
 
 %define name ocp
-%define version 3.4.1
+%define version 3.5.0
 
 Name: %{name}
 Version: %{version}
@@ -34,78 +34,22 @@ frontend, with some few optional features in graphical. Plays modules, sids,
 wave and mp3
 
 %changelog
-Changes from version 3.4.0 to 3.4.1
+Changes from version 3.4.1
 
-Bugfixes
+[opus]
+ * Initial version
 
-[psgplay/sndh]
- * Try to make it compile on m68k target
-
-[configure]
- * AC_MSG_ERROR calls should contain message inside [], not "". Failing to do so causes syntax error when running the configure script and it wants to display an error message.
- * if libspeex was not detected, auto vs forced logic was swapped around
-
-[flac/mpX/ogg/wavpack]
- * Ensure that PictureViewer initializes to "NotVisible", avoid de-referencing invalid memory playing a file without a picture, after playing a file with a picture.
-
-[timidity/midi]
- * Library messages should not depend on compile-time flag
- * cpiTimiditySetupInit() should be called before loading a MIDI song, so that reverb and chorus are initialized to wanted settings as early as possible.
- * Update Timidity, protect against roomsize reaching zero, causing inf math and assertion/abort on certain systems.
-
-Changes from version 3.3.1 to 3.4.0:
-
-Added support for *.SPX, *.WV, *.OGA, *.XMI and *.WM
+[sidplayfp/residfp] Update to latest masters
+ * New tunable parameters:
+  * Wave Offset 6581
+  * DAC Leakage Level
+  * DC Block Resistor
 
 [speex]
- * Initial support (*.spx)
+ * Seek home did not work as expected
 
-[wavpack]
- * Initial support (*.wv)
-
-[flac]
- * Added support for FLAC embedded into OGG (*.OGA)
-
-[help]
- * Use the correct screen-width if displaying error-messages, avoid crash blanking invalid memory
-
-[mingw]
- * Update version-numbers of packages used by mingw build
-
-[adplug/opl]
- * update adplug to latest master
-   * adds support for *.xmi, Miles Design music
-   * adds support for *.wm, Silky's MusicV WM OPL3 format
-
-[sidplayfp/sid]
- * Update to latest masters.
-
-[sndh]
- * update psgplay to latest master.
-
-[qoa]
- * update to latest master
-   * Adds more sanitization
-   * Fixes Out-Of-Bounds read for special crafted .QOA files
-
-[libmad/mpX]
- * Skip frame 0, if it is a meta-frame.
- * Correct MPEG version and LAYER information in the status header.
- * File-browser detection, now uses information in meta-header to calculate song length if available if no ID3 tag is available.
-
-[cue/toc]
- * Add support for WavPack, Ogg, FLAC and MP3 compressed audio
- *.WAV files, the result of case-insenstive-search was never used.
-
-[udf]
- * Filesystem did not parse correctly if CDFS_DEBUG was not defined.
-
-[wav]
- * Fix parsing META comments
-
-[configure]
- * Detect and error-out if -flto is detected in CFLAGS/CXXFLAGS/LDFLAGS. It causes problems with the internal list of core plugins.
- * --with-strip_lto_flags, that can automatically strip away -flto flags.
+[general/posix]
+ * Add #include <stddef.h> to types.h, for size_t defintion.
 
 %prep
 %setup -q -n %{name}-%{version}
