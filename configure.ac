@@ -282,58 +282,6 @@ if test "$ac_cv_c_signed_char" = no; then
 	CXXFLAGS="$CXXFLAGS -fsigned-char"
 fi
 
-
-dnl If compiled with -flto, the staticdlls symbol in /boot/plinkman.c, containing the complete list of built-in-plugins - becomes mangles, sometimes even the end-of-list marker being moved forward, causing plugins to be missing.
-dnl Known versions that fail:
-dnl   gcc/g++ 14.2, binutils 2.44
-dnl   gcc/g++ 16.1, binutils 2.46
-AC_ARG_WITH([strip_lto_flags], [AS_HELP_STRING([--with-strip_lto_flags], [Strip away -flto flags in CFLAGS/CXXFLAGS/LDFLAGS.])])
-AS_IF([test "x$with_strip_lto_flags" = "xyes"], [
-	NEW_CFLAGS=""
-	for flag in $CFLAGS; do
-	    if [ ! echo "$flag" | grep -- '-flto'>/dev/null ]; then
-	        NEW_CFLAGS="$NEW_CFLAGS $flag"
-	    fi
-	done
-	CFLAGS=$NEW_CFLAGS
-	NEW_CXXFLAGS=""
-	for flag in $CXXFLAGS; do
-	    if [ ! echo "$flag" | grep -- '-flto'>/dev/null ]; then
-	        NEW_CXXFLAGS="$NEW_CXXFLAGS $flag"
-	    fi
-	done
-	CXXFLAGS=$NEW_CXXFLAGS
-	NEW_LDFLAGS=""
-	for flag in $LDFLAGS; do
-	    if [ ! echo "$flag" | grep -- '-flto'>/dev/null ]; then
-	        NEW_LDFLAGS="$NEW_LDFLAGS $flag"
-	    fi
-	done
-	LDFLAGS=$NEW_LDFLAGS
-])
-
-AC_DEFUN([AX_LTO_ERROR_MSG], [dnl
-AC_MSG_ERROR([detected
-
-$1 contains -flto, this is known to create problems with the list of built-in plugins:
-* some built-in plugins might be missing, and this can be very hard to notice.
-
-If you really want lto, you will need to provide a linker-script and update DLLEXTINFO_END_PREFIX
-and ensure that the plugin_list is terminated correctly.
-
-Add --without-lto_check if you really are sure you want this.
-
-Or add --with-strip_lto_flags and let this configure script remove the options])
-]) dnl AX_LTO_ERROR_MSG
-AC_ARG_WITH([lto_check], [AS_HELP_STRING([--without-lto_check], [Do not check for -flto in CFLAGS/CXXFLAGS/LDFLAGS. Only use if you know what you are doing])])
-AS_IF([test "x$with_lto_check" != "xno"], [
-	AC_MSG_CHECKING([for -flto])
-		AS_IF([echo "$CFLAGS"|grep -- '-flto'>/dev/null],[AX_LTO_ERROR_MSG([CFLAGS])])
-		AS_IF([echo "$CXXFLAGS"|grep -- '-flto'>/dev/null],[AX_LTO_ERROR_MSG([CXXLAGS])])
-		AS_IF([echo "$LDFLAGS"|grep -- '-flto'>/dev/null],[AX_LTO_ERROR_MSG([LDFLAGS])])
-	AC_MSG_RESULT([not detected in CFLAGS, CXXFLAGS and LDFLAGS])
-])
-
 AC_MSG_CHECKING([for PIC])
 org_cflags="$CFLAGS"
 CFLAGS="$CFLAGS -fPIC"

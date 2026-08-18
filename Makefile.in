@@ -39,7 +39,6 @@ libocp_so:=$(LIBOCP_OBJECTS)
 ifeq ($(STATIC_BUILD),1)
 libocp_so+=$(STATIC_OBJECTS)
 endif
-libocp_end_so=$(LIBOCP_END_OBJECTS)
 
 all: subdirs ocp$(EXE_SUFFIX) ocp.hlp libocp$(LIB_SUFFIX)
 
@@ -188,4 +187,4 @@ distclean: clean
 		mingw/ocp.rc
 
 libocp$(LIB_SUFFIX): subdirs
-	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(libocp_start_so) $(libocp_so) $(libocp_end_so) $(STATIC_LIBS)
+	$(CXX) $(SHARED_FLAGS) $(LDFLAGS) -o $@ $(libocp_start_so) $(libocp_so) $(STATIC_LIBS)

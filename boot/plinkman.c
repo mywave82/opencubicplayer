@@ -67,10 +67,6 @@ static int handlecounter;
 static struct dll_handle loadlist[MAXDLLLIST];
 int loadlist_n;
 
-#ifdef SUPPORT_STATIC_PLUGINS
-DLLEXTINFO_BEGIN_PREFIX struct linkinfostruct staticdlls = {.name = "static", .desc = "Compiled in plugins (c) 2009-'26 Stian Skjelstad", .ver = DLLVERSION};
-#endif
-
 #ifdef _WIN32
 static int lnkAppend (char *file, HMODULE handle, uint32_t size, const struct linkinfostruct *info)
 #else
@@ -482,28 +478,41 @@ void lnkFree(const int id)
 }
 
 #ifdef SUPPORT_STATIC_PLUGINS
+
+/* special symbols maintained by linkers, marking the boundaries of sections */
+#ifdef __APPLE__
+extern uint8_t section$start$__DATA$plugin_list[];
+extern uint8_t section$end$__DATA$plugin_list[];
+#else
+extern uint8_t __start_plugin_list[];
+extern uint8_t __stop_plugin_list[];
+#endif
+
 static void lnkLoadStatics(void)
 {
-	const struct linkinfostruct *iterator = &staticdlls + 1; /* skip the head */
-	asm("":"+r"(iterator)); /* if staticdlls is const, gcc with optimization will detect going past array and assume zero data. Make gcc forget how iterator was assigned */
+#ifdef __APPLE__
+	const struct linkinfostruct *iterator = (struct linkinfostruct *)section$start$__DATA$plugin_list;
+	const struct linkinfostruct *end      = (struct linkinfostruct *)section$end$__DATA$plugin_list;
+#else
+	const struct linkinfostruct *iterator = (struct linkinfostruct *)__start_plugin_list;
+	const struct linkinfostruct *end      = (struct linkinfostruct *)__stop_plugin_list;
+#endif
 
 	#ifdef LD_DEBUG
-	fprintf (stderr, "About to add static modules: iterator=%p %s\n", iterator, iterator->name);
+	fprintf (stderr, "About to add static modules: iterator range {from %p up to %p}\n", iterator, end);
 	#endif
 
-	while (iterator->name)
+	while (iterator < end)
 	{
 		#ifdef LD_DEBUG
-		fprintf(stderr, "[lnk] Adding static module: \"%s\"\n", iterator->name);
+		fprintf(stderr, "[lnk] Adding static module (iterator=%p): \"%s\"\n", iterator, iterator->name);
 		#endif
 
 		lnkAppend (0, 0, 0, iterator);
 
 		iterator++;
-		#ifdef LD_DEBUG
-		fprintf (stderr, "iterator=%p &=%p name=%p string=%s\n", iterator, &iterator->name, iterator->name, iterator->name);
-		#endif
 	}
+
 	return;
 }
 #endif
