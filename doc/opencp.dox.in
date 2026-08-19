@@ -1484,7 +1484,7 @@ the configuration permanently you have to modify the entries of this section.
     wavetabledevices=devwMixF devwmixQ devwMix devwNone
     mixrate=44100
     mixprocrate=4096000
-    plrbufsize=500
+    plrbufsize=200
     samprate=44100
     defwavetable=
     midichan=64
@@ -1529,10 +1529,10 @@ the configuration permanently you have to modify the entries of this section.
                    channels at full mixrate. This value defines the maximum
                    "calculation power" to which OCP tries to use the full
                    mixrate.
-  ~plrbufsize~       When using a ~playerdevice~ to play sample streams a DMA
-                   buffer is used to minimize CPU resources for handling the
-                   sample stream. This option sets the DMA buffer length in
-                   milliseconds.
+  ~plrbufsize~       When running in a multitasking environment there is no
+                   guarantee for constant cpu resources. To avoid a break in the
+                   sample stream OCP will calculate in advance. This option sets
+                   the buffer lenth in miliseconds.
   ~samprate~         When using a diskwriter, this value will be used.
   ~defwavetable~     this option sets the default ~wavetabledevice~. Can also be set
                    with ~-sw~ command.

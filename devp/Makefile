@@ -162,6 +162,7 @@ devpalsa.o: devpalsa.c \
 	../filesel/modlist.h \
 	../filesel/pfilesel.h \
 	../stuff/err.h \
+	../stuff/compat.h \
 	../stuff/imsrtns.h \
 	../stuff/poutput.h \
 	../stuff/utf-8.h

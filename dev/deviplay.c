@@ -234,7 +234,6 @@ static int deviplayLateInit (struct PluginInitAPI_t *API)
 	);
 	API->filesystem_setup_register_file (setup_devp);
 
-
 	fprintf (stderr, "playbackdevices:\n");
 
 	/* Do we have a specific device specified on the command-line ? */
@@ -373,7 +372,7 @@ static void deviplayLateClose (void)
 	plrDriverListNone = -1;
 }
 
-static void setup_devp_draw (const struct DevInterfaceAPI_t *API, const char *title, int dsel)
+static void setup_devp_draw_driver (const struct DevInterfaceAPI_t *API, const char *title, int dsel)
 {
 	unsigned int mlHeight;
 	unsigned int mlTop;
@@ -383,7 +382,7 @@ static void setup_devp_draw (const struct DevInterfaceAPI_t *API, const char *ti
 	unsigned int i, skip, half, dot, fit;
 
 #if (CONSOLE_MIN_Y < 10)
-# error setup_devp_draw() requires CONSOLE_MIN_Y >= 10
+# error setup_devp_draw_driver() requires CONSOLE_MIN_Y >= 10
 #endif
 
 	/* SETUP the framesize */
@@ -392,16 +391,16 @@ static void setup_devp_draw (const struct DevInterfaceAPI_t *API, const char *ti
 		mlHeight = 10;
 	} else {
 		mlHeight = plrDriverListEntries + 7;
-		if (mlHeight > (plScrHeight - 2))
+		if (mlHeight > (API->console->TextHeight - 2))
 		{
-			mlHeight = plScrHeight - 2;
+			mlHeight = API->console->TextHeight - 2;
 		}
 	}
 	fit = mlHeight - 7;
-	mlTop = (plScrHeight - mlHeight) / 2;
+	mlTop = (API->console->TextHeight - mlHeight) / 2;
 
 	mlWidth = 70;
-	mlLeft = (plScrWidth - mlWidth) / 2;
+	mlLeft = (API->console->TextWidth - mlWidth) / 2;
 
 	half = fit / 2;
 	if (plrDriverListEntries <= fit)
@@ -535,13 +534,13 @@ static void devp_save_devices (const struct DevInterfaceAPI_t *API)
 	free (tmp);
 }
 
-static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
+static void setup_devp_run_driver (void **token, const struct DevInterfaceAPI_t *API)
 {
 	int dsel = 0;
 	while (1)
 	{
 		API->fsDraw();
-		setup_devp_draw (API, "Playback plugins", dsel);
+		setup_devp_draw_driver (API, "Playback plugins", dsel);
 		while (API->console->KeyboardHit())
 		{
 			int key = API->console->KeyboardGetChar();
@@ -648,6 +647,171 @@ static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
 					if (dsel >= plrDriverListEntries)
 					{
 						dsel = plrDriverListEntries ? plrDriverListEntries - 1 : 0;
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		API->console->FrameLock();
+	}
+}
+
+static void DrawDelayBar (const struct DevInterfaceAPI_t *API, const int left, const int lineno, const int width, int value, const int active)
+{
+ /* 500ms  150 [......#] 1000
+   [  6 ][  6 ]1       1[ 5 ] */
+	if (value > 1000)
+	{
+		value = 1000;
+	}
+	if (value < 150)
+	{
+		value = 150;
+	}
+
+	int tw = width - 6 - 6 - 1 - 1 - 5;
+	int pw = tw * (value - 150) / (1000 - 150 + 1) /* max-level - min-level */;
+	API->console->DisplayPrintf (lineno, left, active ? 0x0f : 0x08, width, "%-4dms%.*o  150 [%*C.%.*o#%.*o%*C.] 1000",
+		value,
+		active ? 0x07 : 0x08,
+		pw,
+		active ? 0x0f : 0x08,
+		active ? 0x07 : 0x08,
+		tw - pw - 1);
+}
+
+static void setup_devp_draw_main (const struct DevInterfaceAPI_t *API, const char *title, int dsel, const char *plrDriverName, const int plrbufsize)
+{
+/************************ Playback plugins ****************************  1
+ *                                                                    *  2  opt
+ *       Setup of audio playback driver. Exit with <ESC> key          *  3
+ *                                                                    *  4  opt
+ **********************************************************************  5
+ *                                                                    *  6  opt
+ * 1. Modify detection priority order, and/or temporary force driver. *  7
+ *    Current active driver: devpALSA                                 *  8
+ *                                                                    *  9
+ * 2. Audio buffer length (in miliseconds)                            *  10
+ '    200ms    150 [...........#.........................] 1000       *  11
+ *                                                                    *  12 opt
+ **********************************************************************  13 */
+#if (CONSOLE_MIN_Y < 10)
+# error setup_devp_draw_driver() requires CONSOLE_MIN_Y >= 9
+#endif
+
+	int big = API->console->TextHeight >= 9;
+	unsigned int mlHeight = big ? 13 : 9;
+	unsigned int mlWidth = 70;
+	unsigned int mlTop = (API->console->TextHeight - mlHeight) / 2;
+	unsigned int mlLeft = (API->console->TextWidth - mlWidth) / 2;
+
+	API->console->DisplayFrame (mlTop++, mlLeft++, mlHeight, mlWidth, DIALOG_COLOR_FRAME, title, -1, big ? 4 : 2, 0 /* no second bar */);
+	mlWidth -= 2;
+	mlHeight -= 2;
+
+	mlTop += big;
+
+	API->console->DisplayPrintf (mlTop++, mlLeft + 7, 0x07, mlWidth - 7, "Setup of audio playback driver. Exit with %.15o<ESC>%.7o key.");
+
+	mlTop += big;
+
+	mlTop += 1; // horizontal bar
+
+	mlTop += big;
+
+	API->console->DisplayPrintf (mlTop++, mlLeft + 1, 0x07, mlWidth-2, "%*.*o1. %.*oModify detection priority order, and/or temporary force driver.", (dsel == 0) ? 7 : 0, (dsel == 0) ? 1 : 7, (dsel == 0) ? 1 : 3);
+	API->console->DisplayPrintf (mlTop++, mlLeft + 4, 0x02, mlWidth-4, "Current active driver: %.*o%s", plrDriverName ? 1 : 2, plrDriverName ? plrDriverName : "none");
+
+	mlTop++;
+
+	API->console->DisplayPrintf (mlTop++, mlLeft + 1, 0x07, mlWidth-2, "%*.*o2. %.*oAudio buffer length (in miliseconds).", (dsel == 1) ? 7 : 0, (dsel == 1) ? 1 : 7, (dsel == 1) ? 1 : 3);
+	DrawDelayBar (API, mlLeft + 4, mlTop++, mlWidth - 5, plrbufsize, dsel == 1);
+}
+
+
+static void setup_devp_run (void **token, const struct DevInterfaceAPI_t *API)
+{
+	int repeat = 1;
+	uint32_t lastpress = 0;
+	int dsel = 0;
+	int plrbufsize = API->configAPI->GetProfileInt2 (API->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
+	while (1)
+	{
+		API->fsDraw();
+		setup_devp_draw_main (API, "Playback plugins", dsel, plrDriver ? plrDriver->name : 0, plrbufsize);
+		while (API->console->KeyboardHit())
+		{
+			int key = API->console->KeyboardGetChar();
+			if ((key != KEY_LEFT) && (key != KEY_RIGHT) && (key != '+') && (key != '-'))
+			{
+				lastpress = 0;
+				repeat = 1;
+			} else {
+				uint32_t newpress = clock_ms();
+				if ((newpress-lastpress) > 250) /* 250 ms */
+				{
+					repeat = 1;
+				} else {
+					if (repeat < 20)
+					{
+						repeat += 1;
+					}
+				}
+				lastpress = newpress;
+			}
+
+			switch (key)
+			{
+				case KEY_DOWN:
+					if (dsel < 1)
+					{
+						dsel++;
+					}
+					break;
+				case KEY_UP:
+					if (dsel > 0)
+					{
+						dsel--;
+					}
+					break;
+				case KEY_HOME:
+					dsel = 0;
+					break;
+				case KEY_END:
+					dsel = 1;
+					break;
+				case KEY_EXIT:
+				case KEY_ESC:
+					API->configAPI->SetProfileInt (API->configAPI->SoundSec, "plrbufsize", plrbufsize, 10);
+					API->configAPI->StoreConfig();
+					return;
+				case _KEY_ENTER:
+					if (dsel == 0)
+					{
+						setup_devp_run_driver (token, API);
+					}
+					break;
+				case KEY_LEFT:
+				case '-':
+					if (dsel == 1)
+					{
+						plrbufsize-=repeat;
+						if (plrbufsize < 150)
+						{
+							plrbufsize = 150;
+						}
+					}
+					break;
+				case KEY_RIGHT:
+				case '+':
+					if (dsel == 1)
+					{
+						plrbufsize += repeat;
+						if (plrbufsize > 1000)
+						{
+							plrbufsize = 1000;
+						}
 					}
 					break;
 				default:

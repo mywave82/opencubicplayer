@@ -44,6 +44,7 @@
 #include "filesel/mdb.h"
 #include "filesel/modlist.h"
 #include "filesel/pfilesel.h"
+#include "stuff/compat.h"
 #include "stuff/err.h"
 #include "stuff/imsrtns.h"
 #include "stuff/poutput.h"
@@ -96,6 +97,8 @@ static int stereo;
 static int bit16;
 static int bitsigned;
 
+static int plrbufsize, maxdelay;
+
 static volatile int busy=0;
 
 /****************************** setup/alsaconfig.dev ******************************/
@@ -109,7 +112,8 @@ enum alsaConfigDraw_Mode_t
 	ACDM_MIXER_DEVICE_SELECTED,
 	ACDM_MIXER_DEVICE_OPEN,
 	ACDM_MIXER_DEVICE_CUSTOM_SELECTED,
-	ACDM_MIXER_DEVICE_CUSTOM_EDIT
+	ACDM_MIXER_DEVICE_CUSTOM_EDIT,
+	ACDM_AUDIO_BUFFER_SIZE,
 };
 
 struct AlsaConfigDeviceEntry_t
@@ -252,6 +256,29 @@ static void alsaSetupDrawList (const int mlTop, const int mlLeft, const int mlHe
 	API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x07, mlWidth, "    % 72s", list->entries[list->preselected].desc2 ? list->entries[list->preselected].desc2 : "");
 }
 
+static void DrawDelayBar (const struct DevInterfaceAPI_t *API, const int left, const int lineno, const int width, int value, const int active)
+{
+ /* 500ms  150 [......#] 1000
+   [  6 ][  6 ]1       1[ 5 ] */
+	if (value > 1000)
+	{
+		value = 1000;
+	}
+	if (value < 150)
+	{
+		value = 150;
+	}
+
+	int tw = width - 6 - 6 - 1 - 1 - 5;
+	int pw = tw * (value - 150) / (1000 - 150 + 1) /* max-level - min-level */;
+	API->console->DisplayPrintf (lineno, left, active ? 0x78 : 0x07, width, "%-4dms  150 [%*C.%.15o#%.*o%*C.] 1000",
+		value,
+		pw,
+		active ? 0x08 : 0x07,
+		tw - pw - 1
+	);
+}
+
 static void alsaSetupDraw (int mlTop, int mlLeft, int mlHeight, int mlWidth, enum alsaConfigDraw_Mode_t *alsaConfigDraw_Mode, struct AlsaConfigDeviceList_t *pcmlist, struct AlsaConfigDeviceList_t *mixerlist, const struct DevInterfaceAPI_t *API)
 {
 	uint16_t hbar1;
@@ -301,9 +328,8 @@ static void alsaSetupDraw (int mlTop, int mlLeft, int mlHeight, int mlWidth, enu
 		API->console->DisplayPrintf (mlTop +  7, mlLeft, 0x07, mlWidth, "    % 72s", pcmlist->entries[pcmlist->selected].desc2 ? pcmlist->entries[pcmlist->selected].desc2 : "");
 
 		//API->console->DisplayPrintf (mlTop +  8, mlLeft, 0x07, mlWidth, "%76C \xb3");
-		//API->console->DisplayPrintf (mlTop +  9, mlLeft, 0x07, mlWidth, "%76C \xb3");
-		API->console->DisplayPrintf (mlTop + 10, mlLeft, 0x07, mlWidth, " Mixer device (volume control):");
-		API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x07, mlWidth, "    %*.15o[% 66s]%0.9o    ",
+		API->console->DisplayPrintf (mlTop + 9, mlLeft, 0x07, mlWidth, " Mixer device (volume control):");
+		API->console->DisplayPrintf (mlTop + 10, mlLeft, 0x07, mlWidth, "    %*.15o[% 66s]%0.9o    ",
 			*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_SELECTED ?  8 : 0,
 			mixerlist->entries[mixerlist->selected].name);
 		if (!mixerlist->selected) /* custom */
@@ -314,16 +340,21 @@ static void alsaSetupDraw (int mlTop, int mlLeft, int mlHeight, int mlWidth, enu
 				//API->console->DisplayPrintf (mlTop + 12, mlLeft + mlWidth - 5, 0x09, 5, "    ");
 				/* we delay the EditStringUTF8z(), since it will trigger keyboard input + framelock */
 			} else {
-				API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x07, mlWidth, "    %*.15o%.68S%0.9o    ",
+				API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x07, mlWidth, "    %*.15o%.68S%0.9o    ",
 					*alsaConfigDraw_Mode==ACDM_MIXER_DEVICE_CUSTOM_SELECTED ?  8 : 0,
 					mixerlist->custom);
 			}
 		} else {
-			API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x09, mlWidth, "    -%71C ");
+			API->console->DisplayPrintf (mlTop + 11, mlLeft, 0x09, mlWidth, "    -%71C ");
 		}
-		API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x07, mlWidth, " Description:%63C ");
-		API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc1 ? mixerlist->entries[mixerlist->selected].desc1 : "(no description)");
-		API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc2 ? mixerlist->entries[mixerlist->selected].desc2 : "");
+		API->console->DisplayPrintf (mlTop + 12, mlLeft, 0x07, mlWidth, " Description:%63C ");
+		API->console->DisplayPrintf (mlTop + 13, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc1 ? mixerlist->entries[mixerlist->selected].desc1 : "(no description)");
+		API->console->DisplayPrintf (mlTop + 14, mlLeft, 0x07, mlWidth, "    % 72s", mixerlist->entries[mixerlist->selected].desc2 ? mixerlist->entries[mixerlist->selected].desc2 : "");
+
+		//API->console->DisplayPrintf (mlTop + 15, mlLeft, 0x07, mlWidth, "%76C \xb3");
+
+		API->console->DisplayPrintf (mlTop + 16, mlLeft + 1, 0x07, mlWidth - 1, "Audio buffer length (in miliseconds).");
+		DrawDelayBar (API, mlLeft + 3, mlTop + 17, mlWidth - 4, plrbufsize, *alsaConfigDraw_Mode==ACDM_AUDIO_BUFFER_SIZE);
 	}
 
 	if (*alsaConfigDraw_Mode==ACDM_AUDIO_DEVICE_CUSTOM_EDIT)
@@ -395,18 +426,22 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 	struct AlsaConfigDeviceList_t pcmlist = {0, 0, 0};
 	struct AlsaConfigDeviceList_t mixerlist = {0, 0, 0};
 	int doexit = 0;
+	int repeat = 1;
+	uint32_t lastpress = 0;
 
 	snprintf (  pcmlist.custom, sizeof (  pcmlist.custom), "%s", alsaCardName);
 	snprintf (mixerlist.custom, sizeof (mixerlist.custom), "%s", alsaMixerName);
+
+	plrbufsize = API->configAPI->GetProfileInt2 (API->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 
 	alsaSetupScan (&pcmlist, &mixerlist);
 
 	while (!doexit)
 	{
 		const int mlWidth = 78;
-		const int mlHeight = 18;
-#if (CONSOLE_MIN_Y < 18)
-# error alsaSetupRun() requires CONSOLE_MIN_Y >= 18
+		const int mlHeight = 20;
+#if (CONSOLE_MIN_Y < 20)
+# error alsaSetupRun() requires CONSOLE_MIN_Y >= 20
 #endif
 		int mlTop = (API->console->TextHeight - mlHeight) / 2;
 		int mlLeft = (API->console->TextWidth - mlWidth) / 2;
@@ -421,8 +456,48 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 		while (API->console->KeyboardHit() && !doexit && (alsaConfigDraw_Mode != ACDM_AUDIO_DEVICE_CUSTOM_EDIT) && (alsaConfigDraw_Mode != ACDM_MIXER_DEVICE_CUSTOM_EDIT))
 		{
 			int key = API->console->KeyboardGetChar();
+			if ((key != KEY_LEFT) && (key != KEY_RIGHT) && (key != '+') && (key != '-'))
+			{
+				lastpress = 0;
+				repeat = 1;
+			} else {
+				uint32_t newpress = clock_ms();
+				if ((newpress-lastpress) > 250) /* 250 ms */
+				{
+					repeat = 1;
+				} else {
+					if (repeat < 20)
+					{
+						repeat += 1;
+					}
+				}
+				lastpress = newpress;
+			}
+
 			switch (key)
 			{
+				case KEY_LEFT:
+				case '-':
+					if (alsaConfigDraw_Mode == ACDM_AUDIO_BUFFER_SIZE)
+					{
+						plrbufsize-=repeat;
+						if (plrbufsize < 150)
+						{
+							plrbufsize = 150;
+						}
+					}
+					break;
+				case KEY_RIGHT:
+				case '+':
+					if (alsaConfigDraw_Mode == ACDM_AUDIO_BUFFER_SIZE)
+					{
+						plrbufsize += repeat;
+						if (plrbufsize > 1000)
+						{
+							plrbufsize = 1000;
+						}
+					}
+					break;
 				case KEY_DOWN:
 					switch (alsaConfigDraw_Mode)
 					{
@@ -449,6 +524,8 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 							if (!mixerlist.selected) /* !custom */
 							{
 								alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
+							} else {
+								alsaConfigDraw_Mode = ACDM_AUDIO_BUFFER_SIZE;
 							}
 							break;
 						case ACDM_MIXER_DEVICE_OPEN:
@@ -458,8 +535,11 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 							}
 							break;
 						case ACDM_MIXER_DEVICE_CUSTOM_SELECTED:
+							alsaConfigDraw_Mode = ACDM_AUDIO_BUFFER_SIZE;
 							break;
 						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
+							break;
+						case ACDM_AUDIO_BUFFER_SIZE:
 							break;
 					}
 					break;
@@ -498,6 +578,14 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 							break;
 						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
 							break;
+						case ACDM_AUDIO_BUFFER_SIZE:
+							if (!mixerlist.selected) /* !custom */
+							{
+								alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
+							} else {
+								alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_SELECTED;
+							}
+						break;
 					}
 					break;
 				case KEY_EXIT:
@@ -532,6 +620,9 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 							alsaConfigDraw_Mode = ACDM_MIXER_DEVICE_CUSTOM_SELECTED;
 							API->console->Driver->SetCursorShape (0);
 							break;
+						case ACDM_AUDIO_BUFFER_SIZE:
+							doexit = 1;
+							break;
 					}
 					break;
 				case _KEY_ENTER:
@@ -563,6 +654,8 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 							break;
 						case ACDM_MIXER_DEVICE_CUSTOM_EDIT:
 							break;
+						case ACDM_AUDIO_BUFFER_SIZE:
+							break;
 					}
 					break;
 			}
@@ -591,6 +684,7 @@ static void alsaSetupRun (void **token, const struct DevInterfaceAPI_t *API)
 
 	API->configAPI->SetProfileString ("devpALSA", "card", alsaCardName);
 	API->configAPI->SetProfileString ("devpALSA", "mixer", alsaMixerName);
+	API->configAPI->SetProfileInt (API->configAPI->SoundSec, "plrbufsize", plrbufsize, 10);
 	API->configAPI->StoreConfig ();
 }
 
@@ -665,6 +759,16 @@ static unsigned int devpALSAIdle(void)
 		if (odelay<0)
 		{
 			odelay=0;
+		}
+	} else {
+		if (odelay > maxdelay)
+		{
+			maxdelay = odelay;
+			unsigned int plrbufsizeneed = (unsigned int)((unsigned long)odelay * 1000 / devpALSARate);
+			if (plrbufsizeneed > plrbufsize)
+			{
+				fprintf (stderr, "ALSA: audio delay (%d ms) > plrbufsize (%d ms). Please increase the audio buffer length, available in setup:/devp.dev\n", plrbufsizeneed, plrbufsize);
+			}
 		}
 	}
 
@@ -901,7 +1005,7 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 {
 	int err;
 	unsigned int uval, realdelay;
-	int plrbufsize, buflength;
+	int buflength;
 	/* start with setting default values, if we bail out */
 
 	alsaOpenDevice();
@@ -1050,6 +1154,7 @@ static int devpALSAPlay (uint32_t *rate, enum plrRequestFormat *format, struct o
 		return 0;
 	}
 
+	maxdelay = 0;
 	plrbufsize = cpifaceSession->configAPI->GetProfileInt2 (cpifaceSession->configAPI->SoundSec, "sound", "plrbufsize", 200, 10);
 	/* clamp the plrbufsize to be atleast 150ms and below 1000 ms */
 	if (plrbufsize < 150)
