@@ -243,7 +243,7 @@ timiditypchan.o: timiditypchan.c \
 	../stuff/poutput.h \
 	../cpiface/cpiface.h \
 	timidity-git/timidity/timidity.h
-	$(CC) $< -o $@ -c
+	$(CC) $< -o $@ -c -DDEFAULT_PATH=TIMIDITY_DEFAULT_PATH -DPKGDATADIR=TIMIDITYPKGDATADIR
 
 timiditypdots.o: \
 	timiditypdots.c \

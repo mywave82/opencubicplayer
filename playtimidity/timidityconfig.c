@@ -741,7 +741,7 @@ static void timidityBrowseSF2Draw (int contentsel, const char *path, const struc
 {
 	int mlWidth = MAX(75, API->console->TextWidth * 3 / 4);
 	int mlHeight = MIN((API->console->TextHeight >= 35) ? 33 : 23, API->console->TextHeight);
-	int mlTop = (API->console->TextHeight - mlHeight) / 2 ;
+	int mlTop = (API->console->TextHeight - mlHeight) / 2;
 	int mlLeft = (API->console->TextWidth - mlWidth) / 2;
 	int skip;
 	int dot;
