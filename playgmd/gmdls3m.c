@@ -283,11 +283,11 @@ OCP_INTERNAL int LoadS3M (struct cpifaceSessionAPI_t *cpifaceSession, struct gmd
 		}
 		smppara[i]=sins.sampptr+(sins.sampptrh<<16);
 
-		if (sins.flag&4)
+		if (sins.flag&4) /* 16-bit */
 		{
-			sins.length>>=1;
-			sins.loopstart>>=1;
-			sins.loopend>>=1;
+			sins.length<<=1;
+			sins.loopstart<<=1;
+			sins.loopend<<=1;
 		}
 
 		ip=&m->instruments[i];
